@@ -22,7 +22,7 @@ export default function About() {
       <article><span>02</span><h3>People belong in the story</h3><p>Conservation works best when local and Indigenous leadership is heard and valued.</p></article>
       <article><span>03</span><h3>Possibility matters</h3><p>We investigate solutions without hype, and make space for grounded hope.</p></article>
     </section>
-    <section className="about-support" id="support"><div className="shell"><p className="eyebrow">Join our community</p><h2>Help keep independent conservation journalism in the field.</h2><button>Make a donation <ArrowRight /></button></div></section>
+    <section className="about-support" id="support"><div className="shell"><p className="eyebrow">Join our community</p><h2>Help keep independent conservation journalism in the field.</h2><a className="action-button action-button-dark" href="https://www.wildteam.org.uk/donate" target="_blank" rel="noreferrer">Make a donation <ArrowRight /></a></div></section>
     <footer><div className="shell footer-inner"><a href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></a><p>Conservation, clearly told.</p><div><a href="/">Home</a><a href="#support">Donate</a></div></div></footer>
   </main>;
 }

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { ArrowLeft, ArrowRight, ExternalLink, Leaf } from 'lucide-react';
-import { getStory, stories } from '@/lib/stories';
+import { getStory, stories, topicSlug } from '@/lib/stories';
 
 export function generateStaticParams() { return stories.map(({ slug }) => ({ slug })); }
 
@@ -24,9 +24,13 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
     </header>
     <article>
       <header className="article-hero shell">
-        <div className="article-topics">{story.topics.map((topic) => <span key={topic}>{topic}</span>)}</div>
+        <div className="article-topics">{story.topics.map((topic) => <a href={`/topics/${topicSlug(topic)}`} key={topic}>{topic}</a>)}</div>
         <h1>{story.title}</h1>
         <p className="article-deck">{story.summary}</p>
+        <div className="article-leaning-summary" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}>
+          <div className="lean-bar"><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>
+          <div className="lean-labels"><span>Left</span><span>Centre</span><span>Right</span></div>
+        </div>
         <p className="byline">Curated by {story.byline} <span>·</span> Updated today</p>
       </header>
       <div className="article-lead-image"><img src={story.image} alt="" /></div>
@@ -40,6 +44,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
           <div className="lean-bar" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>
           <div className="lean-labels"><span>Left {left}%</span><span>Centre {centre}%</span><span>Right {right}%</span></div>
           <small>This is an editorial signal, not a judgement of factual accuracy. It reflects outlet orientation and framing, and may change as coverage develops.</small>
+          <a className="analysis-link" href="/how-leaning-works">How our leaning analysis works <ArrowRight /></a>
         </aside>
       </div>
     </article>

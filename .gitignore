@@ -4,3 +4,6 @@ dist/
 .vinext/
 .DS_Store
 *.log
+.next/
+.wrangler/
+next-env.d.ts
