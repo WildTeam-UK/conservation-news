@@ -67,7 +67,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
         </div>
       </header>
       <div className="article-lead-image"><img src={storyImage(story)} alt="" /></div>
-      <section className="article-overview shell"><div className="article-curator-meta"><CuratorByline name={story.byline} /><p className="story-update-note">last updated 28 august 2026. this story may be updated as it develops.</p></div><h2>The story at a glance</h2>{storyOverview(story).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</section>
+      <section className="article-overview shell"><div className="article-curator-meta"><CuratorByline name={story.byline} /><p className="story-update-note">Last updated 28 August 2026. This story may be updated as it develops.</p></div><h2>The story at a glance</h2>{storyOverview(story).map((paragraph) => <p key={paragraph}>{paragraph}</p>)}</section>
       <div className="article-layout shell">
         <div className="article-main">
           <section className="story-section"><p className="eyebrow">The story in brief</p><h2>What you need to know</h2><ul className="key-points">{story.bullets.map((bullet, index) => <li key={bullet}>{expandedBullet(story, bullet, index)}</li>)}</ul></section>

@@ -231,8 +231,8 @@ img{border-radius:18px}
 
 .article-lead-image,.article-lead-image img{border-radius:0}
 .article-curator-meta{margin-bottom:26px}
-.article-overview .article-curator-meta .curator-byline{margin:0 0 6px;font-size:9px}
-.story-update-note{margin:0;padding-left:34px;color:var(--muted);font-size:10px;font-weight:500;line-height:1.45;text-transform:lowercase;letter-spacing:0}
+.article-overview .article-curator-meta .curator-byline{margin:0 0 6px;font-size:10px}
+.story-update-note{margin:0;padding-left:0;color:var(--muted);font-size:10px;font-weight:500;line-height:1.45;text-align:left;text-transform:none;letter-spacing:0}
 
 @media(max-width:820px){
   .topic-page-grid{column-gap:0}

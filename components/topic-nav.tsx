@@ -55,13 +55,15 @@ export function TopicNav({ topics }: { topics: string[] }) {
       draggingRef.current = true;
       movedRef.current = false;
       pointerStartRef.current = { x: event.clientX, position: positionRef.current };
-      event.currentTarget.setPointerCapture(event.pointerId);
-      event.currentTarget.classList.add('is-dragging');
     }}
     onPointerMove={(event) => {
       if (!draggingRef.current) return;
       const distance = event.clientX - pointerStartRef.current.x;
-      if (Math.abs(distance) > 4) movedRef.current = true;
+      if (Math.abs(distance) > 4 && !movedRef.current) {
+        movedRef.current = true;
+        event.currentTarget.setPointerCapture(event.pointerId);
+        event.currentTarget.classList.add('is-dragging');
+      }
       positionRef.current = wrapPosition(pointerStartRef.current.position - distance);
     }}
     onPointerUp={endDrag}
