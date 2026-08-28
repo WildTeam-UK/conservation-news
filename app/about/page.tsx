@@ -1,11 +1,10 @@
-import Link from 'next/link';
 import { ArrowLeft, ArrowRight, Leaf } from 'lucide-react';
 
 export default function About() {
   return <main>
     <header className="about-header shell">
-      <Link href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></Link>
-      <Link href="/" className="back-link"><ArrowLeft /> Back to stories</Link>
+      <a href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></a>
+      <a href="/" className="back-link"><ArrowLeft /> Back to stories</a>
       <a href="#support" className="donate-button">Donate <ArrowRight /></a>
     </header>
     <section className="about-hero shell">
@@ -24,6 +23,6 @@ export default function About() {
       <article><span>03</span><h3>Possibility matters</h3><p>We investigate solutions without hype, and make space for grounded hope.</p></article>
     </section>
     <section className="about-support" id="support"><div className="shell"><p className="eyebrow">Join our community</p><h2>Help keep independent conservation journalism in the field.</h2><button>Make a donation <ArrowRight /></button></div></section>
-    <footer><div className="shell footer-inner"><Link href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></Link><p>Conservation, clearly told.</p><div><Link href="/">Home</Link><a href="#support">Donate</a></div></div></footer>
+    <footer><div className="shell footer-inner"><a href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></a><p>Conservation, clearly told.</p><div><a href="/">Home</a><a href="#support">Donate</a></div></div></footer>
   </main>;
 }

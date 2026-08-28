@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { ArrowLeft, ArrowRight, ExternalLink, Leaf } from 'lucide-react';
 import { getStory, stories } from '@/lib/stories';
 
@@ -13,14 +12,14 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 
 export default async function StoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const story = getStory((await params).slug);
-  if (!story) return <main className="missing shell"><h1>Story not found</h1><Link href="/">Back to WildNews</Link></main>;
+  if (!story) return <main className="missing shell"><h1>Story not found</h1><a href="/">Back to WildNews</a></main>;
   const related = stories.filter((item) => item.slug !== story.slug && item.topics.some((topic) => story.topics.includes(topic))).slice(0,3);
   if (related.length < 3) related.push(...stories.filter((item) => item.slug !== story.slug && !related.includes(item)).slice(0,3-related.length));
   const [left, centre, right] = story.balance;
   return <main>
     <header className="article-header shell">
-      <Link href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></Link>
-      <Link href="/" className="back-link"><ArrowLeft /> All stories</Link>
+      <a href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></a>
+      <a href="/" className="back-link"><ArrowLeft /> All stories</a>
       <a href="#sources" className="donate-button">View sources <ArrowRight /></a>
     </header>
     <article>
@@ -44,7 +43,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
         </aside>
       </div>
     </article>
-    <section className="related shell"><div className="section-heading"><h2>Similar stories</h2><p>Keep exploring this topic.</p></div><div className="related-grid">{related.map((item)=><article key={item.slug}><Link href={`/stories/${item.slug}`} className="related-image"><img src={item.image} alt="" /></Link><p className="eyebrow">{item.topic}</p><h3><Link href={`/stories/${item.slug}`}>{item.title}</Link></h3></article>)}</div></section>
-    <footer><div className="shell footer-inner"><Link href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></Link><p>Conservation, clearly told.</p><div><Link href="/about">About</Link><Link href="/">Latest</Link></div></div></footer>
+    <section className="related shell"><div className="section-heading"><h2>Similar stories</h2><p>Keep exploring this topic.</p></div><div className="related-grid">{related.map((item)=><article key={item.slug}><a href={`/stories/${item.slug}`} className="related-image"><img src={item.image} alt="" /></a><p className="eyebrow">{item.topic}</p><h3><a href={`/stories/${item.slug}`}>{item.title}</a></h3></article>)}</div></section>
+    <footer><div className="shell footer-inner"><a href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></a><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/">Latest</a></div></div></footer>
   </main>;
 }
