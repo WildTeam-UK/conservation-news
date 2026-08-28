@@ -116,9 +116,9 @@ p{margin-top:0;margin-bottom:1.25em}p:last-child{margin-bottom:0}.byline{margin-
 .article-overview .curator-byline{margin:0 0 26px;padding:0;font-size:10px}
 .article-overview .curator-avatar{width:25px;height:25px;flex-basis:25px}
 img{border-radius:18px}
-@media(min-width:821px){.hero-grid{grid-auto-rows:auto;align-items:center}.hero-copy{height:auto}.hero-image{height:auto;min-height:0;aspect-ratio:16/10;align-self:center}}
+@media(min-width:821px){.hero-grid{grid-auto-rows:auto;align-items:center}.hero-copy{height:auto}.hero-image{height:auto;min-height:0;aspect-ratio:1;align-self:center}}
 @media(prefers-reduced-motion:reduce){.topic-nav{overflow-x:auto}.topic-ticker-track{animation:none}.topic-ticker-group[aria-hidden="true"]{display:none}}
-@media(max-width:820px){.hero-image{min-height:0;aspect-ratio:16/10}}
+@media(max-width:820px){.hero-image{min-height:0;aspect-ratio:1}}
 @media(max-width:560px){.ai-disclosure{padding:22px}.author-page-hero{padding-bottom:92px}.author-profile-heading{grid-template-columns:72px minmax(0,1fr)}.author-profile-heading h1{margin:0}.topic-nav .topic-tag{min-width:max-content}}
 
 /* Four-part coverage analysis */
@@ -155,3 +155,15 @@ img{border-radius:18px}
 .methodology-dimensions .methodology-scale{font-size:10px}.methodology-dimensions .methodology-scale span{padding:11px 14px}
 @media(max-width:820px){.methodology-dimensions{grid-template-columns:1fr}.methodology-dimensions>section,.methodology-dimensions>section:nth-child(even){padding:30px 0;border-left:0}.coverage-card .analysis-tooltip{right:-8px;width:min(270px,calc(100vw - 80px))}}
 @media(max-width:560px){.coverage-card{padding:26px}.coverage-dimension h2,.political-dimension .coverage-title-row h2{font-size:17px}.coverage-signal-labels{font-size:9px}.coverage-card .analysis-tooltip{width:min(250px,calc(100vw - 72px))}.methodology-dimensions h2{font-size:28px}}
+
+/* Homepage and archive corrections */
+.ai-disclosure{margin-bottom:0}.hero{padding-top:18px}
+.story-image{overflow:hidden;border-radius:18px;background:transparent}
+.latest .section-heading h2{font-size:clamp(40px,5vw,62px);font-weight:900;line-height:.95;letter-spacing:-.045em}
+.author-page-hero>.curator-pill{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:999px;background:var(--cream);color:var(--forest);font-family:var(--font-ui),sans-serif;font-size:12px;font-weight:500;line-height:1;text-transform:uppercase;letter-spacing:.05em}
+.author-page-hero>.curator-pill>svg{display:block;width:15px;height:15px;flex:0 0 15px;stroke-width:2}
+.author-page-hero>.curator-pill>span{display:inline;flex:0 0 auto;margin:0;line-height:1}
+.methodology-content ol{margin:0;padding-left:25px;list-style:decimal}
+.methodology-content ol li{display:list-item;padding-left:5px}
+.methodology-content ol li::marker{color:var(--lime);font-weight:900}
+@media(max-width:560px){.hero{padding-top:12px}}
