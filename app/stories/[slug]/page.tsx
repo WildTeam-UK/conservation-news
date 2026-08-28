@@ -4,7 +4,20 @@ import { Brand } from '@/components/brand';
 import { CuratorByline } from '@/components/curator-byline';
 import { InteriorHeader } from '@/components/interior-header';
 import { TopicTag } from '@/components/topic-tag';
-import { cleanCopy, expandedBullet, getStory, stories, storyImage, storyOverview } from '@/lib/stories';
+import { cleanCopy, expandedBullet, getCoverageAnalysis, getStory, stories, storyImage, storyOverview } from '@/lib/stories';
+
+function CoverageHelp({ label, text }: { label: string; text: string }) {
+  return <span className="analysis-help coverage-help" tabIndex={0} aria-label={`${label}: ${text}`}><CircleHelp aria-hidden="true" /><span className="analysis-tooltip" role="tooltip">{text}</span></span>;
+}
+
+function BinaryAnalysis({ title, firstLabel, firstValue, secondLabel, tooltip, tone }: { title: string; firstLabel: string; firstValue: number; secondLabel: string; tooltip: string; tone: string }) {
+  const secondValue = 100 - firstValue;
+  return <section className="coverage-dimension">
+    <div className="coverage-dimension-heading"><h2>{title}</h2><CoverageHelp label={title} text={tooltip} /></div>
+    <div className={`lean-bar coverage-signal-bar ${tone}`} aria-label={`${firstLabel} ${firstValue}%, ${secondLabel} ${secondValue}%`}><span style={{width:`${firstValue}%`}}/><span style={{width:`${secondValue}%`}}/></div>
+    <div className="coverage-signal-labels"><span>{firstLabel} <strong>{firstValue}%</strong></span><span>{secondLabel} <strong>{secondValue}%</strong></span></div>
+  </section>;
+}
 
 export function generateStaticParams() { return stories.map(({ slug }) => ({ slug })); }
 
@@ -23,6 +36,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   const related = stories.filter((item) => item.slug !== story.slug && item.topics.some((topic) => story.topics.includes(topic))).slice(0,3);
   if (related.length < 3) related.push(...stories.filter((item) => item.slug !== story.slug && !related.includes(item)).slice(0,3-related.length));
   const [left, centre, right] = story.balance;
+  const coverage = getCoverageAnalysis(story);
   return <main>
     <InteriorHeader actionHref="#sources" actionLabel="View sources" />
     <article>
@@ -30,7 +44,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
         <div className="article-topics">{story.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
         <h1>{cleanCopy(story.title)}</h1>
         <div className="article-leaning-summary" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}>
-          <div className="leaning-summary-heading"><span>{story.leaning} coverage mix</span><a className="analysis-help" href="/how-leaning-works" aria-label="Learn how our leaning analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">This shows the political mix of outlets covering the story, not whether the reporting is accurate. Click to learn how it works.</span></a></div>
+          <div className="leaning-summary-heading"><span>{story.leaning} coverage mix</span><a className="analysis-help" href="/how-leaning-works" aria-label="Learn how our coverage analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">This shows the political mix of outlets covering the story, not whether the reporting is accurate. Click to learn how the full coverage analysis works.</span></a></div>
           <div className="lean-bar"><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>
           <div className="lean-labels"><span>Left</span><span>Centre</span><span>Right</span></div>
         </div>
@@ -43,11 +57,18 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
           <section className="story-section" id="sources"><p className="eyebrow">Source coverage</p><h2>Read the reporting</h2><div className="source-list">{story.sources.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}><span>{source.primary ? 'Primary story' : 'Also covering'}</span><strong>{cleanCopy(source.name)}</strong><ExternalLink /></a>)}</div></section>
         </div>
         <aside className="coverage-card">
-          <p className="eyebrow">Coverage analysis</p><div className="coverage-title-row"><h2>{story.leaning} leaning</h2></div><p>Based on the mix of outlets currently covering this story.</p>
-          <div className="lean-bar" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>
-          <div className="lean-labels"><span>Left {left}%</span><span>Centre {centre}%</span><span>Right {right}%</span></div>
-          <small>This is an editorial signal, not a judgement of factual accuracy. It reflects outlet orientation and framing, and may change as coverage develops.</small>
-          <a className="analysis-link" href="/how-leaning-works">How our leaning analysis works <ArrowRight /></a>
+          <p className="eyebrow">Coverage analysis</p>
+          <BinaryAnalysis title="Ecological / Economic" firstLabel="Ecological" firstValue={coverage.ecological} secondLabel="Economic" tone="ecology-signal" tooltip="Shows whether coverage primarily frames the story around environmental outcomes or economic impacts such as costs, jobs, industry and development." />
+          <BinaryAnalysis title="Evidence-led / Opinion-led" firstLabel="Evidence-led" firstValue={coverage.evidence} secondLabel="Opinion-led" tone="evidence-signal" tooltip="Shows how strongly the coverage relies on research, data and attributable evidence versus commentary, interpretation or argument." />
+          <BinaryAnalysis title="Consensus / Contested" firstLabel="Consensus" firstValue={coverage.consensus} secondLabel="Contested" tone="consensus-signal" tooltip="Shows how much agreement exists across the sources and viewpoints represented in current coverage. This refers to coverage consensus, not scientific consensus." />
+          <section className="coverage-dimension political-dimension">
+            <p className="coverage-dimension-kicker">Political leaning</p>
+            <div className="coverage-title-row"><h2>{story.leaning} leaning</h2></div><p>Based on the mix of outlets currently covering this story.</p>
+            <div className="lean-bar" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>
+            <div className="lean-labels"><span>Left {left}%</span><span>Centre {centre}%</span><span>Right {right}%</span></div>
+          </section>
+          <small>Coverage analysis reflects the sources, framing and viewpoints currently represented in this story. These signals are not judgements of factual accuracy and may change as new reporting and sources are added.</small>
+          <a className="analysis-link" href="/how-leaning-works">How our coverage analysis works <ArrowRight /></a>
         </aside>
       </div>
     </article>

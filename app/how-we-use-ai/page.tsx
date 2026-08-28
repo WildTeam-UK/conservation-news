@@ -29,7 +29,7 @@ export default function AiTransparencyPage() {
         <div className="ai-process-grid">
           <article><Search /><span>01</span><h3>Find and group</h3><p>AI helps identify conservation stories across different outlets and group reports that appear to describe the same underlying event.</p></article>
           <article><Sparkles /><span>02</span><h3>Summarise and tag</h3><p>AI helps draft concise overviews, key points and topic labels so readers can understand the shape of a story quickly.</p></article>
-          <article><CheckCircle2 /><span>03</span><h3>Compare coverage</h3><p>AI helps surface differences in source selection and framing. The political leaning signal describes the coverage mix, not factual accuracy.</p></article>
+          <article><CheckCircle2 /><span>03</span><h3>Compare coverage</h3><p>AI helps surface differences in framing, evidence, agreement and political source mix. These coverage signals describe the reporting we found, not factual accuracy.</p></article>
         </div>
       </section>
 
@@ -41,6 +41,6 @@ export default function AiTransparencyPage() {
       <section className="ai-next-step"><div><p className="eyebrow">Keep reading critically</p><h2>Go to the evidence.</h2></div><p>Use WILDNEWS to discover what is happening, then follow the source links for the detail, uncertainty and reporting behind each story.</p><a className="action-button" href="/">Explore the stories <ArrowRight /></a></section>
     </article>
 
-    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/how-leaning-works">Leaning analysis</a></div></div></footer>
+    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/how-leaning-works">Coverage analysis</a></div></div></footer>
   </main>;
 }

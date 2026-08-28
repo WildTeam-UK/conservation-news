@@ -6,6 +6,12 @@ export type Story = {
 
 export type Curator = { name: string; role: string; avatar: string };
 
+export type CoverageAnalysis = {
+  ecological: number;
+  evidence: number;
+  consensus: number;
+};
+
 export const stories: Story[] = [
   { slug:'blue-carbon-stores', topic:'Oceans', topics:['Oceans','Climate','Restoration'], title:'The quiet return of Europe’s great blue carbon stores', summary:'From Scotland to the Adriatic, conservationists are restoring seagrass meadows — and discovering how much life can return when the seabed is given room to recover.', byline:'Mara Velasquez', image:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1400&q=85', bullets:['Seagrass restoration is accelerating across European coastal waters, with new projects moving from small trials to whole-bay recovery plans.','Healthy meadows lock away carbon in seabed sediments while sheltering juvenile fish and stabilising vulnerable shorelines.','Divers and autonomous cameras are recording stronger biodiversity gains than early models predicted in several restored sites.','Projects still face pressure from anchors, dredging, nutrient pollution and poor water quality beyond restoration boundaries.','Researchers say long-term legal protection and local stewardship will determine whether the returning meadows survive.'], leaning:'Centre', balance:[28,58,14], sources:[{name:'UNEP — Seagrass ecosystems',url:'https://www.unep.org/resources/report/out-blue-value-seagrasses-environment-and-people',primary:true},{name:'The Guardian — Seagrass coverage',url:'https://www.theguardian.com/environment/seagrass'},{name:'Oceanographic — Blue carbon',url:'https://oceanographicmagazine.com/'}]},
   { slug:'elephant-corridor', topic:'Wildlife', topics:['Wildlife','Communities','Land use'], title:'A new corridor gives elephants room to roam', summary:'A community-led agreement is reconnecting fragmented habitat while keeping farms and families at the center of the plan.', byline:'Nia Okafor', image:'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=1200&q=85', bullets:['Neighbouring conservancies agreed to protect a migration route between two reserves after three years of community negotiation.','The plan funds crop-protection fencing, early-warning systems and rapid-response teams for farms closest to the corridor.','Landholders will receive annual conservation payments tied to keeping key pathways open and avoiding new barriers.','Researchers will monitor elephant movements and conflict reports to measure whether the corridor works over the next five years.','Community leaders say reliable benefits for families are essential if the agreement is to outlast its first funding cycle.'], leaning:'Centre', balance:[22,64,14], sources:[{name:'IUCN — African elephant',url:'https://www.iucn.org/our-work/topic/wildlife',primary:true},{name:'WWF — Elephant conservation',url:'https://www.worldwildlife.org/species/elephant'},{name:'Mongabay — Elephants',url:'https://news.mongabay.com/list/elephants/'}]},
@@ -60,6 +66,41 @@ const imageOverrides: Record<string, string> = {
   'pollinator-highways': 'https://images.unsplash.com/photo-1550170139-ed6b5e6b4c38?auto=format&fit=crop&w=1200&q=85',
   'mangrove-insurance': 'https://images.unsplash.com/photo-1589556183130-530470785fab?auto=format&fit=crop&w=1200&q=85',
   'cranes-return-wetlands': 'https://images.unsplash.com/photo-1577870142472-476ba8111ef1?auto=format&fit=crop&w=1200&q=85',
+};
+
+const coverageSignals: Record<string, CoverageAnalysis> = {
+  'blue-carbon-stores': { ecological:72, evidence:81, consensus:64 },
+  'elephant-corridor': { ecological:63, evidence:76, consensus:58 },
+  'forest-guardians': { ecological:68, evidence:84, consensus:61 },
+  'river-runs-free': { ecological:79, evidence:86, consensus:74 },
+  'peatland-success-story': { ecological:71, evidence:82, consensus:67 },
+  'urban-seed-banks': { ecological:66, evidence:78, consensus:70 },
+  'wolves-find-way-home': { ecological:57, evidence:73, consensus:46 },
+  'coral-nurseries-heat': { ecological:84, evidence:88, consensus:77 },
+  'forest-fire-recovery': { ecological:69, evidence:80, consensus:43 },
+  'beavers-urban-rivers': { ecological:70, evidence:75, consensus:62 },
+  'grasslands-carbon-blindspot': { ecological:62, evidence:83, consensus:55 },
+  'pangolin-trafficking-routes': { ecological:54, evidence:79, consensus:69 },
+  'kelp-forest-recovery': { ecological:76, evidence:80, consensus:65 },
+  'pollinator-highways': { ecological:74, evidence:72, consensus:73 },
+  'mangrove-insurance': { ecological:51, evidence:77, consensus:52 },
+  'cranes-return-wetlands': { ecological:78, evidence:83, consensus:71 },
+  'gorilla-tourism-reset': { ecological:52, evidence:69, consensus:48 },
+  'sea-turtle-nests-heat': { ecological:82, evidence:85, consensus:76 },
+  'oyster-reefs-comeback': { ecological:67, evidence:79, consensus:68 },
+  'prairie-restoration-drought': { ecological:73, evidence:81, consensus:59 },
+  'snow-leopard-insurance': { ecological:55, evidence:71, consensus:51 },
+  'lights-out-migration': { ecological:65, evidence:87, consensus:72 },
+  'shark-nursery-protection': { ecological:75, evidence:86, consensus:66 },
+  'islands-without-rats': { ecological:85, evidence:82, consensus:79 },
+  'fungi-restoration-network': { ecological:81, evidence:89, consensus:63 },
+  'urban-wetlands-floods': { ecological:58, evidence:78, consensus:65 },
+};
+
+export const getCoverageAnalysis = (story: Story): CoverageAnalysis => coverageSignals[story.slug] ?? {
+  ecological: 70,
+  evidence: 78,
+  consensus: 62,
 };
 
 const pointContext: Record<string, string[]> = {
