@@ -249,3 +249,7 @@ img{border-radius:18px}
   .simple-footer-bottom{align-items:flex-start;flex-direction:column}
   .simple-footer-bottom>div{justify-content:flex-start}
 }
+
+/* Keep both Latest Stories columns on the same title scale */
+.latest-primary .story-copy h3,.latest-compact .compact-story h3{font-size:25px;line-height:1.05}
+@media(max-width:560px){.latest-primary .story-copy h3,.latest-compact .compact-story h3{font-size:21px}}
