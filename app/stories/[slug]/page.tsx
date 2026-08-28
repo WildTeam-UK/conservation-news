@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
 import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { CuratorByline } from '@/components/curator-byline';
 import { InteriorHeader } from '@/components/interior-header';
 import { TopicTag } from '@/components/topic-tag';
-import { authorSlug, cleanCopy, expandedBullet, getStory, stories, storyImage, storyOverview } from '@/lib/stories';
+import { cleanCopy, expandedBullet, getStory, stories, storyImage, storyOverview } from '@/lib/stories';
 
 export function generateStaticParams() { return stories.map(({ slug }) => ({ slug })); }
 
@@ -28,7 +29,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
       <header className="article-hero shell">
         <div className="article-topics">{story.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
         <h1>{cleanCopy(story.title)}</h1>
-        <p className="byline">Curated by <a href={`/authors/${authorSlug(story.byline)}`}>{story.byline}</a> <span>·</span> Updated today</p>
+        <CuratorByline name={story.byline} prefix="Curated by" meta="Updated today" />
         <div className="article-leaning-summary" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}>
           <div className="leaning-summary-heading"><span>{story.leaning} coverage mix</span><a className="analysis-help" href="/how-leaning-works" aria-label="Learn how our leaning analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">This shows the political mix of outlets covering the story, not whether the reporting is accurate. Click to learn how it works.</span></a></div>
           <div className="lean-bar"><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>

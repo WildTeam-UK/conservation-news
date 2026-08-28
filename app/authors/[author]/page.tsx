@@ -3,7 +3,7 @@ import { ArrowRight, PenLine } from 'lucide-react';
 import { Brand } from '@/components/brand';
 import { InteriorHeader } from '@/components/interior-header';
 import { TopicTag } from '@/components/topic-tag';
-import { allAuthors, authorSlug, cleanCopy, getAuthor, stories, storyImage } from '@/lib/stories';
+import { allAuthors, authorSlug, cleanCopy, getAuthor, getCurator, stories, storyImage } from '@/lib/stories';
 
 export function generateStaticParams() {
   return allAuthors.map((author) => ({ author: authorSlug(author) }));
@@ -19,14 +19,15 @@ export default async function AuthorPage({ params }: { params: Promise<{ author:
   const author = getAuthor((await params).author);
   if (!author) return <main className="missing shell"><h1>Curator not found</h1><a href="/">Back to WildNews</a></main>;
 
+  const curator = getCurator(author)!;
   const authorStories = stories.filter((story) => story.byline === author);
 
   return <main>
     <InteriorHeader />
     <section className="topic-page-hero author-page-hero shell">
-      <span className="curator-pill"><PenLine /> Curator</span>
+      <div className="author-identity"><img src={curator.avatar} alt={author} /><span className="curator-pill"><PenLine /> Curator</span></div>
       <h1>{author}</h1>
-      <p>Conservation stories selected and summarised by {author} for WILDNEWS.</p>
+      <p>{curator.role} at WildTeam. Conservation stories selected and summarised by {author} for WILDNEWS.</p>
       <span>{authorStories.length} {authorStories.length === 1 ? 'story' : 'stories'}</span>
     </section>
     <section className="topic-page-grid shell">

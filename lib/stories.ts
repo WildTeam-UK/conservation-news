@@ -4,6 +4,8 @@ export type Story = {
   balance: [number, number, number]; sources: { name: string; url: string; primary?: boolean }[];
 };
 
+export type Curator = { name: string; role: string; avatar: string };
+
 export const stories: Story[] = [
   { slug:'blue-carbon-stores', topic:'Oceans', topics:['Oceans','Climate','Restoration'], title:'The quiet return of Europe’s great blue carbon stores', summary:'From Scotland to the Adriatic, conservationists are restoring seagrass meadows — and discovering how much life can return when the seabed is given room to recover.', byline:'Mara Velasquez', image:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1400&q=85', bullets:['Seagrass restoration is accelerating across European coastal waters, with new projects moving from small trials to whole-bay recovery plans.','Healthy meadows lock away carbon in seabed sediments while sheltering juvenile fish and stabilising vulnerable shorelines.','Divers and autonomous cameras are recording stronger biodiversity gains than early models predicted in several restored sites.','Projects still face pressure from anchors, dredging, nutrient pollution and poor water quality beyond restoration boundaries.','Researchers say long-term legal protection and local stewardship will determine whether the returning meadows survive.'], leaning:'Centre', balance:[28,58,14], sources:[{name:'UNEP — Seagrass ecosystems',url:'https://www.unep.org/resources/report/out-blue-value-seagrasses-environment-and-people',primary:true},{name:'The Guardian — Seagrass coverage',url:'https://www.theguardian.com/environment/seagrass'},{name:'Oceanographic — Blue carbon',url:'https://oceanographicmagazine.com/'}]},
   { slug:'elephant-corridor', topic:'Wildlife', topics:['Wildlife','Communities','Land use'], title:'A new corridor gives elephants room to roam', summary:'A community-led agreement is reconnecting fragmented habitat while keeping farms and families at the center of the plan.', byline:'Nia Okafor', image:'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=1200&q=85', bullets:['Neighbouring conservancies agreed to protect a migration route between two reserves after three years of community negotiation.','The plan funds crop-protection fencing, early-warning systems and rapid-response teams for farms closest to the corridor.','Landholders will receive annual conservation payments tied to keeping key pathways open and avoiding new barriers.','Researchers will monitor elephant movements and conflict reports to measure whether the corridor works over the next five years.','Community leaders say reliable benefits for families are essential if the agreement is to outlast its first funding cycle.'], leaning:'Centre', balance:[22,64,14], sources:[{name:'IUCN — African elephant',url:'https://www.iucn.org/our-work/topic/wildlife',primary:true},{name:'WWF — Elephant conservation',url:'https://www.worldwildlife.org/species/elephant'},{name:'Mongabay — Elephants',url:'https://news.mongabay.com/list/elephants/'}]},
@@ -32,6 +34,18 @@ export const stories: Story[] = [
   { slug:'fungi-restoration-network', topic:'Forests', topics:['Forests','Soil','Restoration'], title:'Restoration is learning to work with the fungi underground', summary:'Ecologists are paying closer attention to mycorrhizal networks that help plants find water and nutrients, especially on severely degraded land.', byline:'Elena Rossi', image:'https://images.unsplash.com/photo-1629457442277-918387fec70c?auto=format&fit=crop&w=1200&q=85', bullets:['Most land plants form partnerships with fungi that extend beyond their roots and exchange soil nutrients for sugars produced through photosynthesis.','Mined, compacted or intensively farmed soils may lack the fungal communities needed for native seedlings to survive after they are planted.','Restoration teams are testing small amounts of locally sourced soil inoculum, nursery treatments and planting near surviving habitat that can act as a reservoir.','Introducing fungi without careful screening can spread pathogens or poorly matched species, so researchers are resisting the rush towards universal commercial products.','The strongest evidence supports rebuilding whole soil communities and reducing disturbance rather than treating one fungal strain as a simple technological fix.'], leaning:'Centre', balance:[42,47,11], sources:[{name:'Kew: State of the World’s Plants and Fungi',url:'https://www.kew.org/science/our-science/projects/state-of-the-worlds-plants-and-fungi',primary:true},{name:'Society for Ecological Restoration',url:'https://www.ser.org/'},{name:'Nature: Soil ecology',url:'https://www.nature.com/subjects/soil-ecology'}]},
   { slug:'urban-wetlands-floods', topic:'Freshwater', topics:['Freshwater','Cities','Climate'], title:'Urban wetlands are becoming part of the flood plan', summary:'Cities are restoring marshes and floodplains as working infrastructure that can hold stormwater, cool neighbourhoods and create habitat close to home.', byline:'Samira Okoye', image:'https://images.unsplash.com/photo-1786795468102-84cd1ac41cd8?auto=format&fit=crop&w=1200&q=85', bullets:['Hard flood defences move water quickly, while wetlands slow and temporarily store it, reducing pressure on drains and downstream communities during intense rain.','Restored sites can also lower local temperatures, filter pollution and provide accessible green space in neighbourhoods that have historically received less investment.','Engineers need accurate models because a wetland cannot absorb unlimited water and may fail if development continues across the wider catchment.','Projects work best when maintenance, public access, mosquito management and habitat goals are agreed with residents before earthworks begin.','City planners are starting to measure avoided flood damage alongside biodiversity, health and recreation benefits when comparing wetlands with conventional infrastructure.'], leaning:'Centre', balance:[39,48,13], sources:[{name:'Ramsar Convention: Urban wetlands',url:'https://www.ramsar.org/',primary:true},{name:'UN-Habitat: Nature-based solutions',url:'https://unhabitat.org/'},{name:'World Bank: Urban resilience',url:'https://www.worldbank.org/en/topic/urbandevelopment'}]},
 ];
+
+export const curators: Curator[] = [
+  { name: 'Adam Barlow', role: 'Executive Director', avatar: '/team/adam-barlow.jpg' },
+  { name: 'Lucy Boddam-Whetham', role: 'Director, Training & Operations', avatar: '/team/lucy-boddam-whetham.jpg' },
+  { name: 'Léa Kaplani', role: 'WildLearning Specialist', avatar: '/team/lea-kaplani.png' },
+  { name: 'Zoe Melvin', role: 'WildLearning Specialist', avatar: '/team/zoe-melvin.jpg' },
+  { name: 'Ali Skeats', role: 'WildLearning Specialist Manager', avatar: '/team/ali-skeats.png' },
+  { name: 'Matt Barker', role: 'Communications and Engagement Specialist', avatar: '/team/matt-barker.jpg' },
+];
+
+const curatorAssignments = [4,1,5,2,0,3,2,0,4,5,3,1,5,3,1,0,2,4,1,4,2,3,5,0,3,0];
+stories.forEach((story, index) => { story.byline = curators[curatorAssignments[index % curatorAssignments.length]].name; });
 
 const imageOverrides: Record<string, string> = {
   'blue-carbon-stores': 'https://images.unsplash.com/photo-1629215833350-8ddcec7e1153?auto=format&fit=crop&w=1400&q=85',
@@ -71,6 +85,8 @@ export const expandedBullet = (story: Story, bullet: string, index: number) => {
 export const getStory = (slug: string) => stories.find((story) => story.slug === slug);
 
 export const slugify = (value: string) => value
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
   .toLowerCase()
   .replace(/&/g, 'and')
   .replace(/[^a-z0-9]+/g, '-')
@@ -80,7 +96,8 @@ export const topicSlug = (topic: string) => slugify(topic);
 export const authorSlug = (author: string) => slugify(author);
 
 export const allTopics = Array.from(new Set(stories.flatMap((story) => [story.topic, ...story.topics])));
-export const allAuthors = Array.from(new Set(stories.map((story) => story.byline))).sort((a, b) => a.localeCompare(b));
+export const allAuthors = curators.map((curator) => curator.name);
 
 export const getTopic = (slug: string) => allTopics.find((topic) => topicSlug(topic) === slug);
 export const getAuthor = (slug: string) => allAuthors.find((author) => authorSlug(author) === slug);
+export const getCurator = (name: string) => curators.find((curator) => curator.name === name);

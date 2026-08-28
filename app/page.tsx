@@ -1,8 +1,9 @@
 import { ArrowRight } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
+import { CuratorByline } from '@/components/curator-byline';
 import { TopicTag } from '@/components/topic-tag';
-import { authorSlug, cleanCopy, stories, storyImage, topicSlug } from '@/lib/stories';
+import { cleanCopy, stories, storyImage, topicSlug } from '@/lib/stories';
 
 const shelfTopics = ['Wildlife', 'Oceans', 'Forests', 'Freshwater', 'Land & climate'];
 
@@ -25,7 +26,7 @@ export default function Home() {
           <h1 id="lead-story"><a href={`/stories/${lead.slug}`}>{cleanCopy(lead.title)}</a></h1>
           <p className="standfirst">{cleanCopy(lead.summary)}</p>
           <a className="read-more-button" href={`/stories/${lead.slug}`}>Read more <ArrowRight /></a>
-          <p className="byline">By <a href={`/authors/${authorSlug(lead.byline)}`}>{lead.byline}</a> <span>·</span> 8 min read</p>
+          <CuratorByline name={lead.byline} meta="8 min read" />
         </div>
         <a href={`/stories/${lead.slug}`} className="hero-image" aria-label={`Read: ${cleanCopy(lead.title)}`}><img src={storyImage(lead)} alt="Sunlit seagrass below clear ocean water" /><span className="image-caption">Read the full story</span></a>
       </div>
@@ -34,10 +35,10 @@ export default function Home() {
     <section className="latest shell" id="latest" aria-labelledby="latest-heading">
       <div className="section-heading"><h2 id="latest-heading">Latest stories</h2><p>Reporting, analysis and ideas from the people protecting nature.</p></div>
       <div className="latest-columns">
-        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={`/stories/${story.slug}`} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" /></a><div className="story-copy"><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p><p className="byline">By <a href={`/authors/${authorSlug(story.byline)}`}>{story.byline}</a></p></div></article>)}</div>
+        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={`/stories/${story.slug}`} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" /></a><div className="story-copy"><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p><CuratorByline name={story.byline} /></div></article>)}</div>
         <aside className="latest-compact" aria-label="More latest stories">{compactLatest.map((story) => <article className="compact-story" key={story.slug}>
           <a className="compact-story-image" href={`/stories/${story.slug}`}><img src={storyImage(story)} alt="" /></a>
-          <div><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><p className="byline">By <a href={`/authors/${authorSlug(story.byline)}`}>{story.byline}</a></p></div>
+          <div><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><CuratorByline name={story.byline} /></div>
         </article>)}</aside>
       </div>
     </section>
