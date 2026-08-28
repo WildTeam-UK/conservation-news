@@ -1,15 +1,16 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, Leaf } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
+import { Brand } from '@/components/brand';
 
 export const metadata: Metadata = {
-  title: 'How our leaning analysis works — WildNews',
+  title: 'How our leaning analysis works | WILDNEWS',
   description: 'How WildNews describes the political leaning and balance of conservation news coverage.',
 };
 
 export default function LeaningMethodologyPage() {
   return <main>
     <header className="article-header shell">
-      <a href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></a>
+      <Brand />
       <a href="/" className="back-link"><ArrowLeft /> All stories</a>
       <a href="/#donate" className="donate-button">Donate</a>
     </header>
@@ -17,7 +18,7 @@ export default function LeaningMethodologyPage() {
       <header className="methodology-hero">
         <p className="eyebrow">WildNews methodology</p>
         <h1>How our leaning analysis works</h1>
-        <p>Our analysis shows the political orientation of the outlets covering a story. It helps readers see where reporting is coming from — not whether it is true.</p>
+        <p>Our analysis shows the political orientation of the outlets covering a story. It helps readers see where reporting is coming from, not whether it is true.</p>
       </header>
 
       <div className="methodology-scale" aria-label="Political leaning from left to centre to right"><span>Left</span><span>Centre</span><span>Right</span></div>
@@ -28,6 +29,6 @@ export default function LeaningMethodologyPage() {
         <aside><p className="eyebrow">Important context</p><h2>What it does not measure</h2><p>The leaning bar is not a factual-accuracy score, a judgement of an author’s personal beliefs or a recommendation to trust one outlet over another.</p><p>Political categories are imperfect and vary between countries. We use them as a practical signal, publish the source links, and keep the result open to editorial review.</p></aside>
       </div>
     </article>
-    <footer><div className="shell footer-inner"><a href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></a><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/">Latest</a></div></div></footer>
+    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/">Latest</a></div></div></footer>
   </main>;
 }

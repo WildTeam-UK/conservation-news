@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, ArrowRight, Leaf } from 'lucide-react';
-import { allTopics, getTopic, stories, topicSlug } from '@/lib/stories';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { Brand } from '@/components/brand';
+import { allTopics, cleanCopy, getTopic, stories, storyImage, topicSlug } from '@/lib/stories';
 
 export function generateStaticParams() {
   return allTopics.map((topic) => ({ topic: topicSlug(topic) }));
@@ -8,8 +9,8 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ topic: string }> }): Promise<Metadata> {
   const topic = getTopic((await params).topic);
-  if (!topic) return { title: 'Topic not found — WildNews' };
-  return { title: `${topic} news — WildNews`, description: `The latest ${topic.toLowerCase()} reporting, analysis and ideas from WildNews.` };
+  if (!topic) return { title: 'Topic not found | WILDNEWS' };
+  return { title: `${topic} news | WILDNEWS`, description: `The latest ${topic.toLowerCase()} reporting, analysis and ideas from WILDNEWS.` };
 }
 
 export default async function TopicPage({ params }: { params: Promise<{ topic: string }> }) {
@@ -21,7 +22,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
 
   return <main>
     <header className="article-header shell">
-      <a href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></a>
+      <Brand />
       <a href="/" className="back-link"><ArrowLeft /> All stories</a>
       <a href="/#donate" className="donate-button">Donate <ArrowRight /></a>
     </header>
@@ -33,10 +34,10 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
     </section>
     <section className="topic-page-grid shell">
       {topicStories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}>
-        <a className="topic-story-image" href={`/stories/${story.slug}`}><img src={story.image} alt="" /></a>
-        <div><p className="eyebrow">{story.topic}</p><h2><a href={`/stories/${story.slug}`}>{story.title}</a></h2><p>{story.summary}</p><span className="byline">By {story.byline}</span><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
+        <a className="topic-story-image" href={`/stories/${story.slug}`}><img src={storyImage(story)} alt="" /></a>
+        <div><p className="eyebrow">{story.topic}</p><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><span className="byline">By {story.byline}</span><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
       </article>)}
     </section>
-    <footer><div className="shell footer-inner"><a href="/" className="brand"><span className="brand-mark"><Leaf /></span><span>WildNews</span></a><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/">Latest</a></div></div></footer>
+    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/">Latest</a></div></div></footer>
   </main>;
 }
