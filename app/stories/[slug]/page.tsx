@@ -19,6 +19,15 @@ function BinaryAnalysis({ title, firstLabel, firstValue, secondLabel, tooltip, t
   </section>;
 }
 
+function CoverageSummaryBinary({ title, firstLabel, firstValue, secondLabel, tone }: { title: string; firstLabel: string; firstValue: number; secondLabel: string; tone: string }) {
+  const secondValue = 100 - firstValue;
+  return <section className="article-coverage-item">
+    <div className="article-coverage-item-heading"><span>{title}</span><strong>{firstValue} / {secondValue}</strong></div>
+    <div className={`lean-bar coverage-summary-bar ${tone}`} aria-label={`${firstLabel} ${firstValue}%, ${secondLabel} ${secondValue}%`}><span style={{width:`${firstValue}%`}}/><span style={{width:`${secondValue}%`}}/></div>
+    <div className="coverage-summary-mini-labels"><span>{firstLabel}</span><span>{secondLabel}</span></div>
+  </section>;
+}
+
 export function generateStaticParams() { return stories.map(({ slug }) => ({ slug })); }
 
 export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }): Promise<Metadata> {
@@ -43,10 +52,18 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
       <header className="article-hero shell">
         <div className="article-topics">{story.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
         <h1>{cleanCopy(story.title)}</h1>
-        <div className="article-leaning-summary" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}>
-          <div className="leaning-summary-heading"><span>{story.leaning} coverage mix</span><a className="analysis-help" href="/how-leaning-works" aria-label="Learn how our coverage analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">This shows the political mix of outlets covering the story, not whether the reporting is accurate. Click to learn how the full coverage analysis works.</span></a></div>
-          <div className="lean-bar"><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>
-          <div className="lean-labels"><span>Left</span><span>Centre</span><span>Right</span></div>
+        <div className="article-coverage-summary" aria-label="Coverage analysis summary">
+          <div className="leaning-summary-heading"><span>Coverage mix</span><a className="analysis-help" href="/how-leaning-works" aria-label="Learn how our coverage analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">A quick view of the ecological, evidence, consensus and political signals found across current coverage. Click to learn how it works.</span></a></div>
+          <div className="article-coverage-track">
+            <CoverageSummaryBinary title="Ecological / Economic" firstLabel="Ecological" firstValue={coverage.ecological} secondLabel="Economic" tone="ecology-signal" />
+            <CoverageSummaryBinary title="Evidence / Opinion" firstLabel="Evidence" firstValue={coverage.evidence} secondLabel="Opinion" tone="evidence-signal" />
+            <CoverageSummaryBinary title="Consensus / Contested" firstLabel="Consensus" firstValue={coverage.consensus} secondLabel="Contested" tone="consensus-signal" />
+            <section className="article-coverage-item political-summary-item">
+              <div className="article-coverage-item-heading"><span>Political leaning</span><strong>{story.leaning}</strong></div>
+              <div className="lean-bar coverage-summary-bar" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>
+              <div className="coverage-summary-mini-labels"><span>L {left}</span><span>C {centre}</span><span>R {right}</span></div>
+            </section>
+          </div>
         </div>
       </header>
       <div className="article-lead-image"><img src={storyImage(story)} alt="" /></div>
