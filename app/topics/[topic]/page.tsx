@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { AllTopicsNav } from '@/components/all-topics-nav';
+import { ArrowRight } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { InteriorHeader } from '@/components/interior-header';
 import { TopicTag } from '@/components/topic-tag';
 import { allTopics, authorSlug, cleanCopy, getTopic, stories, storyImage, topicSlug } from '@/lib/stories';
 
@@ -23,12 +23,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
   const topicStories = stories.filter((story) => story.topic === topic || story.topics.includes(topic));
 
   return <main>
-    <header className="article-header shell">
-      <Brand />
-      <a href="/" className="back-link"><ArrowLeft /> All stories</a>
-      <a href="/#donate" className="donate-button">Donate <ArrowRight /></a>
-    </header>
-    <AllTopicsNav />
+    <InteriorHeader />
     <section className="topic-page-hero shell">
       <TopicTag topic={topic} className="topic-pill" />
       <h1>{topic}</h1>

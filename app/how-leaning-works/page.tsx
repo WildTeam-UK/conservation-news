@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import { ArrowLeft } from 'lucide-react';
-import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
+import { InteriorHeader } from '@/components/interior-header';
 
 export const metadata: Metadata = {
   title: 'How our leaning analysis works | WILDNEWS',
@@ -10,12 +9,7 @@ export const metadata: Metadata = {
 
 export default function LeaningMethodologyPage() {
   return <main>
-    <header className="article-header shell">
-      <Brand />
-      <a href="/" className="back-link"><ArrowLeft /> All stories</a>
-      <a href="/#donate" className="donate-button">Donate</a>
-    </header>
-    <AllTopicsNav />
+    <InteriorHeader />
     <article className="methodology-page shell">
       <header className="methodology-hero">
         <p className="eyebrow">WildNews methodology</p>

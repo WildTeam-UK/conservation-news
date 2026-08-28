@@ -1,15 +1,10 @@
-import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { AllTopicsNav } from '@/components/all-topics-nav';
+import { ArrowRight } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { InteriorHeader } from '@/components/interior-header';
 
 export default function About() {
   return <main>
-    <header className="about-header shell">
-      <Brand />
-      <a href="/" className="back-link"><ArrowLeft /> Back to stories</a>
-      <a href="#support" className="donate-button">Donate <ArrowRight /></a>
-    </header>
-    <AllTopicsNav />
+    <InteriorHeader actionHref="#support" />
     <section className="about-hero shell">
       <p className="eyebrow">About WildNews</p>
       <h1>We tell the whole story of a changing natural world.</h1>

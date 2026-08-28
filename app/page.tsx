@@ -21,7 +21,7 @@ export default function Home() {
     <section className="hero shell" aria-labelledby="lead-story">
       <div className="hero-grid">
         <div className="hero-copy">
-          <div className="hero-meta"><TopicTag topic={lead.topic} /><span>Field report</span></div>
+          <div className="hero-meta"><TopicTag topic={lead.topic} /></div>
           <h1 id="lead-story"><a href={`/stories/${lead.slug}`}>{cleanCopy(lead.title)}</a></h1>
           <p className="standfirst">{cleanCopy(lead.summary)}</p>
           <a className="read-more-button" href={`/stories/${lead.slug}`}>Read more <ArrowRight /></a>

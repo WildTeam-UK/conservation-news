@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, ArrowRight, CheckCircle2, Search, Sparkles } from 'lucide-react';
-import { AllTopicsNav } from '@/components/all-topics-nav';
+import { ArrowRight, CheckCircle2, Search, Sparkles } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { InteriorHeader } from '@/components/interior-header';
 
 export const metadata: Metadata = {
   title: 'How WILDNEWS uses AI',
@@ -10,12 +10,7 @@ export const metadata: Metadata = {
 
 export default function AiTransparencyPage() {
   return <main>
-    <header className="article-header shell">
-      <Brand />
-      <a href="/" className="back-link"><ArrowLeft /> All stories</a>
-      <a href="/#donate" className="donate-button">Donate</a>
-    </header>
-    <AllTopicsNav />
+    <InteriorHeader />
 
     <article className="ai-page shell">
       <header className="ai-page-hero">

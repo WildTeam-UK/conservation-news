@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, ArrowRight, PenLine } from 'lucide-react';
-import { AllTopicsNav } from '@/components/all-topics-nav';
+import { ArrowRight, PenLine } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { InteriorHeader } from '@/components/interior-header';
 import { TopicTag } from '@/components/topic-tag';
 import { allAuthors, authorSlug, cleanCopy, getAuthor, stories, storyImage } from '@/lib/stories';
 
@@ -22,12 +22,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ author:
   const authorStories = stories.filter((story) => story.byline === author);
 
   return <main>
-    <header className="article-header shell">
-      <Brand />
-      <a href="/" className="back-link"><ArrowLeft /> All stories</a>
-      <a href="/#donate" className="donate-button">Donate <ArrowRight /></a>
-    </header>
-    <AllTopicsNav />
+    <InteriorHeader />
     <section className="topic-page-hero author-page-hero shell">
       <span className="curator-pill"><PenLine /> Curator</span>
       <h1>{author}</h1>

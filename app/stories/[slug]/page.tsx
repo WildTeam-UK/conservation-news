@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
-import { ArrowLeft, ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
-import { AllTopicsNav } from '@/components/all-topics-nav';
+import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
 import { Brand } from '@/components/brand';
+import { InteriorHeader } from '@/components/interior-header';
 import { TopicTag } from '@/components/topic-tag';
 import { authorSlug, cleanCopy, expandedBullet, getStory, stories, storyImage, storyOverview } from '@/lib/stories';
 
@@ -23,12 +23,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   if (related.length < 3) related.push(...stories.filter((item) => item.slug !== story.slug && !related.includes(item)).slice(0,3-related.length));
   const [left, centre, right] = story.balance;
   return <main>
-    <header className="article-header shell">
-      <Brand />
-      <a href="/" className="back-link"><ArrowLeft /> All stories</a>
-      <a href="#sources" className="donate-button">View sources <ArrowRight /></a>
-    </header>
-    <AllTopicsNav />
+    <InteriorHeader actionHref="#sources" actionLabel="View sources" />
     <article>
       <header className="article-hero shell">
         <div className="article-topics">{story.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
