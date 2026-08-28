@@ -25,7 +25,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ author:
   return <main>
     <InteriorHeader />
     <section className="topic-page-hero author-page-hero shell">
-      <span className="curator-pill"><PenLine /> Curator</span>
+      <span className="curator-pill"><PenLine /><span>Curator</span></span>
       <div className="author-profile-heading">
         <img src={curator.avatar} alt={author} />
         <h1>{author}</h1>
