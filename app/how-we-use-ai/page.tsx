@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ArrowLeft, ArrowRight, CheckCircle2, Search, Sparkles } from 'lucide-react';
+import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default function AiTransparencyPage() {
       <a href="/" className="back-link"><ArrowLeft /> All stories</a>
       <a href="/#donate" className="donate-button">Donate</a>
     </header>
+    <AllTopicsNav />
 
     <article className="ai-page shell">
       <header className="ai-page-hero">

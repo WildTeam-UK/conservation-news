@@ -1,4 +1,5 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
 
 export default function About() {
@@ -8,6 +9,7 @@ export default function About() {
       <a href="/" className="back-link"><ArrowLeft /> Back to stories</a>
       <a href="#support" className="donate-button">Donate <ArrowRight /></a>
     </header>
+    <AllTopicsNav />
     <section className="about-hero shell">
       <p className="eyebrow">About WildNews</p>
       <h1>We tell the whole story of a changing natural world.</h1>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { ArrowLeft } from 'lucide-react';
+import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
 
 export const metadata: Metadata = {
@@ -14,6 +15,7 @@ export default function LeaningMethodologyPage() {
       <a href="/" className="back-link"><ArrowLeft /> All stories</a>
       <a href="/#donate" className="donate-button">Donate</a>
     </header>
+    <AllTopicsNav />
     <article className="methodology-page shell">
       <header className="methodology-hero">
         <p className="eyebrow">WildNews methodology</p>

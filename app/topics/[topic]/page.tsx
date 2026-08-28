@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
+import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
+import { TopicTag } from '@/components/topic-tag';
 import { allTopics, cleanCopy, getTopic, stories, storyImage, topicSlug } from '@/lib/stories';
 
 export function generateStaticParams() {
@@ -26,8 +28,9 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
       <a href="/" className="back-link"><ArrowLeft /> All stories</a>
       <a href="/#donate" className="donate-button">Donate <ArrowRight /></a>
     </header>
+    <AllTopicsNav />
     <section className="topic-page-hero shell">
-      <a className="topic-pill" href={`/topics/${slug}`}>{topic}</a>
+      <TopicTag topic={topic} className="topic-pill" />
       <h1>{topic}</h1>
       <p>The latest reporting, analysis and practical ideas shaping {topic.toLowerCase()} conservation.</p>
       <span>{topicStories.length} {topicStories.length === 1 ? 'story' : 'stories'}</span>
@@ -35,7 +38,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
     <section className="topic-page-grid shell">
       {topicStories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}>
         <a className="topic-story-image" href={`/stories/${story.slug}`}><img src={storyImage(story)} alt="" /></a>
-        <div><p className="eyebrow">{story.topic}</p><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><span className="byline">By {story.byline}</span><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
+        <div><TopicTag topic={story.topic} /><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="byline" href={`/stories/${story.slug}`}>By {story.byline}</a><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
       </article>)}
     </section>
     <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/">Latest</a></div></div></footer>
