@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { ArrowRight, CheckCircle2, Search, Sparkles } from 'lucide-react';
-import { Brand } from '@/components/brand';
 import { InteriorHeader } from '@/components/interior-header';
+import { SiteFooter } from '@/components/site-footer';
 
 export const metadata: Metadata = {
   title: 'How WILDNEWS uses AI',
@@ -41,6 +41,6 @@ export default function AiTransparencyPage() {
       <section className="ai-next-step"><div><p className="eyebrow">Keep reading critically</p><h2>Go to the evidence.</h2></div><p>Use WILDNEWS to discover what is happening, then follow the source links for the detail, uncertainty and reporting behind each story.</p><a className="action-button" href="/">Explore the stories <ArrowRight /></a></section>
     </article>
 
-    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/how-leaning-works">Coverage analysis</a></div></div></footer>
+    <SiteFooter />
   </main>;
 }

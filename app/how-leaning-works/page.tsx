@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
-import { Brand } from '@/components/brand';
 import { InteriorHeader } from '@/components/interior-header';
+import { SiteFooter } from '@/components/site-footer';
 
 export const metadata: Metadata = {
   title: 'How our coverage analysis works | WILDNEWS',
@@ -47,6 +47,6 @@ export default function LeaningMethodologyPage() {
         <aside><p className="eyebrow">Important context</p><h2>What coverage analysis does not measure</h2><p>Coverage analysis reflects the sources, framing and viewpoints currently represented in a story. These signals are not judgements of factual accuracy, a recommendation to trust one outlet, or a measure of an individual author’s beliefs.</p><p>Categories require editorial judgement and can simplify complex reporting. We keep source links visible and update the analysis as new reporting and evidence are added.</p></aside>
       </div>
     </article>
-    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/">Latest</a></div></div></footer>
+    <SiteFooter />
   </main>;
 }

@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
-import { Brand } from '@/components/brand';
 import { CuratorByline } from '@/components/curator-byline';
 import { InteriorHeader } from '@/components/interior-header';
+import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { allTopics, cleanCopy, getTopic, stories, storyImage, topicSlug } from '@/lib/stories';
 
@@ -37,6 +37,6 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
         <div><TopicTag topic={story.topic} /><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><CuratorByline name={story.byline} /><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
       </article>)}
     </section>
-    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/">Latest</a></div></div></footer>
+    <SiteFooter />
   </main>;
 }

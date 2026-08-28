@@ -1,8 +1,8 @@
 import type { Metadata } from 'next';
 import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
-import { Brand } from '@/components/brand';
 import { CuratorByline } from '@/components/curator-byline';
 import { InteriorHeader } from '@/components/interior-header';
+import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { cleanCopy, expandedBullet, getCoverageAnalysis, getStory, stories, storyImage, storyOverview } from '@/lib/stories';
 
@@ -73,6 +73,6 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
       </div>
     </article>
     <section className="related shell"><div className="section-heading"><h2>Similar stories</h2><p>Keep exploring this topic.</p></div><div className="related-grid">{related.map((item)=><article key={item.slug}><a href={`/stories/${item.slug}`} className="related-image"><img src={storyImage(item)} alt="" /></a><TopicTag topic={item.topic} /><h3><a href={`/stories/${item.slug}`}>{cleanCopy(item.title)}</a></h3></article>)}</div></section>
-    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="/">Latest</a></div></div></footer>
+    <SiteFooter />
   </main>;
 }

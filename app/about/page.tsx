@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
-import { Brand } from '@/components/brand';
 import { InteriorHeader } from '@/components/interior-header';
+import { SiteFooter } from '@/components/site-footer';
 
 export default function About() {
   return <main>
@@ -21,6 +21,6 @@ export default function About() {
       <article><span>03</span><h3>Possibility matters</h3><p>We investigate solutions without hype, and make space for grounded hope.</p></article>
     </section>
     <section className="about-support" id="support"><div className="shell"><p className="eyebrow">Join our community</p><h2>Help keep independent conservation journalism in the field.</h2><a className="action-button action-button-dark" href="https://www.wildteam.org.uk/donate" target="_blank" rel="noreferrer">Make a donation <ArrowRight /></a></div></section>
-    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/">Home</a><a href="#support">Donate</a></div></div></footer>
+    <SiteFooter />
   </main>;
 }

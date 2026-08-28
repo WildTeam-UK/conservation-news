@@ -2,6 +2,7 @@ import { ArrowRight } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
 import { CuratorByline } from '@/components/curator-byline';
+import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { cleanCopy, stories, storyImage, topicSlug } from '@/lib/stories';
 
@@ -59,6 +60,6 @@ export default function Home() {
 
     <section className="newsletter" id="newsletter"><div className="newsletter-inner shell"><div><p className="eyebrow">The weekly WildNews</p><h2>Conservation news,<br />clearly told.</h2></div><form className="signup-form"><label htmlFor="email">Get our essential conservation briefing every Friday.</label><div><input id="email" type="email" placeholder="you@example.com" required /><button type="submit">Sign me up <ArrowRight /></button></div></form></div></section>
     <section className="donate-panel shell" id="donate"><div><p className="eyebrow">Reader supported</p><h2>Nature needs a newsroom.</h2></div><p>WildNews is independent and nonprofit. Your support helps us follow the evidence, amplify local voices, and keep every story free to read.</p><a className="action-button" href="https://www.wildteam.org.uk/donate" target="_blank" rel="noreferrer">Support our reporting <ArrowRight /></a></section>
-    <footer><div className="shell footer-inner"><Brand /><p>Conservation, clearly told.</p><div><a href="/about">About</a><a href="#newsletter">Newsletter</a><a href="#donate">Donate</a></div></div></footer>
+    <SiteFooter />
   </main>;
 }
