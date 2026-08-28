@@ -28,7 +28,7 @@ export const iconForTopic = (topic: string) => {
   return Leaf;
 };
 
-export function TopicTag({ topic, className = '' }: { topic: string; className?: string }) {
+export function TopicTag({ topic, className = '', tabIndex }: { topic: string; className?: string; tabIndex?: number }) {
   const Icon = iconForTopic(topic);
-  return <a className={`topic-tag ${className}`.trim()} href={`/topics/${topicSlug(topic)}`} draggable={false}><Icon aria-hidden="true" /><span>{topic}</span></a>;
+  return <a className={`topic-tag ${className}`.trim()} href={`/topics/${topicSlug(topic)}`} draggable={false} tabIndex={tabIndex}><Icon aria-hidden="true" /><span>{topic}</span></a>;
 }

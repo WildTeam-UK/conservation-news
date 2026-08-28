@@ -10,7 +10,7 @@ const shelfTopics = ['Wildlife', 'Oceans', 'Forests', 'Freshwater', 'Land & clim
 export default function Home() {
   const [lead, ...moreStories] = stories;
   const primaryLatest = moreStories.slice(0, 6);
-  const compactLatest = moreStories.slice(6, 18);
+  const compactLatest = moreStories.slice(6, 16);
 
   return <main>
     <header className="site-header">
@@ -23,19 +23,19 @@ export default function Home() {
       <div className="hero-grid">
         <div className="hero-copy">
           <div className="hero-meta"><TopicTag topic={lead.topic} /></div>
+          <CuratorByline name={lead.byline} meta="8 min read" />
           <h1 id="lead-story"><a href={`/stories/${lead.slug}`}>{cleanCopy(lead.title)}</a></h1>
           <p className="standfirst">{cleanCopy(lead.summary)}</p>
           <a className="read-more-button" href={`/stories/${lead.slug}`}>Read more <ArrowRight /></a>
-          <CuratorByline name={lead.byline} meta="8 min read" />
         </div>
-        <a href={`/stories/${lead.slug}`} className="hero-image" aria-label={`Read: ${cleanCopy(lead.title)}`}><img src={storyImage(lead)} alt="Sunlit seagrass below clear ocean water" /><span className="image-caption">Read the full story</span></a>
+        <a href={`/stories/${lead.slug}`} className="hero-image" aria-label={`Read: ${cleanCopy(lead.title)}`}><img src={storyImage(lead)} alt="Sunlit seagrass below clear ocean water" /></a>
       </div>
     </section>
 
     <section className="latest shell" id="latest" aria-labelledby="latest-heading">
       <div className="section-heading"><h2 id="latest-heading">Latest stories</h2><p>Reporting, analysis and ideas from the people protecting nature.</p></div>
       <div className="latest-columns">
-        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={`/stories/${story.slug}`} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" /></a><div className="story-copy"><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p><CuratorByline name={story.byline} /></div></article>)}</div>
+        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={`/stories/${story.slug}`} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" /></a><div className="story-copy"><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p><CuratorByline name={story.byline} showAvatar={false} /></div></article>)}</div>
         <aside className="latest-compact" aria-label="More latest stories">{compactLatest.map((story) => <article className="compact-story" key={story.slug}>
           <a className="compact-story-image" href={`/stories/${story.slug}`}><img src={storyImage(story)} alt="" /></a>
           <div><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><CuratorByline name={story.byline} /></div>

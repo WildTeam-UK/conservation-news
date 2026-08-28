@@ -29,7 +29,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
       <header className="article-hero shell">
         <div className="article-topics">{story.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
         <h1>{cleanCopy(story.title)}</h1>
-        <CuratorByline name={story.byline} prefix="Curated by" meta="Updated today" />
+        <CuratorByline name={story.byline} meta="Updated today" />
         <div className="article-leaning-summary" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}>
           <div className="leaning-summary-heading"><span>{story.leaning} coverage mix</span><a className="analysis-help" href="/how-leaning-works" aria-label="Learn how our leaning analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">This shows the political mix of outlets covering the story, not whether the reporting is accurate. Click to learn how it works.</span></a></div>
           <div className="lean-bar"><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>

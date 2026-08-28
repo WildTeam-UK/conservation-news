@@ -25,9 +25,10 @@ export default async function AuthorPage({ params }: { params: Promise<{ author:
   return <main>
     <InteriorHeader />
     <section className="topic-page-hero author-page-hero shell">
+      <span className="curator-pill"><PenLine /> Curator</span>
       <div className="author-profile-heading">
         <img src={curator.avatar} alt={author} />
-        <div><span className="curator-pill"><PenLine /> Curator</span><h1>{author}</h1></div>
+        <h1>{author}</h1>
       </div>
       <p>{curator.role} at WildTeam. Conservation stories selected and summarised by {author} for WILDNEWS.</p>
       <span>{authorStories.length} {authorStories.length === 1 ? 'story' : 'stories'}</span>
