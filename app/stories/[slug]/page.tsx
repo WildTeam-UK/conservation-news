@@ -3,7 +3,7 @@ import { ArrowLeft, ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
 import { TopicTag } from '@/components/topic-tag';
-import { cleanCopy, expandedBullet, getStory, stories, storyImage, storyOverview } from '@/lib/stories';
+import { authorSlug, cleanCopy, expandedBullet, getStory, stories, storyImage, storyOverview } from '@/lib/stories';
 
 export function generateStaticParams() { return stories.map(({ slug }) => ({ slug })); }
 
@@ -33,7 +33,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
       <header className="article-hero shell">
         <div className="article-topics">{story.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
         <h1>{cleanCopy(story.title)}</h1>
-        <p className="byline">Curated by <a href={`/stories/${story.slug}`}>{story.byline}</a> <span>·</span> Updated today</p>
+        <p className="byline">Curated by <a href={`/authors/${authorSlug(story.byline)}`}>{story.byline}</a> <span>·</span> Updated today</p>
         <div className="article-leaning-summary" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}>
           <div className="leaning-summary-heading"><span>{story.leaning} coverage mix</span><a className="analysis-help" href="/how-leaning-works" aria-label="Learn how our leaning analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">This shows the political mix of outlets covering the story, not whether the reporting is accurate. Click to learn how it works.</span></a></div>
           <div className="lean-bar"><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>
@@ -48,7 +48,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
           <section className="story-section" id="sources"><p className="eyebrow">Source coverage</p><h2>Read the reporting</h2><div className="source-list">{story.sources.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}><span>{source.primary ? 'Primary story' : 'Also covering'}</span><strong>{cleanCopy(source.name)}</strong><ExternalLink /></a>)}</div></section>
         </div>
         <aside className="coverage-card">
-          <p className="eyebrow">Coverage analysis</p><div className="coverage-title-row"><h2>{story.leaning} leaning</h2><a className="analysis-help" href="/how-leaning-works" aria-label="Learn how our leaning analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">This describes the political mix of the sources covering this story. Click to learn how the analysis works.</span></a></div><p>Based on the mix of outlets currently covering this story.</p>
+          <p className="eyebrow">Coverage analysis</p><div className="coverage-title-row"><h2>{story.leaning} leaning</h2></div><p>Based on the mix of outlets currently covering this story.</p>
           <div className="lean-bar" aria-label={`Coverage: ${left}% left, ${centre}% centre, ${right}% right`}><span style={{width:`${left}%`}}/><span style={{width:`${centre}%`}}/><span style={{width:`${right}%`}}/></div>
           <div className="lean-labels"><span>Left {left}%</span><span>Centre {centre}%</span><span>Right {right}%</span></div>
           <small>This is an editorial signal, not a judgement of factual accuracy. It reflects outlet orientation and framing, and may change as coverage develops.</small>

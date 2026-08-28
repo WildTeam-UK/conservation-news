@@ -70,12 +70,17 @@ export const expandedBullet = (story: Story, bullet: string, index: number) => {
 
 export const getStory = (slug: string) => stories.find((story) => story.slug === slug);
 
-export const topicSlug = (topic: string) => topic
+export const slugify = (value: string) => value
   .toLowerCase()
   .replace(/&/g, 'and')
   .replace(/[^a-z0-9]+/g, '-')
   .replace(/(^-|-$)/g, '');
 
+export const topicSlug = (topic: string) => slugify(topic);
+export const authorSlug = (author: string) => slugify(author);
+
 export const allTopics = Array.from(new Set(stories.flatMap((story) => [story.topic, ...story.topics])));
+export const allAuthors = Array.from(new Set(stories.map((story) => story.byline))).sort((a, b) => a.localeCompare(b));
 
 export const getTopic = (slug: string) => allTopics.find((topic) => topicSlug(topic) === slug);
+export const getAuthor = (slug: string) => allAuthors.find((author) => authorSlug(author) === slug);
