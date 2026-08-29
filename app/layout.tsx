@@ -1,8 +1,5 @@
 import type { Metadata } from 'next';
-import { Nunito_Sans } from 'next/font/google';
 import './globals.css';
-
-const rounded = Nunito_Sans({ variable: '--font-rounded', subsets: ['latin'] });
 
 export const metadata: Metadata = {
   title: 'WILDNEWS | Conservation, clearly told',
@@ -19,5 +16,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en"><body className={rounded.variable}>{children}</body></html>;
+  return <html lang="en"><body>{children}</body></html>;
 }
