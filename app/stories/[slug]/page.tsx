@@ -42,8 +42,8 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
 export default async function StoryPage({ params }: { params: Promise<{ slug: string }> }) {
   const story = getStory((await params).slug);
   if (!story) return <main className="missing shell"><h1>Story not found</h1><a href="/">Back to WildNews</a></main>;
-  const related = stories.filter((item) => item.slug !== story.slug && item.topics.some((topic) => story.topics.includes(topic))).slice(0,3);
-  if (related.length < 3) related.push(...stories.filter((item) => item.slug !== story.slug && !related.includes(item)).slice(0,3-related.length));
+  const related = stories.filter((item) => item.slug !== story.slug && item.topics.some((topic) => story.topics.includes(topic))).slice(0,6);
+  if (related.length < 6) related.push(...stories.filter((item) => item.slug !== story.slug && !related.includes(item)).slice(0,6-related.length));
   const [left, centre, right] = story.balance;
   const coverage = getCoverageAnalysis(story);
   return <main>
