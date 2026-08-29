@@ -274,3 +274,17 @@ img{border-radius:18px}
 .hero h1,.article-hero h1,.about-hero h1,.topic-page-hero h1,.methodology-hero h1,.ai-page-hero h1,.newsletter h2{letter-spacing:-.02em}
 .section-heading h2,.donate-panel h2,.about-values h2,.about-support h2,.story-section h2,.coverage-card h2,.related h2,.shelf-heading h2,.methodology-content h2,.article-overview h2,.ai-editorial-grid h2,.methodology-dimensions h2{letter-spacing:-.015em}
 .story-copy h3,.carousel-card h3,.topic-story h2,.compact-story h3,.coverage-dimension h2,.political-dimension .coverage-title-row h2{letter-spacing:-.01em}
+
+/* Archive rhythm and heading alignment */
+.archive-page .interior-header .wildteam-logo{transform:translateY(-10px)}
+.author-profile-heading{align-items:center}
+.author-profile-heading h1{margin:0}
+.author-page-hero>p{margin-top:28px}
+.author-page-hero>span:last-child{margin-top:36px}
+.archive-page .topic-page-hero{padding-bottom:56px}
+.archive-page .topic-page-grid{padding-top:18px}
+.archive-page .topic-story-featured{padding-top:24px}
+.archive-page .topic-story h2{margin-bottom:16px}
+.archive-page .topic-story p:not(.eyebrow){margin-top:0}
+.latest .section-heading,.shelf-heading{align-items:baseline}
+@media(max-width:560px){.archive-page .topic-page-hero{padding-bottom:46px}.archive-page .topic-page-grid{padding-top:14px}.archive-page .topic-story-featured{padding-top:20px}}

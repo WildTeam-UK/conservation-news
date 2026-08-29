@@ -23,7 +23,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
 
   const topicStories = stories.filter((story) => story.topic === topic || story.topics.includes(topic));
 
-  return <main>
+  return <main className="archive-page">
     <InteriorHeader />
     <section className="topic-page-hero shell">
       <TopicTag topic={topic} className="topic-pill" />

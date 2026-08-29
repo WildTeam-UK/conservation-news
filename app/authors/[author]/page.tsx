@@ -22,7 +22,7 @@ export default async function AuthorPage({ params }: { params: Promise<{ author:
   const curator = getCurator(author)!;
   const authorStories = stories.filter((story) => story.byline === author);
 
-  return <main>
+  return <main className="archive-page">
     <InteriorHeader />
     <section className="topic-page-hero author-page-hero shell">
       <span className="curator-pill"><PenLine /><span>Curator</span></span>
