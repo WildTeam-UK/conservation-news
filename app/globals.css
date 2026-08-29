@@ -251,5 +251,5 @@ img{border-radius:18px}
 }
 
 /* Keep both Latest Stories columns on the same title scale */
-.latest-primary .story-copy h3,.latest-compact .compact-story h3{font-size:25px;line-height:1.05}
-@media(max-width:560px){.latest-primary .story-copy h3,.latest-compact .compact-story h3{font-size:21px}}
+.latest-primary .story-copy h3,.latest-compact .compact-story h3{font-size:18px;line-height:1.08}
+@media(max-width:560px){.latest-primary .story-copy h3,.latest-compact .compact-story h3{font-size:18px}}
