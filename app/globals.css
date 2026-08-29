@@ -263,3 +263,14 @@ img{border-radius:18px}
 .evidence-points li{position:relative;padding:18px 0 18px 28px;border-bottom:1px solid var(--rule);font-size:16px;line-height:1.55}
 .evidence-points li:before{content:"";position:absolute;top:26px;left:2px;width:7px;height:7px;border-radius:50%;background:var(--lime)}
 @media(max-width:560px){.story-explainer{font-size:17px}}
+
+/* VAG Rounded optical spacing and wordmark alignment */
+.brand{letter-spacing:-.015em}
+.brand-wordmark{display:inline-flex;align-items:center;line-height:.82;transform:translateY(1px)}
+.brand-wild{color:var(--forest)}
+.brand-news{color:var(--lime)}
+.simple-footer-brand .brand-wild,.simple-footer-brand .brand-news{color:#fff}
+
+.hero h1,.article-hero h1,.about-hero h1,.topic-page-hero h1,.methodology-hero h1,.ai-page-hero h1,.newsletter h2{letter-spacing:-.02em}
+.section-heading h2,.donate-panel h2,.about-values h2,.about-support h2,.story-section h2,.coverage-card h2,.related h2,.shelf-heading h2,.methodology-content h2,.article-overview h2,.ai-editorial-grid h2,.methodology-dimensions h2{letter-spacing:-.015em}
+.story-copy h3,.carousel-card h3,.topic-story h2,.compact-story h3,.coverage-dimension h2,.political-dimension .coverage-title-row h2{letter-spacing:-.01em}
