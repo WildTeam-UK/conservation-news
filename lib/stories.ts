@@ -12,6 +12,13 @@ export type CoverageAnalysis = {
   consensus: number;
 };
 
+export type StoryInsights = {
+  whyItMatters: string;
+  nextSteps: string[];
+  known: string[];
+  unknown: string[];
+};
+
 export const stories: Story[] = [
   { slug:'blue-carbon-stores', topic:'Oceans', topics:['Oceans','Climate','Restoration'], title:'The quiet return of Europe’s great blue carbon stores', summary:'From Scotland to the Adriatic, conservationists are restoring seagrass meadows — and discovering how much life can return when the seabed is given room to recover.', byline:'Mara Velasquez', image:'https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1400&q=85', bullets:['Seagrass restoration is accelerating across European coastal waters, with new projects moving from small trials to whole-bay recovery plans.','Healthy meadows lock away carbon in seabed sediments while sheltering juvenile fish and stabilising vulnerable shorelines.','Divers and autonomous cameras are recording stronger biodiversity gains than early models predicted in several restored sites.','Projects still face pressure from anchors, dredging, nutrient pollution and poor water quality beyond restoration boundaries.','Researchers say long-term legal protection and local stewardship will determine whether the returning meadows survive.'], leaning:'Centre', balance:[28,58,14], sources:[{name:'UNEP — Seagrass ecosystems',url:'https://www.unep.org/resources/report/out-blue-value-seagrasses-environment-and-people',primary:true},{name:'The Guardian — Seagrass coverage',url:'https://www.theguardian.com/environment/seagrass'},{name:'Oceanographic — Blue carbon',url:'https://oceanographicmagazine.com/'}]},
   { slug:'elephant-corridor', topic:'Wildlife', topics:['Wildlife','Communities','Land use'], title:'A new corridor gives elephants room to roam', summary:'A community-led agreement is reconnecting fragmented habitat while keeping farms and families at the center of the plan.', byline:'Nia Okafor', image:'https://images.unsplash.com/photo-1557050543-4d5f4e07ef46?auto=format&fit=crop&w=1200&q=85', bullets:['Neighbouring conservancies agreed to protect a migration route between two reserves after three years of community negotiation.','The plan funds crop-protection fencing, early-warning systems and rapid-response teams for farms closest to the corridor.','Landholders will receive annual conservation payments tied to keeping key pathways open and avoiding new barriers.','Researchers will monitor elephant movements and conflict reports to measure whether the corridor works over the next five years.','Community leaders say reliable benefits for families are essential if the agreement is to outlast its first funding cycle.'], leaning:'Centre', balance:[22,64,14], sources:[{name:'IUCN — African elephant',url:'https://www.iucn.org/our-work/topic/wildlife',primary:true},{name:'WWF — Elephant conservation',url:'https://www.worldwildlife.org/species/elephant'},{name:'Mongabay — Elephants',url:'https://news.mongabay.com/list/elephants/'}]},
@@ -113,6 +120,36 @@ const pointContext: Record<string, string[]> = {
 };
 
 export const cleanCopy = (text: string) => text.replace(/\s*—\s*/g, ', ');
+
+const conservationSignificance: Record<string, string> = {
+  Oceans: 'For conservation teams, this story tests whether marine recovery can deliver lasting biodiversity gains while also supporting climate resilience and coastal communities. The outcome can shape where limited restoration funding and protection effort are directed next.',
+  Wildlife: 'For conservation teams, this story shows how species recovery depends on habitat, local livelihoods and public consent working together. Its lessons can influence how future coexistence and protection programmes are designed and funded.',
+  Forests: 'For conservation teams, this story matters because forest condition is about far more than tree cover. It can change how projects measure recovery, support local stewardship and plan for fire, climate pressure and long-term ecosystem function.',
+  Freshwater: 'For conservation teams, this story connects species recovery with the health of the whole catchment. It offers practical evidence about where restoration, land management and community participation need to work together.',
+  'Land & climate': 'For conservation teams, this story highlights the need to treat climate, biodiversity and land use as one connected challenge. Decisions made here can affect how projects value intact ecosystems and judge whether restoration is genuinely durable.',
+  Solutions: 'For conservation teams, this story provides a real-world test of whether a promising intervention can move beyond a pilot. The important lesson is not only whether it works, but whether it can remain effective, affordable and locally supported.',
+};
+
+const conservationUnknowns: Record<string, string[]> = {
+  Oceans: ['Whether the reported gains will persist through future warming, storms and changes in water quality.', 'How well results from monitored sites will translate to other coastlines and ecological conditions.', 'Whether long-term protection, enforcement and finance will keep pace with restoration activity.'],
+  Wildlife: ['How populations and behaviour will change over several breeding or migration cycles.', 'Whether benefits and costs will be shared fairly by the communities living closest to wildlife.', 'Whether monitoring, compensation and habitat protection can continue after initial funding ends.'],
+  Forests: ['Whether early signs of recovery will develop into a diverse and resilient forest over time.', 'How fire, drought, soil condition and surrounding land use will alter the outcome.', 'Whether local rights, safety and funding will be strong enough to sustain long-term stewardship.'],
+  Freshwater: ['How the system will respond during severe droughts, floods and unusually warm seasons.', 'Whether improvements at one site can withstand pressures elsewhere in the catchment.', 'How quickly species and water quality will respond once physical restoration is complete.'],
+  'Land & climate': ['How durable the reported benefits will be through future drought, fire and market change.', 'Whether carbon, biodiversity and livelihood outcomes can all be measured with equal confidence.', 'Whether pressure will be reduced overall or displaced to nearby land.'],
+  Solutions: ['Whether the approach will remain effective when expanded beyond the current sites or participants.', 'What unintended ecological or social effects may become visible with longer monitoring.', 'Whether maintenance, skills and finance will remain available after the pilot phase.'],
+};
+
+export const getStoryInsights = (story: Story): StoryInsights => {
+  const nextStepPattern = /\b(will|next|need|needs|remain|remains|depends|determine|requires|must|monitor|monitoring|track|tracking|long-term|future|beginning|want|expected)\b/i;
+  const nextSteps = story.bullets.slice(3).filter((point) => nextStepPattern.test(point)).slice(0, 2).map(cleanCopy);
+  return {
+    whyItMatters: conservationSignificance[story.topic] ?? conservationSignificance.Solutions,
+    nextSteps,
+    known: story.bullets.slice(0, 3).map(cleanCopy),
+    unknown: conservationUnknowns[story.topic] ?? conservationUnknowns.Solutions,
+  };
+};
+
 export const storyImage = (story: Story) => imageOverrides[story.slug] ?? story.image;
 export const storyOverview = (story: Story) => [
   cleanCopy(story.summary),

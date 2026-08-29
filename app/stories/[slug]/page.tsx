@@ -4,7 +4,7 @@ import { CuratorByline } from '@/components/curator-byline';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
-import { cleanCopy, expandedBullet, getCoverageAnalysis, getStory, stories, storyImage, storyOverview } from '@/lib/stories';
+import { cleanCopy, expandedBullet, getCoverageAnalysis, getStory, getStoryInsights, stories, storyImage, storyOverview } from '@/lib/stories';
 
 function CoverageHelp({ label, text }: { label: string; text: string }) {
   return <span className="analysis-help coverage-help" tabIndex={0} aria-label={`${label}: ${text}`}><CircleHelp aria-hidden="true" /><span className="analysis-tooltip" role="tooltip">{text}</span></span>;
@@ -46,6 +46,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   if (related.length < 6) related.push(...stories.filter((item) => item.slug !== story.slug && !related.includes(item)).slice(0,6-related.length));
   const [left, centre, right] = story.balance;
   const coverage = getCoverageAnalysis(story);
+  const insights = getStoryInsights(story);
   return <main>
     <InteriorHeader actionHref="#sources" actionLabel="View sources" />
     <article>
@@ -71,6 +72,9 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
       <div className="article-layout shell">
         <div className="article-main">
           <section className="story-section"><p className="eyebrow">The story in brief</p><h2>What you need to know</h2><ul className="key-points">{story.bullets.map((bullet, index) => <li key={bullet}>{expandedBullet(story, bullet, index)}</li>)}</ul></section>
+          <section className="story-section"><p className="eyebrow">Conservation context</p><h2>Why this matters</h2><p className="story-explainer">{insights.whyItMatters}</p></section>
+          {insights.nextSteps.length ? <section className="story-section"><p className="eyebrow">The developing story</p><h2>What happens next</h2><ul className="compact-points">{insights.nextSteps.map((point) => <li key={point}>{point}</li>)}</ul></section> : null}
+          <section className="story-section"><p className="eyebrow">Evidence and uncertainty</p><h2>What we know / What we don&apos;t know</h2><div className="knowledge-grid"><div className="knowledge-card"><h3>What we know</h3><ul>{insights.known.map((point) => <li key={point}>{point}</li>)}</ul></div><div className="knowledge-card"><h3>What we don&apos;t know</h3><ul>{insights.unknown.map((point) => <li key={point}>{point}</li>)}</ul></div></div></section>
           <section className="story-section" id="sources"><p className="eyebrow">Source coverage</p><h2>Read the reporting</h2><div className="source-list">{story.sources.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}><span>{source.primary ? 'Primary story' : 'Also covering'}</span><strong>{cleanCopy(source.name)}</strong><ExternalLink /></a>)}</div></section>
         </div>
         <aside className="coverage-card">
