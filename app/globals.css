@@ -276,7 +276,7 @@ img{border-radius:18px}
 .story-copy h3,.carousel-card h3,.topic-story h2,.compact-story h3,.coverage-dimension h2,.political-dimension .coverage-title-row h2{letter-spacing:-.01em}
 
 /* Archive rhythm and heading alignment */
-.archive-page .interior-header .wildteam-logo{transform:translateY(-10px)}
+.masthead .wildteam-logo,.interior-header .wildteam-logo{top:-7px}
 .author-profile-heading{align-items:center}
 .author-profile-heading h1{margin:0}
 .author-page-hero>p{margin-top:28px}
