@@ -4,6 +4,9 @@ dist/
 .vinext/
 .DS_Store
 *.log
+*.tsbuildinfo
 .next/
+.output/
+.vercel/
 .wrangler/
 next-env.d.ts
