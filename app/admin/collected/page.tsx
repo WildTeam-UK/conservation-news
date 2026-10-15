@@ -3,6 +3,7 @@ import { ExternalLink, Inbox } from 'lucide-react';
 import { AdminNav } from '@/components/admin-nav';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { Brand } from '@/components/brand';
+import { RunAssessmentButton } from '@/components/run-assessment-button';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
 export const dynamic = 'force-dynamic';
@@ -57,7 +58,7 @@ export default async function CollectedItemsPage() {
       <div className="admin-shell admin-collected-shell">
         <section className="admin-welcome collected-heading" aria-labelledby="collected-heading">
           <div><p className="eyebrow">Ingestion inbox</p><h1 id="collected-heading">Collected items</h1><p>Raw stories found in your active feeds. These have not been assessed, rewritten or published.</p></div>
-          <span>{count ?? items.length} total</span>
+          <div className="collected-heading-actions"><span>{count ?? items.length} total</span><RunAssessmentButton /></div>
         </section>
 
         {items.length === 0 ? (
