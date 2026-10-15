@@ -1,6 +1,7 @@
 import { getOpenAIClient } from './client';
 import { recordUnsplashSelection, searchUnsplashImages, unsplashIsConfigured } from '@/lib/images/unsplash';
 import type { EditorialImageCredit, UnsplashImageCandidate } from '@/lib/images/types';
+import { stripSourceMarkers } from '@/lib/article-text';
 import type { ResearchClaim, ResearchContent } from './research-story';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
@@ -87,10 +88,6 @@ function cleanText(value: unknown, maxLength: number) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 }
 
-function stripGeneratedSourceMarkers(value: string) {
-  return value.replace(/\s*\[(?:\s*source-[1-9][0-9]*\s*,?)+\]/gi, '').trim();
-}
-
 function safeImageUrl(value: unknown) {
   const text = cleanText(value, 2000);
   if (!text) return '';
@@ -123,7 +120,7 @@ function cleanImageCredit(value: unknown): EditorialImageCredit | null {
 
 export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<string>): StoryDraftContent {
   const sourced = (item: SourcedDraftText): SourcedDraftText => ({
-    text: stripGeneratedSourceMarkers(cleanText(item?.text, 8000)),
+    text: stripSourceMarkers(cleanText(item?.text, 8000)),
     source_ids: [...new Set((item?.source_ids ?? []).filter((id) => validSourceIds.has(id)))],
   });
   const sourcedList = (items: SourcedDraftText[], limit: number) => (items ?? []).slice(0, limit).map(sourced).filter((item) => item.text && item.source_ids.length);
@@ -135,7 +132,7 @@ export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<
     template_version: 2,
     topics: [...new Set((value.topics ?? []).map((topic) => cleanText(topic, 80)).filter(Boolean))].slice(0, 4),
     headline: cleanText(value.headline, 180),
-    standfirst: cleanText(value.standfirst, 400),
+    standfirst: stripSourceMarkers(cleanText(value.standfirst, 400)),
     story_at_a_glance: sourcedList(value.story_at_a_glance, 3),
     key_takeaways: sourcedList(value.key_takeaways, 5),
     why_it_matters: sourced(value.why_it_matters),
@@ -164,6 +161,7 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
     const content = record as StoryDraftContent;
     return {
       ...content,
+      standfirst: stripSourceMarkers(cleanText(content.standfirst, 400)),
       coverage_analysis: normalizedCoverage(content.coverage_analysis),
       image_search_query: cleanText(content.image_search_query, 120) || cleanText(content.headline, 120),
       image_search_fallbacks: Array.isArray(content.image_search_fallbacks) ? content.image_search_fallbacks.map((query) => cleanText(query, 120)).filter(Boolean).slice(0, 2) : [],
@@ -185,7 +183,7 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
     template_version: 2,
     topics: fallback.topics?.length ? fallback.topics : ['Solutions'],
     headline: cleanText(record.headline, 180),
-    standfirst: cleanText(record.standfirst, 400),
+    standfirst: stripSourceMarkers(cleanText(record.standfirst, 400)),
     story_at_a_glance: overview.length >= 2 ? overview.slice(0, 3) : [fallbackSourced, ...overview].slice(0, 2),
     key_takeaways: [...takeaways, ...allBody].slice(0, 5),
     why_it_matters: (record.why_it_matters as SourcedDraftText | undefined) ?? fallbackSourced,

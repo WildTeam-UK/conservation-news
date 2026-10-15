@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import type { ArticleTemplateData } from '@/components/article-template';
+import { stripSourceMarkers } from '@/lib/article-text';
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
 import type { Story } from '@/lib/stories';
 import { getPublicSupabaseConfig } from '@/lib/supabase/config';
@@ -91,7 +92,7 @@ export function publishedStoryToListing(story: PublishedStory): Story {
     topic: topics[0] ?? 'Solutions',
     topics,
     title: story.headline,
-    summary: story.standfirst,
+    summary: stripSourceMarkers(story.standfirst),
     byline: story.byline,
     image: story.image_url ?? content.image_url,
     bullets: content.key_takeaways.map((item) => item.text),

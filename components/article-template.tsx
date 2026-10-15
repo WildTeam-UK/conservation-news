@@ -2,6 +2,7 @@ import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { CuratorByline } from '@/components/curator-byline';
 import { TopicTag } from '@/components/topic-tag';
+import { stripSourceMarkers } from '@/lib/article-text';
 import type { EditorialImageCredit } from '@/lib/images/types';
 
 export type ArticleCoverage = {
@@ -63,7 +64,7 @@ function formattedDate(value: string) {
 
 function articleTextValue(value: ArticleText) {
   const text = typeof value === 'string' ? value : value.text;
-  return text.replace(/\s*\[(?:\s*source-[1-9][0-9]*\s*,?)+\]/gi, '').trim();
+  return stripSourceMarkers(text);
 }
 
 function ArticleTextContent({ value, sources }: { value: ArticleText; sources: Map<string, ArticleSource> }) {

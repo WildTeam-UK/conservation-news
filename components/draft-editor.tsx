@@ -209,8 +209,8 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, re
       </fieldset>
     </form>
 
-    <section className="draft-template-preview" aria-label="Private article preview">
-      <div className="draft-preview-banner"><ShieldCheck /><span>Private preview using the live article template</span><strong>Not published</strong></div>
+    <section className="draft-template-preview" aria-label={readOnly ? 'Published article preview' : 'Private article preview'}>
+      <div className="draft-preview-banner"><ShieldCheck /><span>{readOnly ? 'Published article using the live article template' : 'Private preview using the live article template'}</span><strong>{readOnly ? 'Live' : 'Not published'}</strong></div>
       <ArticleTemplate article={article} />
     </section>
   </>;
