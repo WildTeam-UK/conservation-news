@@ -1,4 +1,6 @@
 import { getOpenAIClient } from './client';
+import { recordUnsplashSelection, searchUnsplashImages, unsplashIsConfigured } from '@/lib/images/unsplash';
+import type { EditorialImageCredit, UnsplashImageCandidate } from '@/lib/images/types';
 import type { ResearchClaim, ResearchContent } from './research-story';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
@@ -27,6 +29,8 @@ export type StoryDraftContent = {
   coverage_analysis: DraftCoverageAnalysis;
   image_url: string;
   image_alt: string;
+  image_search_query: string;
+  image_credit: EditorialImageCredit | null;
   byline: string;
   seo_title: string;
   seo_description: string;
@@ -34,7 +38,7 @@ export type StoryDraftContent = {
 
 type GeneratedDraftContent = Pick<StoryDraftContent,
   'headline' | 'standfirst' | 'story_at_a_glance' | 'key_takeaways' | 'why_it_matters' |
-  'what_happens_next' | 'what_we_know' | 'what_we_dont_know' | 'seo_title' | 'seo_description'
+  'what_happens_next' | 'what_we_know' | 'what_we_dont_know' | 'seo_title' | 'seo_description' | 'image_search_query'
 >;
 
 export type DraftResult = {
@@ -92,6 +96,25 @@ function safeImageUrl(value: unknown) {
   }
 }
 
+function cleanImageCredit(value: unknown): EditorialImageCredit | null {
+  if (!value || typeof value !== 'object') return null;
+  const credit = value as Partial<EditorialImageCredit>;
+  const provider = credit.provider === 'unsplash' ? 'unsplash' : 'manual';
+  const cleaned: EditorialImageCredit = {
+    provider,
+    source_id: cleanText(credit.source_id, 200),
+    creator_name: cleanText(credit.creator_name, 200),
+    creator_url: safeImageUrl(credit.creator_url),
+    source_name: cleanText(credit.source_name, 120),
+    source_url: safeImageUrl(credit.source_url),
+    licence_name: cleanText(credit.licence_name, 120),
+    licence_url: safeImageUrl(credit.licence_url),
+    download_location: provider === 'unsplash' ? safeImageUrl(credit.download_location) : '',
+    illustrative: Boolean(credit.illustrative),
+  };
+  return cleaned.creator_name || cleaned.source_name ? cleaned : null;
+}
+
 export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<string>): StoryDraftContent {
   const sourced = (item: SourcedDraftText): SourcedDraftText => ({
     text: cleanText(item?.text, 8000),
@@ -112,6 +135,8 @@ export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<
     coverage_analysis: normalizedCoverage(value.coverage_analysis),
     image_url: safeImageUrl(value.image_url),
     image_alt: cleanText(value.image_alt, 300),
+    image_search_query: cleanText(value.image_search_query, 120) || cleanText(value.headline, 120),
+    image_credit: cleanImageCredit(value.image_credit),
     byline: cleanText(value.byline, 120) || 'WildNews editorial team',
     seo_title: cleanText(value.seo_title, 180),
     seo_description: cleanText(value.seo_description, 320),
@@ -126,7 +151,12 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
   const record = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   if (record.template_version === 2) {
     const content = record as StoryDraftContent;
-    return { ...content, coverage_analysis: normalizedCoverage(content.coverage_analysis) };
+    return {
+      ...content,
+      coverage_analysis: normalizedCoverage(content.coverage_analysis),
+      image_search_query: cleanText(content.image_search_query, 120) || cleanText(content.headline, 120),
+      image_credit: cleanImageCredit(content.image_credit),
+    };
   }
   const bodySections = Array.isArray(record.body_sections) ? record.body_sections as { heading?: string; paragraphs?: SourcedDraftText[] }[] : [];
   const allBody = bodySections.flatMap((section) => section.paragraphs ?? []);
@@ -153,6 +183,8 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
     coverage_analysis: normalizedCoverage(fallback.coverage_analysis),
     image_url: safeImageUrl(fallback.image_url),
     image_alt: cleanText(fallback.image_alt, 300),
+    image_search_query: cleanText(record.headline, 120),
+    image_credit: null,
     byline: cleanText(fallback.byline, 120) || 'WildNews editorial team',
     seo_title: cleanText(record.seo_title, 180),
     seo_description: cleanText(record.seo_description, 320),
@@ -204,6 +236,8 @@ Write a clear, neutral article of roughly 500 words in British English using onl
 
 The public article template is fixed. Supply exactly two short paragraphs for "The story at a glance", exactly five substantial points for "What you need to know", one concise paragraph for "Why this matters", one concise paragraph for "What happens next", 3-5 points for "What we know", and 3-5 points for "What we don't know". Do not create arbitrary headings or additional article sections. Avoid repeating the same point.
 
+Also supply a concise, visually literal Unsplash search query of 2-6 words. Prefer a clearly established species, habitat or location from the research pack. Do not search for a named individual, organisation, abstract policy concept or an event that a stock photograph could falsely appear to document.
+
 Every factual paragraph and point must cite one or more supplied source IDs. Use only IDs in the supplied source list. If support is missing, omit the claim. "What we don't know" should accurately describe genuine uncertainty, evidence gaps or unresolved questions supported by the reporting. Never manufacture disagreement or balance. The headline and standfirst should be informative rather than sensational. SEO text must be accurate and natural, not keyword-stuffed.
 
 This is a private first draft for human review, never a finished or published article.`,
@@ -236,8 +270,9 @@ This is a private first draft for human review, never a finished or published ar
           what_we_dont_know: { type: 'array', minItems: 3, maxItems: 5, items: { $ref: '#/$defs/sourced_text' } },
           seo_title: { type: 'string' },
           seo_description: { type: 'string' },
+          image_search_query: { type: 'string' },
         },
-        required: ['headline', 'standfirst', 'story_at_a_glance', 'key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know', 'seo_title', 'seo_description'],
+        required: ['headline', 'standfirst', 'story_at_a_glance', 'key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know', 'seo_title', 'seo_description', 'image_search_query'],
         additionalProperties: false,
         $defs: { sourced_text: { type: 'object', properties: { text: { type: 'string' }, source_ids: { type: 'array', minItems: 1, items: { type: 'string', pattern: '^source-[1-9][0-9]*$' } } }, required: ['text', 'source_ids'], additionalProperties: false } },
       },
@@ -246,13 +281,24 @@ This is a private first draft for human review, never a finished or published ar
 
   if (!response.output_text) throw new Error('OpenAI returned no draft output.');
   const generated = JSON.parse(response.output_text) as GeneratedDraftContent;
+  let selectedImage: UnsplashImageCandidate | null = null;
+  if (unsplashIsConfigured()) {
+    try {
+      selectedImage = (await searchUnsplashImages(generated.image_search_query, 1))[0] ?? null;
+      if (selectedImage) await recordUnsplashSelection(selectedImage.credit.download_location);
+    } catch (error) {
+      console.warn('Draft created without an Unsplash image', error);
+    }
+  }
   const content = cleanDraftContent({
     template_version: 2,
     topics,
     ...generated,
     coverage_analysis: normalizedCoverage(research.coverage_analysis),
-    image_url: '',
-    image_alt: '',
+    image_url: selectedImage?.image_url ?? '',
+    image_alt: selectedImage?.alt_text || (selectedImage ? `Illustrative image related to ${generated.image_search_query}` : ''),
+    image_search_query: generated.image_search_query,
+    image_credit: selectedImage?.credit ?? null,
     byline: 'WildNews editorial team',
   }, validSourceIds);
   const slug = await uniqueSlug(content.headline);

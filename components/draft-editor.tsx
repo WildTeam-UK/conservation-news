@@ -1,8 +1,9 @@
 'use client';
 
 import { type SyntheticEvent, useMemo, useState } from 'react';
-import { Check, LoaderCircle, RotateCcw, Save, ShieldCheck } from 'lucide-react';
+import { Check, ImageIcon, LoaderCircle, RotateCcw, Save, Search, ShieldCheck, X } from 'lucide-react';
 import { ArticleTemplate, type ArticleTemplateData } from '@/components/article-template';
+import type { EditorialImageCredit, UnsplashImageCandidate } from '@/lib/images/types';
 import type { DraftCoverageAnalysis, SourcedDraftText, StoryDraftContent } from '@/lib/openai/draft-story';
 
 export type DraftSource = { id: string; title: string; publisher: string; url: string; source_type: string };
@@ -29,6 +30,9 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
   const [content, setContent] = useState(initialContent);
   const [saving, setSaving] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
+  const [searchingImages, setSearchingImages] = useState(false);
+  const [imageCandidates, setImageCandidates] = useState<UnsplashImageCandidate[]>([]);
+  const [imageMessage, setImageMessage] = useState('');
   const [message, setMessage] = useState('');
   const [failed, setFailed] = useState(false);
   const sources = useMemo(() => new Map(sourceList.map((source) => [source.id, source])), [sourceList]);
@@ -81,12 +85,58 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
     }
   }
 
+  async function searchImages() {
+    const query = content.image_search_query.trim();
+    if (query.length < 2) {
+      setImageMessage('Enter a more specific image search.');
+      return;
+    }
+    setSearchingImages(true);
+    setImageMessage('');
+    try {
+      const response = await fetch(`/api/admin/images/unsplash?query=${encodeURIComponent(query)}`);
+      const result = await response.json() as { images?: UnsplashImageCandidate[]; error?: string };
+      if (!response.ok) {
+        setImageCandidates([]);
+        setImageMessage(result.error ?? 'Images could not be found.');
+      } else {
+        setImageCandidates(result.images ?? []);
+        setImageMessage(result.images?.length ? 'Choose an image below. It will remain private until the article is published.' : 'No suitable images were found. Try a broader habitat or species search.');
+      }
+    } catch {
+      setImageCandidates([]);
+      setImageMessage('Images could not be found.');
+    } finally {
+      setSearchingImages(false);
+    }
+  }
+
+  function selectImage(candidate: UnsplashImageCandidate) {
+    setContent((current) => ({
+      ...current,
+      image_url: candidate.image_url,
+      image_alt: candidate.alt_text || candidate.description || current.image_search_query,
+      image_credit: candidate.credit,
+    }));
+    setImageCandidates([]);
+    setImageMessage(`Selected a photograph by ${candidate.credit.creator_name}. Save the draft to keep this choice.`);
+  }
+
+  const blankManualCredit = (): EditorialImageCredit => ({
+    provider: 'manual', source_id: '', creator_name: '', creator_url: '', source_name: '', source_url: '', licence_name: '', licence_url: '', download_location: '', illustrative: false,
+  });
+
+  function updateManualCredit(changes: Partial<EditorialImageCredit>) {
+    setContent((current) => ({ ...current, image_credit: { ...(current.image_credit?.provider === 'manual' ? current.image_credit : blankManualCredit()), ...changes, provider: 'manual' } }));
+  }
+
   const article: ArticleTemplateData = {
     topics: content.topics,
     headline: content.headline,
     storyAtAGlance: content.story_at_a_glance.map((item) => item.text),
     imageUrl: content.image_url,
     imageAlt: content.image_alt,
+    imageCredit: content.image_credit,
     byline: content.byline,
     updatedAt,
     keyTakeaways: content.key_takeaways.map((item) => item.text),
@@ -113,8 +163,25 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
         <label><span>Headline</span><input value={content.headline} onChange={(event) => setContent({ ...content, headline: event.target.value })} maxLength={180} required /></label>
         <label><span>Standfirst for listings and search</span><textarea value={content.standfirst} onChange={(event) => setContent({ ...content, standfirst: event.target.value })} rows={3} maxLength={400} required /></label>
         <label><span>Curator byline</span><input value={content.byline} onChange={(event) => setContent({ ...content, byline: event.target.value })} maxLength={120} /></label>
-        <label><span>Lead image URL</span><input type="url" value={content.image_url} onChange={(event) => setContent({ ...content, image_url: event.target.value })} placeholder="Add once the image has been selected" /></label>
-        <label><span>Lead image alternative text</span><input value={content.image_alt} onChange={(event) => setContent({ ...content, image_alt: event.target.value })} maxLength={300} /></label>
+      </section>
+
+      <section className="draft-edit-section draft-image-section">
+        <div className="draft-section-heading"><div><h3>Featured image</h3><p className="draft-section-note">Unsplash images are automatically labelled as illustrative and credited to the photographer.</p></div>{content.image_url ? <button className="admin-secondary-button" type="button" onClick={() => setContent((current) => ({ ...current, image_url: '', image_alt: '', image_credit: null }))}><X /> Remove image</button> : null}</div>
+        {content.image_url ? <div className="draft-selected-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={content.image_url} alt={content.image_alt} /><div><strong>{content.image_credit?.illustrative ? 'Illustrative image' : 'Featured image'}</strong>{content.image_credit ? <p>Photo by {content.image_credit.creator_name || 'Unknown creator'}{content.image_credit.source_name ? ` on ${content.image_credit.source_name}` : ''} · {content.image_credit.licence_name || 'Licence details required'}</p> : <p>Manual image — check that attribution and reuse permission are recorded below.</p>}</div></div> : <div className="draft-image-empty"><ImageIcon /><div><strong>No featured image selected</strong><p>Search Unsplash to add a free, credited illustrative image.</p></div></div>}
+        <div className="draft-image-search"><label><span>Unsplash search</span><input value={content.image_search_query} onChange={(event) => setContent({ ...content, image_search_query: event.target.value })} maxLength={120} placeholder="For example: white rhinoceros grassland" /></label><button className="admin-secondary-button" type="button" onClick={searchImages} disabled={searchingImages}>{searchingImages ? <><LoaderCircle className="admin-spinner" /> Searching</> : <><Search /> Find images</>}</button></div>
+        {imageMessage ? <p className="draft-image-message">{imageMessage}</p> : null}
+        {imageCandidates.length ? <div className="draft-image-results">{imageCandidates.map((candidate) => <button type="button" onClick={() => selectImage(candidate)} key={candidate.id}>{/* oxlint-disable-next-line next/no-img-element */}<img src={candidate.thumbnail_url} alt={candidate.alt_text} /><span><strong>Use this image</strong><small>{candidate.credit.creator_name} · Unsplash</small></span></button>)}</div> : null}
+        <label><span>Alternative text</span><input value={content.image_alt} onChange={(event) => setContent({ ...content, image_alt: event.target.value })} maxLength={300} placeholder="Describe what is visibly shown in the image" /></label>
+        <details className="draft-manual-image"><summary>Use your own image or URL</summary><div>
+          <label><span>Direct image URL</span><input type="url" value={content.image_url} onChange={(event) => { const image_url = event.target.value; setContent((current) => ({ ...current, image_url, image_credit: image_url && current.image_credit?.provider === 'unsplash' ? blankManualCredit() : current.image_credit })); }} placeholder="https://…" /></label>
+          <label><span>Photographer or creator</span><input value={content.image_credit?.creator_name ?? ''} onChange={(event) => updateManualCredit({ creator_name: event.target.value })} maxLength={200} /></label>
+          <label><span>Creator profile or website</span><input type="url" value={content.image_credit?.creator_url ?? ''} onChange={(event) => updateManualCredit({ creator_url: event.target.value })} /></label>
+          <label><span>Image source</span><input value={content.image_credit?.source_name ?? ''} onChange={(event) => updateManualCredit({ source_name: event.target.value })} maxLength={120} placeholder="For example: WildTeam media library" /></label>
+          <label><span>Source URL</span><input type="url" value={content.image_credit?.source_url ?? ''} onChange={(event) => updateManualCredit({ source_url: event.target.value })} /></label>
+          <label><span>Licence or permission</span><input value={content.image_credit?.licence_name ?? ''} onChange={(event) => updateManualCredit({ licence_name: event.target.value })} maxLength={120} placeholder="For example: CC BY 4.0 or used with permission" /></label>
+          <label><span>Licence URL</span><input type="url" value={content.image_credit?.licence_url ?? ''} onChange={(event) => updateManualCredit({ licence_url: event.target.value })} /></label>
+          <label className="draft-image-checkbox"><input type="checkbox" checked={content.image_credit?.illustrative ?? false} onChange={(event) => updateManualCredit({ illustrative: event.target.checked })} /><span>Label this as an illustrative image</span></label>
+        </div></details>
       </section>
 
       <section className="draft-edit-section"><h3>Article copy</h3>

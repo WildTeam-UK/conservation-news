@@ -1,4 +1,5 @@
 import { cleanDraftContent, type StoryDraftContent } from '@/lib/openai/draft-story';
+import { recordUnsplashSelection } from '@/lib/images/unsplash';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -26,6 +27,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     const content = cleanDraftContent(body.content, validSourceIds);
+    const previousContent = metadata.article_content as Partial<StoryDraftContent> | undefined;
+    const selectedNewUnsplashImage = content.image_credit?.provider === 'unsplash' && content.image_credit.source_id !== previousContent?.image_credit?.source_id;
     const updatedMetadata = { ...metadata, article_content: content, last_edited_at: new Date().toISOString() };
     const { error: updateError } = await supabase.from('stories').update({
       headline: content.headline,
@@ -44,6 +47,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       generation_metadata: updatedMetadata,
     }).eq('id', id);
     if (updateError) throw updateError;
+    if (selectedNewUnsplashImage) {
+      try {
+        await recordUnsplashSelection(content.image_credit?.download_location ?? '');
+      } catch (error) {
+        console.warn('Unsplash selection tracking failed after saving the draft', error);
+      }
+    }
     await supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'edited', notes: 'Draft edited and saved in the editorial workspace.' });
     return Response.json({ saved: true });
   } catch (error) {
