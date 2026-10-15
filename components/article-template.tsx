@@ -81,7 +81,6 @@ export function ArticleTemplate({ article }: { article: ArticleTemplateData }) {
   return <article className="article-template">
     <header className="article-hero shell">
       <div className="article-topics">{article.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
-      {article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <Link href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</Link>)}</div> : null}
       <h1>{article.headline}</h1>
       <div className="article-coverage-summary" aria-label="Coverage analysis summary">
         <div className="leaning-summary-heading"><span>Coverage mix</span><Link className="analysis-help" href="/how-leaning-works" aria-label="Learn how our coverage analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">A quick view of the ecological, evidence and consensus signals found across current coverage. Click to learn how it works.</span></Link></div>
@@ -94,7 +93,7 @@ export function ArticleTemplate({ article }: { article: ArticleTemplateData }) {
     </header>
     <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt ?? ''} />{article.imageCredit ? <figcaption>{article.imageCredit.illustrative ? <span>Illustrative image</span> : null}<span>Photo by {article.imageCredit.creator_url ? <a href={article.imageCredit.creator_url} target="_blank" rel="noreferrer">{article.imageCredit.creator_name}</a> : article.imageCredit.creator_name}{article.imageCredit.source_name ? <> on {article.imageCredit.source_url ? <a href={article.imageCredit.source_url} target="_blank" rel="noreferrer">{article.imageCredit.source_name}</a> : article.imageCredit.source_name}</> : null}</span>{article.imageCredit.licence_name ? article.imageCredit.licence_url ? <a href={article.imageCredit.licence_url} target="_blank" rel="noreferrer">{article.imageCredit.licence_name}</a> : <span>{article.imageCredit.licence_name}</span> : null}</figcaption> : null}</> : <span>Lead image to be selected</span>}</figure>
     <section className="article-overview shell">
-      <div className="article-curator-meta"><CuratorByline name={article.byline} /><p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
+      <div className="article-curator-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <Link href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</Link>)}</div> : <CuratorByline name={article.byline} />}<p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
       <h2>The story at a glance</h2>
       {article.storyAtAGlance.map((paragraph, index) => <p key={`overview-${index}`}><ArticleTextContent value={paragraph} sources={sourcesById} /></p>)}
     </section>

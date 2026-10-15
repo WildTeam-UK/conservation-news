@@ -35,7 +35,13 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   if (published) {
     const allPublished = await getPublishedStories(20);
     const publishedListing = publishedStoryToListing(published);
-    const related = allPublished.filter((item) => item.id !== published.id).filter((item) => publishedStoryToListing(item).topics.some((topic) => publishedListing.topics.includes(topic))).slice(0, 6).map(publishedStoryToListing);
+    const seen = new Set([published.slug]);
+    const candidates = [...allPublished.filter((item) => item.id !== published.id).map(publishedStoryToListing), ...stories].filter((item) => {
+      if (seen.has(item.slug)) return false;
+      seen.add(item.slug);
+      return true;
+    });
+    const related = candidates.map((item, index) => ({ item, index, sharedTopics: item.topics.filter((topic) => publishedListing.topics.includes(topic)).length })).sort((a, b) => b.sharedTopics - a.sharedTopics || a.index - b.index).slice(0, 6).map(({ item }) => item);
     return <main>
       <InteriorHeader actionHref="#sources" actionLabel="View sources" />
       <ArticleTemplate article={publishedStoryToArticle(published)} />
