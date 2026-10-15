@@ -282,8 +282,17 @@ export async function advanceEditorialRun(runId: string, userId: string): Promis
   if (run.current_stage === 'assessing') {
     if (await stopForBudget(run, 'assessment', ASSESSMENT_RESERVE_USD)) return getEditorialRunSnapshot(run.id, 'Stopped at the budget safeguard.');
     const result = await assessUnprocessedItems();
-    const shortlist = await selectRecentUndraftedCandidates(run.max_new_drafts);
     const nextCost = money(run.estimated_cost_usd) + result.estimatedCostUsd;
+    if (result.remainingItems > 0) {
+      await supabase.from('editorial_runs').update({ estimated_cost_usd: nextCost }).eq('id', run.id);
+      await addEvent(run.id, 'assessing', `Assessed a batch of ${result.assessedItems} items; ${result.remainingItems} recent items remain.`, {
+        details: { assessed_items: result.assessedItems, new_candidates: result.selected, matched_items: result.matchedItems, updates_flagged: result.updatesFlagged, expired_items: result.expiredItems, remaining_items: result.remainingItems },
+        estimatedCostUsd: result.estimatedCostUsd,
+      });
+      return getEditorialRunSnapshot(run.id, `Assessed ${result.assessedItems} items. ${result.remainingItems} remain in the recent backlog.`);
+    }
+
+    const shortlist = await selectRecentUndraftedCandidates(run.max_new_drafts);
     if (shortlist.length) {
       const { error: itemError } = await supabase.from('editorial_run_items').insert(shortlist.map((candidate, index) => ({
         run_id: run.id,
@@ -302,7 +311,7 @@ export async function advanceEditorialRun(runId: string, userId: string): Promis
       estimated_cost_usd: nextCost,
     }).eq('id', run.id);
     await addEvent(run.id, 'assessing', `Assessed ${result.assessedItems} new items, then selected the top ${shortlist.length} recent undrafted candidates.`, {
-      details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, recent_pool_shortlist: shortlist.length, freshness_days: CANDIDATE_FRESHNESS_DAYS },
+      details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, matched_items: result.matchedItems, updates_flagged: result.updatesFlagged, expired_items: result.expiredItems, recent_pool_shortlist: shortlist.length, freshness_days: CANDIDATE_FRESHNESS_DAYS },
       estimatedCostUsd: result.estimatedCostUsd,
     });
     if (completed) await addEvent(run.id, 'run', 'Run completed because there were no new qualifying candidates.');

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, FilePenLine } from 'lucide-react';
+import { ArrowLeft, BellRing, ExternalLink, FilePenLine } from 'lucide-react';
 import { AdminNav } from '@/components/admin-nav';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { Brand } from '@/components/brand';
@@ -16,15 +16,32 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+type CoverageUpdate = {
+  id: string;
+  relationship: 'same_event' | 'meaningful_update';
+  rationale: string | null;
+  source_items: {
+    title: string;
+    url: string;
+    sources: { name: string } | { name: string }[] | null;
+  } | {
+    title: string;
+    url: string;
+    sources: { name: string } | { name: string }[] | null;
+  }[] | null;
+};
+
 export default async function DraftPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase, admin } = await requireContentAdmin();
-  const { data: story, error } = await supabase.from('stories').select('id, slug, headline, status, published_at, generation_metadata, updated_at, image_url, image_alt, byline').eq('id', id).maybeSingle();
+  const { data: story, error } = await supabase.from('stories').select('id, cluster_id, slug, headline, status, published_at, generation_metadata, updated_at, image_url, image_alt, byline').eq('id', id).maybeSingle();
   if (error || !story) notFound();
   const metadata = story.generation_metadata as { article_content?: unknown; source_ids?: DraftSource[]; model?: string; estimated_cost_usd?: number | string; topic_classification?: { primary_topic?: string; secondary_topics?: string[] }; coverage_analysis?: Partial<DraftCoverageAnalysis> };
   if (!metadata.article_content) notFound();
   const topics = [metadata.topic_classification?.primary_topic, ...(metadata.topic_classification?.secondary_topics ?? [])].filter((topic): topic is string => Boolean(topic));
   const articleContent = migrateDraftContent(metadata.article_content, { topics, coverage_analysis: metadata.coverage_analysis, image_url: story.image_url, image_alt: story.image_alt, byline: story.byline });
+  const { data: coverageUpdateRows } = story.cluster_id ? await supabase.from('story_cluster_updates').select('id, relationship, rationale, created_at, source_items(title, url, sources(name))').eq('cluster_id', story.cluster_id).eq('status', 'pending_review').order('created_at', { ascending: false }) : { data: [] };
+  const coverageUpdates = (coverageUpdateRows ?? []) as CoverageUpdate[];
   const name = admin.display_name || admin.email;
 
   return <main className="admin-page">
@@ -34,6 +51,7 @@ export default async function DraftPage({ params }: { params: Promise<{ id: stri
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className="admin-back-link" href="/admin/drafts"><ArrowLeft /> All drafts</a>
       <section className="admin-welcome draft-page-heading"><div><p className="eyebrow">{story.status === 'published' ? 'Published article' : 'Human review required'}</p><h1><FilePenLine /> {story.status === 'published' ? 'Article controls' : 'Edit draft'}</h1><p>{story.status === 'published' ? 'This article is live and locked. Unpublish it before making corrections.' : 'This article is private. Saving changes will not publish it.'}</p></div><div className="draft-status-card"><span>Status</span><strong>{story.status}</strong><small>Last saved {new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(story.updated_at))}</small></div></section>
+      {coverageUpdates?.length ? <section className="new-coverage-panel"><div><BellRing /><span><strong>New coverage available</strong><small>These sources were matched to this story after the article was drafted. Review them before deciding whether the article needs updating.</small></span></div>{coverageUpdates.map((update) => { const item = Array.isArray(update.source_items) ? update.source_items[0] : update.source_items; const publisher = item && (Array.isArray(item.sources) ? item.sources[0]?.name : item.sources?.name); return item ? <a href={item.url} target="_blank" rel="noreferrer" key={update.id}><span><strong>{item.title}</strong><small>{publisher ?? 'Source'} · {update.relationship.replace('_', ' ')}</small>{update.rationale ? <em>{update.rationale}</em> : null}</span><ExternalLink /></a> : null; })}</section> : null}
       <PublishControls storyId={story.id} slug={story.slug} status={story.status} publishedAt={story.published_at} content={articleContent} sourceCount={metadata.source_ids?.length ?? 0} />
       <DraftEditor storyId={story.id} initialContent={articleContent} sourceList={metadata.source_ids ?? []} updatedAt={story.updated_at} readOnly={story.status === 'published'} />
       <p className="draft-model-note">Generated with {metadata.model ?? 'OpenAI'} · estimated model cost ${Number(metadata.estimated_cost_usd ?? 0).toFixed(4)}. Sources and factual claims still require human review.</p>

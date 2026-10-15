@@ -10,6 +10,10 @@ type AssessmentResponse = {
   selected?: number;
   rejected?: number;
   estimatedCostUsd?: number;
+  remainingItems?: number;
+  matchedItems?: number;
+  updatesFlagged?: number;
+  expiredItems?: number;
   error?: string;
 };
 
@@ -30,9 +34,14 @@ export function RunAssessmentButton() {
         setFailed(true);
         setMessage(result.error ?? 'Assessment failed.');
       } else if (!result.assessedItems) {
-        setMessage('There are no new collected items to assess.');
+        const expired = result.expiredItems ? ` ${result.expiredItems} old item${result.expiredItems === 1 ? ' was' : 's were'} closed without assessment.` : '';
+        setMessage(`There are no recent collected items to assess.${expired}`);
       } else {
-        setMessage(`Assessed ${result.assessedItems} items and recommended ${result.selected} candidates. Estimated AI cost: $${(result.estimatedCostUsd ?? 0).toFixed(4)}.`);
+        const matching = result.matchedItems ? ` Matched ${result.matchedItems} to recent stories.` : '';
+        const updates = result.updatesFlagged ? ` Flagged ${result.updatesFlagged} new coverage update${result.updatesFlagged === 1 ? '' : 's'}.` : '';
+        const remaining = result.remainingItems ? ` ${result.remainingItems} recent items remain for the next batch.` : '';
+        const expired = result.expiredItems ? ` Closed ${result.expiredItems} old item${result.expiredItems === 1 ? '' : 's'} without assessment.` : '';
+        setMessage(`Assessed ${result.assessedItems} items and recommended ${result.selected} candidates.${matching}${updates}${remaining}${expired} Estimated AI cost: $${(result.estimatedCostUsd ?? 0).toFixed(4)}.`);
         router.refresh();
       }
     } catch {
