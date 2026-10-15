@@ -1,6 +1,6 @@
 'use client';
 
-import { type SyntheticEvent, useState } from 'react';
+import { type SyntheticEvent, useEffect, useState } from 'react';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/lib/supabase/browser';
 
@@ -11,8 +11,21 @@ type AdminLoginFormProps = {
 export function AdminLoginForm({ initialMessage }: AdminLoginFormProps) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(false);
   const [message, setMessage] = useState(initialMessage ?? '');
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(() => {
+      const rememberedEmail = window.localStorage.getItem('wildnews-admin-email');
+      if (rememberedEmail) {
+        setEmail(rememberedEmail);
+        setRememberMe(true);
+      }
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, []);
 
   async function handleSubmit(event: SyntheticEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -27,6 +40,9 @@ export function AdminLoginForm({ initialMessage }: AdminLoginFormProps) {
       setSubmitting(false);
       return;
     }
+
+    if (rememberMe) window.localStorage.setItem('wildnews-admin-email', email);
+    else window.localStorage.removeItem('wildnews-admin-email');
 
     window.location.assign('/admin');
   }
@@ -57,6 +73,14 @@ export function AdminLoginForm({ initialMessage }: AdminLoginFormProps) {
           required
         />
       </div>
+      <label className="admin-remember">
+        <input
+          type="checkbox"
+          checked={rememberMe}
+          onChange={(event) => setRememberMe(event.target.checked)}
+        />
+        <span>Remember me on this site</span>
+      </label>
       {message ? <p className="admin-form-message" role="alert">{message}</p> : null}
       <button className="admin-primary-button" type="submit" disabled={submitting}>
         {submitting ? <><LoaderCircle className="admin-spinner" /> Signing in</> : <>Sign in <ArrowRight /></>}

@@ -27,6 +27,22 @@ type Candidate = {
   created_at: string;
 };
 
+const candidateSorts = {
+  score: 'Highest overall score',
+  newest: 'Newest first',
+  oldest: 'Oldest first',
+  relevance: 'Highest relevance',
+  evidence: 'Strongest evidence',
+  practitioner: 'Highest practitioner value',
+  novelty: 'Highest novelty',
+} as const;
+
+type CandidateSort = keyof typeof candidateSorts;
+
+type CandidatesPageProps = {
+  searchParams?: Promise<{ sort?: string }>;
+};
+
 type CandidateSource = {
   id: string;
   title: string;
@@ -79,23 +95,40 @@ function ResearchPackView({ pack }: { pack: ResearchPack }) {
   </section>;
 }
 
-export default async function CandidatesPage() {
+export default async function CandidatesPage({ searchParams }: CandidatesPageProps) {
   const { supabase, admin } = await requireContentAdmin();
+  const params = searchParams ? await searchParams : undefined;
+  const requestedSort = params?.sort;
+  const sort: CandidateSort = requestedSort && requestedSort in candidateSorts
+    ? requestedSort as CandidateSort
+    : 'score';
   const [candidatesResult, rejectedResult] = await Promise.all([
     supabase
       .from('story_clusters')
       .select('id, working_title, relevance_score, evidence_score, practitioner_value_score, novelty_score, overall_score, selection_rank, assessment, created_at')
       .eq('status', 'selected')
-      .order('created_at', { ascending: false })
-      .limit(10),
+      .order('created_at', { ascending: false }),
     supabase.from('story_clusters').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
   ]);
 
   if (candidatesResult.error) throw new Error('Unable to load assessed candidates.');
 
-  const candidates = ((candidatesResult.data ?? []) as Candidate[]).sort(
-    (a, b) => (a.selection_rank ?? 999) - (b.selection_rank ?? 999),
-  );
+  const candidates = ((candidatesResult.data ?? []) as Candidate[]).sort((a, b) => {
+    if (sort === 'newest') return Date.parse(b.created_at) - Date.parse(a.created_at);
+    if (sort === 'oldest') return Date.parse(a.created_at) - Date.parse(b.created_at);
+
+    const scoreKey: keyof Candidate = sort === 'relevance'
+      ? 'relevance_score'
+      : sort === 'evidence'
+        ? 'evidence_score'
+        : sort === 'practitioner'
+          ? 'practitioner_value_score'
+          : sort === 'novelty'
+            ? 'novelty_score'
+            : 'overall_score';
+    const scoreDifference = Number(b[scoreKey] ?? 0) - Number(a[scoreKey] ?? 0);
+    return scoreDifference || Date.parse(b.created_at) - Date.parse(a.created_at);
+  });
   const candidateIds = candidates.map((candidate) => candidate.id);
   const sourceMap = new Map<string, CandidateSource[]>();
   const researchMap = new Map<string, ResearchPack>();
@@ -146,6 +179,14 @@ export default async function CandidatesPage() {
           <div className="candidate-summary"><BrainCircuit /><strong>{candidates.length}</strong><span>recommended</span></div>
         </section>
 
+        {candidates.length ? <form className="candidate-toolbar" method="get">
+          <label htmlFor="candidate-sort">Sort candidates</label>
+          <select id="candidate-sort" name="sort" defaultValue={sort}>
+            {Object.entries(candidateSorts).map(([value, label]) => <option value={value} key={value}>{label}</option>)}
+          </select>
+          <button type="submit">Apply</button>
+        </form> : null}
+
         {candidates.length === 0 ? (
           <section className="source-empty candidate-empty"><BrainCircuit /><h2>No recommendations yet</h2><p>Go to Collected and assess the new items to create today&apos;s shortlist.</p></section>
         ) : (
@@ -156,7 +197,7 @@ export default async function CandidatesPage() {
               const research = researchMap.get(candidate.id);
               return (
                 <article className="candidate-card" key={candidate.id}>
-                  <div className="candidate-rank"><span>Rank</span><strong>{candidate.selection_rank ?? index + 1}</strong></div>
+                  <div className="candidate-rank"><span>Position</span><strong>{index + 1}</strong></div>
                   <div className="candidate-main">
                     <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span></div>
                     <h2>{candidate.working_title}</h2>
