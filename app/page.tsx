@@ -1,7 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
-import { CuratorByline } from '@/components/curator-byline';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
@@ -40,10 +39,10 @@ export default async function Home() {
     <section className="latest shell" id="latest" aria-labelledby="latest-heading">
       <div className="section-heading"><h2 id="latest-heading">Latest stories</h2><p>Reporting, analysis and ideas from the people protecting nature.</p></div>
       <div className="latest-columns">
-        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={`/stories/${story.slug}`} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" /></a><div className="story-copy"><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p><CuratorByline name={story.byline} /></div></article>)}</div>
+        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={`/stories/${story.slug}`} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" /></a><div className="story-copy"><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p></div></article>)}</div>
         <aside className="latest-compact" aria-label="More latest stories">{compactLatest.map((story) => <article className="compact-story" key={story.slug}>
           <a className="compact-story-image" href={`/stories/${story.slug}`}><img src={storyImage(story)} alt="" /></a>
-          <div><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><CuratorByline name={story.byline} showAvatar={false} /></div>
+          <div><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3></div>
         </article>)}</aside>
       </div>
     </section>

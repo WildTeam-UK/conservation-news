@@ -1,3 +1,4 @@
+/* oxlint-disable next/no-html-link-for-pages */
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArticleTemplate, type ArticleTemplateData } from '@/components/article-template';
@@ -45,7 +46,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
     return <main>
       <InteriorHeader actionHref="#sources" actionLabel="View sources" />
       <ArticleTemplate article={publishedStoryToArticle(published)} />
-      {related.length ? <section className="related shell"><div className="section-heading"><h2>Similar stories</h2><p>Keep exploring this topic.</p></div><div className="related-grid">{related.map((item) => <article key={item.slug}><Link href={`/stories/${item.slug}`} className="related-image" aria-label={cleanCopy(item.title)}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(item)} alt="" /></Link><TopicTag topic={item.topic} /><h3><Link href={`/stories/${item.slug}`}>{cleanCopy(item.title)}</Link></h3></article>)}</div></section> : null}
+      {related.length ? <section className="related shell"><div className="section-heading"><h2>Similar stories</h2><p>Keep exploring this topic.</p></div><div className="related-grid">{related.map((item) => <article key={item.slug}><a href={`/stories/${item.slug}`} className="related-image" aria-label={cleanCopy(item.title)}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(item)} alt="" /></a><TopicTag topic={item.topic} /><h3><a href={`/stories/${item.slug}`}>{cleanCopy(item.title)}</a></h3></article>)}</div></section> : null}
       <SiteFooter />
     </main>;
   }
@@ -61,7 +62,6 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
     storyAtAGlance: storyOverview(story),
     imageUrl: storyImage(story),
     imageAlt: '',
-    byline: story.byline,
     updatedAt: '2026-08-28T12:00:00.000Z',
     keyTakeaways: story.bullets.map((bullet, index) => expandedBullet(story, bullet, index)),
     whyItMatters: insights.whyItMatters,
@@ -75,7 +75,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   return <main>
     <InteriorHeader actionHref="#sources" actionLabel="View sources" />
     <ArticleTemplate article={article} />
-    <section className="related shell"><div className="section-heading"><h2>Similar stories</h2><p>Keep exploring this topic.</p></div><div className="related-grid">{related.map((item) => <article key={item.slug}><Link href={`/stories/${item.slug}`} className="related-image" aria-label={cleanCopy(item.title)}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(item)} alt="" /></Link><TopicTag topic={item.topic} /><h3><Link href={`/stories/${item.slug}`}>{cleanCopy(item.title)}</Link></h3></article>)}</div></section>
+    <section className="related shell"><div className="section-heading"><h2>Similar stories</h2><p>Keep exploring this topic.</p></div><div className="related-grid">{related.map((item) => <article key={item.slug}><a href={`/stories/${item.slug}`} className="related-image" aria-label={cleanCopy(item.title)}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(item)} alt="" /></a><TopicTag topic={item.topic} /><h3><a href={`/stories/${item.slug}`}>{cleanCopy(item.title)}</a></h3></article>)}</div></section>
     <SiteFooter />
   </main>;
 }

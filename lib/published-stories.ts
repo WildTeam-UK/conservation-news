@@ -72,7 +72,6 @@ export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateD
     imageUrl: story.image_url ?? content.image_url,
     imageAlt: story.image_alt ?? content.image_alt,
     imageCredit: content.image_credit,
-    byline: story.byline,
     updatedAt: story.updated_at,
     keyTakeaways: content.key_takeaways.map((item) => ({ text: item.text, sourceIds: item.source_ids })),
     whyItMatters: { text: content.why_it_matters.text, sourceIds: content.why_it_matters.source_ids },

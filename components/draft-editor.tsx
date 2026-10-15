@@ -141,7 +141,6 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, re
     imageUrl: content.image_url,
     imageAlt: content.image_alt,
     imageCredit: content.image_credit,
-    byline: content.byline,
     updatedAt,
     keyTakeaways: content.key_takeaways.map((item) => ({ text: item.text, sourceIds: item.source_ids })),
     whyItMatters: { text: content.why_it_matters.text, sourceIds: content.why_it_matters.source_ids },
@@ -167,7 +166,6 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, re
         <label><span>Topics, separated by commas</span><input value={content.topics.join(', ')} onChange={(event) => setContent({ ...content, topics: event.target.value.split(',').map((topic) => topic.trim()).filter(Boolean).slice(0, 4) })} required /></label>
         <label><span>Headline</span><input value={content.headline} onChange={(event) => setContent({ ...content, headline: event.target.value })} maxLength={180} required /></label>
         <label><span>Standfirst for listings and search</span><textarea value={content.standfirst} onChange={(event) => setContent({ ...content, standfirst: event.target.value })} rows={3} maxLength={400} required /></label>
-        <label><span>Curator byline</span><input value={content.byline} onChange={(event) => setContent({ ...content, byline: event.target.value })} maxLength={120} /></label>
       </section>
 
       <section className="draft-edit-section draft-image-section">

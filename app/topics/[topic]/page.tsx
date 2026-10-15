@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
-import { CuratorByline } from '@/components/curator-byline';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
@@ -39,7 +38,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
     <section className="topic-page-grid shell">
       {topicStories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}>
         <a className="topic-story-image" href={`/stories/${story.slug}`}><img src={storyImage(story)} alt="" /></a>
-        <div><TopicTag topic={story.topic} /><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><CuratorByline name={story.byline} /><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
+        <div><TopicTag topic={story.topic} /><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
       </article>)}
     </section>
     <SiteFooter />

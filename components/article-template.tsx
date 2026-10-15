@@ -1,6 +1,5 @@
 import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
-import { CuratorByline } from '@/components/curator-byline';
 import { TopicTag } from '@/components/topic-tag';
 import { stripSourceMarkers } from '@/lib/article-text';
 import type { EditorialImageCredit } from '@/lib/images/types';
@@ -23,7 +22,6 @@ export type ArticleTemplateData = {
   imageUrl?: string;
   imageAlt?: string;
   imageCredit?: EditorialImageCredit | null;
-  byline: string;
   updatedAt: string;
   keyTakeaways: ArticleText[];
   whyItMatters: ArticleText;
@@ -93,7 +91,7 @@ export function ArticleTemplate({ article }: { article: ArticleTemplateData }) {
     </header>
     <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt ?? ''} />{article.imageCredit ? <figcaption>{article.imageCredit.illustrative ? <span>Illustrative image</span> : null}<span>Photo by {article.imageCredit.creator_url ? <a href={article.imageCredit.creator_url} target="_blank" rel="noreferrer">{article.imageCredit.creator_name}</a> : article.imageCredit.creator_name}{article.imageCredit.source_name ? <> on {article.imageCredit.source_url ? <a href={article.imageCredit.source_url} target="_blank" rel="noreferrer">{article.imageCredit.source_name}</a> : article.imageCredit.source_name}</> : null}</span>{article.imageCredit.licence_name ? article.imageCredit.licence_url ? <a href={article.imageCredit.licence_url} target="_blank" rel="noreferrer">{article.imageCredit.licence_name}</a> : <span>{article.imageCredit.licence_name}</span> : null}</figcaption> : null}</> : <span>Lead image to be selected</span>}</figure>
     <section className="article-overview shell">
-      <div className="article-curator-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <Link href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</Link>)}</div> : <CuratorByline name={article.byline} />}<p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
+      <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <Link href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</Link>)}</div> : <span aria-hidden="true" />}<p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
       <h2>The story at a glance</h2>
       {article.storyAtAGlance.map((paragraph, index) => <p key={`overview-${index}`}><ArticleTextContent value={paragraph} sources={sourcesById} /></p>)}
     </section>
