@@ -3,6 +3,7 @@ import { BrainCircuit, ExternalLink, FileSearch, Newspaper, ShieldCheck } from '
 import { AdminNav } from '@/components/admin-nav';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { Brand } from '@/components/brand';
+import { GenerateDraftButton } from '@/components/generate-draft-button';
 import { ResearchCandidateButton } from '@/components/research-candidate-button';
 import type { ResearchClaim, ResearchContent } from '@/lib/openai/research-story';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
@@ -132,6 +133,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
   const candidateIds = candidates.map((candidate) => candidate.id);
   const sourceMap = new Map<string, CandidateSource[]>();
   const researchMap = new Map<string, ResearchPack>();
+  const draftMap = new Map<string, string>();
 
   if (candidateIds.length) {
     const { data: links, error: linkError } = await supabase
@@ -161,6 +163,10 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
       .in('cluster_id', candidateIds);
     if (researchError) throw new Error('Unable to load candidate research.');
     for (const pack of (researchPacks ?? []) as ResearchPack[]) researchMap.set(pack.cluster_id, pack);
+
+    const { data: drafts, error: draftsError } = await supabase.from('stories').select('id, cluster_id').in('cluster_id', candidateIds);
+    if (draftsError) throw new Error('Unable to load candidate drafts.');
+    for (const draft of drafts ?? []) if (draft.cluster_id) draftMap.set(draft.cluster_id, draft.id);
   }
 
   const name = admin.display_name || admin.email;
@@ -195,6 +201,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
               const assessment = candidate.assessment ?? {};
               const sources = sourceMap.get(candidate.id) ?? [];
               const research = researchMap.get(candidate.id);
+              const draftId = draftMap.get(candidate.id);
               return (
                 <article className="candidate-card" key={candidate.id}>
                   <div className="candidate-rank"><span>Position</span><strong>{index + 1}</strong></div>
@@ -206,7 +213,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
                       <h3><Newspaper /> Source {sources.length === 1 ? 'story' : 'stories'}</h3>
                       {sources.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.id}><span>{sourceName(source.sources)}</span>{source.title}<ExternalLink /></a>)}
                     </div>
-                    {research?.status === 'completed' ? <p className="research-complete-label"><ShieldCheck /> Research complete</p> : research?.status === 'researching' ? <p className="research-progress-label">Research is in progress. Refresh shortly.</p> : <ResearchCandidateButton clusterId={candidate.id} retry={research?.status === 'failed'} />}
+                    {research?.status === 'completed' ? <><p className="research-complete-label"><ShieldCheck /> Research complete</p>{draftId ? <a className="candidate-edit-draft" href={`/admin/drafts/${draftId}`}>Edit draft</a> : <GenerateDraftButton clusterId={candidate.id} />}</> : research?.status === 'researching' ? <p className="research-progress-label">Research is in progress. Refresh shortly.</p> : <ResearchCandidateButton clusterId={candidate.id} retry={research?.status === 'failed'} />}
                     {research?.status === 'failed' && research.error_message ? <p className="research-error-detail">The previous attempt failed and can be retried.</p> : null}
                   </div>
                   <dl className="candidate-scores">

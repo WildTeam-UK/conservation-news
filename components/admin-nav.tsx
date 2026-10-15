@@ -1,7 +1,7 @@
-import { BrainCircuit, Inbox, LayoutDashboard, Rss } from 'lucide-react';
+import { BrainCircuit, FilePenLine, Inbox, LayoutDashboard, Rss } from 'lucide-react';
 
 type AdminNavProps = {
-  active: 'dashboard' | 'collected' | 'candidates' | 'sources';
+  active: 'dashboard' | 'collected' | 'candidates' | 'drafts' | 'sources';
 };
 
 export function AdminNav({ active }: AdminNavProps) {
@@ -16,6 +16,8 @@ export function AdminNav({ active }: AdminNavProps) {
       <a className={active === 'collected' ? 'active' : ''} href="/admin/collected"><Inbox /> Collected</a>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'candidates' ? 'active' : ''} href="/admin/candidates"><BrainCircuit /> Candidates</a>
+      {/* oxlint-disable-next-line next/no-html-link-for-pages */}
+      <a className={active === 'drafts' ? 'active' : ''} href="/admin/drafts"><FilePenLine /> Drafts</a>
     </nav>
   );
 }
