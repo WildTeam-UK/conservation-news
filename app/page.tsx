@@ -4,12 +4,17 @@ import { Brand } from '@/components/brand';
 import { CuratorByline } from '@/components/curator-byline';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
+import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 import { cleanCopy, stories, storyImage, topicSlug } from '@/lib/stories';
 
 const shelfTopics = ['Wildlife', 'Oceans', 'Forests', 'Freshwater', 'Land & climate'];
 
-export default function Home() {
-  const [lead, ...moreStories] = stories;
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const published = (await getPublishedStories(30)).map(publishedStoryToListing);
+  const liveStories = [...published, ...stories.filter((story) => !published.some((item) => item.slug === story.slug))];
+  const [lead, ...moreStories] = liveStories;
   const primaryLatest = moreStories.slice(0, 6);
   const compactLatest = moreStories.slice(6, 16);
 
@@ -45,7 +50,7 @@ export default function Home() {
 
     <section className="topic-shelves" aria-label="Stories by topic">
       {shelfTopics.map((topic) => {
-        const topicStories = stories.filter((story) => story.topic === topic || story.topics.includes(topic));
+        const topicStories = liveStories.filter((story) => story.topic === topic || story.topics.includes(topic));
         return <section className="topic-shelf shell" key={topic}>
           <div className="shelf-heading"><div><h2><a href={`/topics/${topicSlug(topic)}`}>{topic}</a></h2></div><a href={`/topics/${topicSlug(topic)}`}>See all {topic.toLowerCase()} <ArrowRight /></a></div>
           <div className="topic-track">{topicStories.map((story) => <article className="carousel-card" key={story.slug}>

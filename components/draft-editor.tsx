@@ -1,6 +1,7 @@
 'use client';
 
 import { type SyntheticEvent, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Check, ImageIcon, LoaderCircle, RotateCcw, Save, Search, ShieldCheck, X } from 'lucide-react';
 import { ArticleTemplate, type ArticleTemplateData } from '@/components/article-template';
 import type { EditorialImageCredit, UnsplashImageCandidate } from '@/lib/images/types';
@@ -26,7 +27,8 @@ function SingleSourcedField({ label, item, sources, onChange }: { label: string;
   return <SourcedFields label={label} items={[item]} sources={sources} onChange={(items) => items[0] && onChange(items[0])} />;
 }
 
-export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: { storyId: string; initialContent: StoryDraftContent; sourceList: DraftSource[]; updatedAt: string }) {
+export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, readOnly = false }: { storyId: string; initialContent: StoryDraftContent; sourceList: DraftSource[]; updatedAt: string; readOnly?: boolean }) {
+  const router = useRouter();
   const [content, setContent] = useState(initialContent);
   const [saving, setSaving] = useState(false);
   const [recalculating, setRecalculating] = useState(false);
@@ -50,6 +52,7 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
         setMessage(result.error ?? 'The draft could not be saved.');
       } else {
         setMessage('Draft saved. It remains private and unpublished.');
+        router.refresh();
       }
     } catch {
       setFailed(true);
@@ -76,6 +79,7 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
       } else {
         setContent((current) => ({ ...current, coverage_analysis: result.coverage! }));
         setMessage(`Coverage recalculated from the research pack. Estimated model cost $${Number(result.estimatedCostUsd ?? 0).toFixed(4)}.`);
+        router.refresh();
       }
     } catch {
       setFailed(true);
@@ -154,7 +158,8 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
   const coverageLooksUncalibrated = [content.coverage_analysis.ecological, content.coverage_analysis.evidence, content.coverage_analysis.consensus].every((score) => score <= 1);
 
   return <>
-    <form className="draft-editor" onSubmit={save}>
+    <form className={`draft-editor${readOnly ? ' draft-editor-readonly' : ''}`} onSubmit={save}>
+      <fieldset disabled={readOnly} className="draft-editor-lock">
       <div className="draft-editor-heading"><div><p className="eyebrow">The shared article template</p><h2>Review the generated copy</h2><p>These fields now map directly to the public article design. Source numbers remain attached in the editor while you check each factual claim.</p></div><button className="admin-primary-button" type="submit" disabled={saving}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving</> : <><Save /> Save draft</>}</button></div>
       {message ? <output className={failed ? 'draft-save-message failed' : 'draft-save-message'}>{failed ? null : <Check />}{message}</output> : null}
 
@@ -201,6 +206,7 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
       </div></section>
 
       <section className="draft-edit-section"><h3>Search preview</h3><label><span>SEO title</span><input value={content.seo_title} onChange={(event) => setContent({ ...content, seo_title: event.target.value })} maxLength={180} /></label><label><span>SEO description</span><textarea value={content.seo_description} onChange={(event) => setContent({ ...content, seo_description: event.target.value })} rows={3} maxLength={320} /></label></section>
+      </fieldset>
     </form>
 
     <section className="draft-template-preview" aria-label="Private article preview">

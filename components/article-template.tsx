@@ -16,6 +16,7 @@ type ArticleSource = { id?: string; name: string; title?: string; url: string; p
 
 export type ArticleTemplateData = {
   topics: string[];
+  discoveryTags?: { name: string; slug: string }[];
   headline: string;
   storyAtAGlance: ArticleText[];
   imageUrl?: string;
@@ -79,6 +80,7 @@ export function ArticleTemplate({ article }: { article: ArticleTemplateData }) {
   return <article className="article-template">
     <header className="article-hero shell">
       <div className="article-topics">{article.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
+      {article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <Link href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</Link>)}</div> : null}
       <h1>{article.headline}</h1>
       <div className="article-coverage-summary" aria-label="Coverage analysis summary">
         <div className="leaning-summary-heading"><span>Coverage mix</span><Link className="analysis-help" href="/how-leaning-works" aria-label="Learn how our coverage analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">A quick view of the ecological, evidence and consensus signals found across current coverage. Click to learn how it works.</span></Link></div>

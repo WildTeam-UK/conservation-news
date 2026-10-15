@@ -4,7 +4,10 @@ import { CuratorByline } from '@/components/curator-byline';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
+import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 import { allTopics, cleanCopy, getTopic, stories, storyImage, topicSlug } from '@/lib/stories';
+
+export const dynamic = 'force-dynamic';
 
 export function generateStaticParams() {
   return allTopics.map((topic) => ({ topic: topicSlug(topic) }));
@@ -21,7 +24,9 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
   const topic = getTopic(slug);
   if (!topic) return <main className="missing shell"><h1>Topic not found</h1><a href="/">Back to WildNews</a></main>;
 
-  const topicStories = stories.filter((story) => story.topic === topic || story.topics.includes(topic));
+  const published = (await getPublishedStories(100)).map(publishedStoryToListing);
+  const liveStories = [...published, ...stories.filter((story) => !published.some((item) => item.slug === story.slug))];
+  const topicStories = liveStories.filter((story) => story.topic === topic || story.topics.includes(topic));
 
   return <main className="archive-page">
     <InteriorHeader />
