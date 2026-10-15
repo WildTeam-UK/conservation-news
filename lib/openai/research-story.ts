@@ -125,6 +125,10 @@ async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) 
     const normalized = normalizeTag(suggestion.name);
     if (!normalized) continue;
     let tag = byName.get(normalized) ?? bySlug.get(tagSlug(suggestion.name));
+    // A retired tag is an editorial decision not to use that concept again.
+    // Keep it in the vocabulary to prevent a duplicate proposal, but never
+    // attach it to a new candidate unless an editor restores it first.
+    if (tag?.status === 'retired') continue;
     if (!tag) {
       const { data: created, error: createError } = await supabase.from('content_tags').insert({
         name: suggestion.name.trim(),
