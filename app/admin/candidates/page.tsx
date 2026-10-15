@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
-import { BrainCircuit, ExternalLink, Newspaper, ShieldCheck } from 'lucide-react';
+import { BrainCircuit, ExternalLink, FileSearch, Newspaper, ShieldCheck } from 'lucide-react';
 import { AdminNav } from '@/components/admin-nav';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { Brand } from '@/components/brand';
+import { ResearchCandidateButton } from '@/components/research-candidate-button';
+import type { ResearchClaim, ResearchContent } from '@/lib/openai/research-story';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
 export const dynamic = 'force-dynamic';
@@ -32,9 +34,48 @@ type CandidateSource = {
   sources: { name: string } | { name: string }[] | null;
 };
 
+type ResearchPack = {
+  cluster_id: string;
+  status: 'researching' | 'completed' | 'failed';
+  content: ResearchContent | null;
+  estimated_cost_usd: number | string | null;
+  web_search_actions: number;
+  error_message: string | null;
+};
+
 function sourceName(source: CandidateSource['sources']) {
   if (Array.isArray(source)) return source[0]?.name ?? 'Unknown source';
   return source?.name ?? 'Unknown source';
+}
+
+function ResearchClaims({ claims, sourceNumbers }: { claims: ResearchClaim[]; sourceNumbers: Map<string, number> }) {
+  if (!claims.length) return <p className="research-none">Nothing material was identified.</p>;
+  return <ul>{claims.map((item) => <li key={item.claim}><span>{item.claim}</span><small>{item.source_urls.map((url) => {
+    const number = sourceNumbers.get(url);
+    return number ? <a href={url} target="_blank" rel="noreferrer" key={url}>Source {number}</a> : null;
+  })}</small></li>)}</ul>;
+}
+
+function ResearchPackView({ pack }: { pack: ResearchPack }) {
+  if (pack.status !== 'completed' || !pack.content) return null;
+  const content = pack.content;
+  const sourceNumbers = new Map(content.sources.map((source, index) => [source.url, index + 1]));
+  const coverage = content.coverage_analysis;
+
+  return <section className="research-pack" aria-label="Completed research pack">
+    <div className="research-pack-heading"><div><p className="eyebrow">Completed research pack</p><h3>Evidence gathered before drafting</h3></div><span><FileSearch /> {content.sources.length} sources</span></div>
+    <p className="research-summary">{content.summary}</p>
+    <div className="research-topics"><strong>{content.topic_classification.primary_topic}</strong>{content.topic_classification.secondary_topics.map((topic) => <span key={topic}>{topic}</span>)}</div>
+    <div className="research-columns">
+      <section><h4>Key facts</h4><ResearchClaims claims={content.key_facts} sourceNumbers={sourceNumbers} /></section>
+      <section><h4>Areas of agreement</h4><ResearchClaims claims={content.areas_of_agreement} sourceNumbers={sourceNumbers} /></section>
+      <section><h4>Disputed or uncertain</h4><ResearchClaims claims={content.disputed_points} sourceNumbers={sourceNumbers} /></section>
+      <section><h4>Open questions</h4>{content.open_questions.length ? <ul>{content.open_questions.map((question) => <li key={question}>{question}</li>)}</ul> : <p className="research-none">No material open questions were identified.</p>}</section>
+    </div>
+    <section className="research-coverage"><div><h4>Coverage analysis</h4><p>{coverage.explanation}</p></div><dl><div><dt>Ecological framing</dt><dd>{coverage.ecological}</dd></div><div><dt>Evidence-led</dt><dd>{coverage.evidence}</dd></div><div><dt>Source agreement</dt><dd>{coverage.consensus}</dd></div><div><dt>Conservation outlook</dt><dd>{coverage.conservation_outlook}</dd></div><div><dt>Political mix</dt><dd>L {coverage.political_left} · C {coverage.political_centre} · R {coverage.political_right}</dd></div></dl></section>
+    <section className="research-source-list"><h4>Sources consulted</h4>{content.sources.map((source, index) => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}><span>{index + 1}</span><div><strong>{source.title}</strong><small>{source.publisher} · {source.source_type} · {source.why_relevant}</small></div><ExternalLink /></a>)}</section>
+    <p className="research-cost-note">Estimated model-token cost ${Number(pack.estimated_cost_usd ?? 0).toFixed(4)}, plus {pack.web_search_actions} web search {pack.web_search_actions === 1 ? 'action' : 'actions'}.</p>
+  </section>;
 }
 
 export default async function CandidatesPage() {
@@ -56,6 +97,7 @@ export default async function CandidatesPage() {
   );
   const candidateIds = candidates.map((candidate) => candidate.id);
   const sourceMap = new Map<string, CandidateSource[]>();
+  const researchMap = new Map<string, ResearchPack>();
 
   if (candidateIds.length) {
     const { data: links, error: linkError } = await supabase
@@ -78,6 +120,13 @@ export default async function CandidatesPage() {
         if (item) sourceMap.set(link.cluster_id, [...(sourceMap.get(link.cluster_id) ?? []), item]);
       }
     }
+
+    const { data: researchPacks, error: researchError } = await supabase
+      .from('research_packs')
+      .select('cluster_id, status, content, estimated_cost_usd, web_search_actions, error_message')
+      .in('cluster_id', candidateIds);
+    if (researchError) throw new Error('Unable to load candidate research.');
+    for (const pack of (researchPacks ?? []) as ResearchPack[]) researchMap.set(pack.cluster_id, pack);
   }
 
   const name = admin.display_name || admin.email;
@@ -103,6 +152,7 @@ export default async function CandidatesPage() {
             {candidates.map((candidate, index) => {
               const assessment = candidate.assessment ?? {};
               const sources = sourceMap.get(candidate.id) ?? [];
+              const research = researchMap.get(candidate.id);
               return (
                 <article className="candidate-card" key={candidate.id}>
                   <div className="candidate-rank"><span>Rank</span><strong>{candidate.selection_rank ?? index + 1}</strong></div>
@@ -114,6 +164,8 @@ export default async function CandidatesPage() {
                       <h3><Newspaper /> Source {sources.length === 1 ? 'story' : 'stories'}</h3>
                       {sources.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.id}><span>{sourceName(source.sources)}</span>{source.title}<ExternalLink /></a>)}
                     </div>
+                    {research?.status === 'completed' ? <p className="research-complete-label"><ShieldCheck /> Research complete</p> : research?.status === 'researching' ? <p className="research-progress-label">Research is in progress. Refresh shortly.</p> : <ResearchCandidateButton clusterId={candidate.id} retry={research?.status === 'failed'} />}
+                    {research?.status === 'failed' && research.error_message ? <p className="research-error-detail">The previous attempt failed and can be retried.</p> : null}
                   </div>
                   <dl className="candidate-scores">
                     <div className="candidate-overall"><dt>Overall</dt><dd>{candidate.overall_score ?? 0}</dd></div>
@@ -122,6 +174,7 @@ export default async function CandidatesPage() {
                     <div><dt>Practitioner value</dt><dd>{candidate.practitioner_value_score ?? 0}</dd></div>
                     <div><dt>Novelty</dt><dd>{candidate.novelty_score ?? 0}</dd></div>
                   </dl>
+                  {research ? <ResearchPackView pack={research} /> : null}
                 </article>
               );
             })}
