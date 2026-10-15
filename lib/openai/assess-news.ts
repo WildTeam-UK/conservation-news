@@ -1,5 +1,6 @@
 import { getOpenAIClient } from './client';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { estimateLunaTokenCost } from './pricing';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'assessment-v1';
@@ -38,6 +39,7 @@ export type AssessmentResult = {
   inputTokens: number;
   outputTokens: number;
   estimatedCostUsd: number;
+  selectedClusterIds: string[];
 };
 
 function sourceName(source: SourceItem['sources']) {
@@ -47,7 +49,7 @@ function sourceName(source: SourceItem['sources']) {
 
 const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
-export async function assessUnprocessedItems(): Promise<AssessmentResult> {
+export async function assessUnprocessedItems(maxSelected = 10): Promise<AssessmentResult> {
   const supabase = getSupabaseAdminClient();
   const { data: recentItems, error: itemError } = await supabase
     .from('source_items')
@@ -58,7 +60,7 @@ export async function assessUnprocessedItems(): Promise<AssessmentResult> {
   if (itemError) throw itemError;
 
   const candidates = (recentItems ?? []) as SourceItem[];
-  if (!candidates.length) return { assessedItems: 0, clustersCreated: 0, selected: 0, rejected: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
+  if (!candidates.length) return { assessedItems: 0, clustersCreated: 0, selected: 0, rejected: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0, selectedClusterIds: [] };
 
   const { data: existingLinks, error: linkError } = await supabase
     .from('story_cluster_items')
@@ -69,7 +71,7 @@ export async function assessUnprocessedItems(): Promise<AssessmentResult> {
 
   const processedIds = new Set((existingLinks ?? []).map((link) => link.source_item_id));
   const items = candidates.filter((item) => !processedIds.has(item.id));
-  if (!items.length) return { assessedItems: 0, clustersCreated: 0, selected: 0, rejected: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0 };
+  if (!items.length) return { assessedItems: 0, clustersCreated: 0, selected: 0, rejected: 0, inputTokens: 0, outputTokens: 0, estimatedCostUsd: 0, selectedClusterIds: [] };
 
   const input = items.map((item) => ({
     id: item.id,
@@ -174,9 +176,10 @@ Use concise neutral wording. This is triage, not fact checking. Never invent fac
   const eligible = cleaned
     .filter((cluster) => cluster.relevant && cluster.relevance_score >= 60 && cluster.overall_score >= 55)
     .sort((a, b) => b.overall_score - a.overall_score);
-  const selectedSet = new Set(eligible.slice(0, 10));
+  const selectedSet = new Set(eligible.slice(0, Math.max(1, Math.min(25, maxSelected))));
   let selected = 0;
   let rejected = 0;
+  const selectedClusterIds: string[] = [];
 
   for (const cluster of cleaned) {
     const isSelected = selectedSet.has(cluster);
@@ -203,6 +206,7 @@ Use concise neutral wording. This is triage, not fact checking. Never invent fac
       .single();
 
     if (clusterError || !created) throw clusterError ?? new Error('Could not create assessed cluster.');
+    if (isSelected) selectedClusterIds.push(created.id);
 
     const { error: itemLinkError } = await supabase.from('story_cluster_items').insert(
       cluster.item_ids.map((itemId) => ({ cluster_id: created.id, source_item_id: itemId })),
@@ -212,7 +216,7 @@ Use concise neutral wording. This is triage, not fact checking. Never invent fac
 
   const inputTokens = response.usage?.input_tokens ?? 0;
   const outputTokens = response.usage?.output_tokens ?? 0;
-  const estimatedCostUsd = (inputTokens * 0.10 + outputTokens * 0.50) / 1_000_000;
+  const estimatedCostUsd = estimateLunaTokenCost(inputTokens, outputTokens);
   await supabase.from('ai_generations').insert({
     purpose: 'assessment',
     provider: 'openai',
@@ -224,5 +228,5 @@ Use concise neutral wording. This is triage, not fact checking. Never invent fac
     warnings: [],
   });
 
-  return { assessedItems: items.length, clustersCreated: cleaned.length, selected, rejected, inputTokens, outputTokens, estimatedCostUsd };
+  return { assessedItems: items.length, clustersCreated: cleaned.length, selected, rejected, inputTokens, outputTokens, estimatedCostUsd, selectedClusterIds };
 }

@@ -1,0 +1,324 @@
+import { collectEnabledSources } from '@/lib/ingestion/rss';
+import { assessUnprocessedItems } from '@/lib/openai/assess-news';
+import { generateStoryDraft } from '@/lib/openai/draft-story';
+import { estimateWebSearchCost } from '@/lib/openai/pricing';
+import { researchCandidate } from '@/lib/openai/research-story';
+import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+
+const ASSESSMENT_RESERVE_USD = 0.03;
+const RESEARCH_RESERVE_USD = 0.06;
+const DRAFT_RESERVE_USD = 0.015;
+const STALE_STEP_MINUTES = 10;
+
+type RunStatus = 'running' | 'completed' | 'partial' | 'failed' | 'budget_stopped';
+type RunStage = 'collecting' | 'assessing' | 'researching' | 'drafting' | 'finished';
+type ItemStatus = 'pending' | 'researching' | 'researched' | 'drafting' | 'drafted' | 'failed';
+
+type EditorialRun = {
+  id: string;
+  status: RunStatus;
+  current_stage: RunStage;
+  max_new_drafts: number;
+  max_estimated_cost_usd: number | string;
+  estimated_cost_usd: number | string;
+  candidates_selected: number;
+  candidates_processed: number;
+  drafts_created: number;
+  failures: number;
+  started_at: string;
+  completed_at: string | null;
+};
+
+type RunItem = {
+  id: string;
+  cluster_id: string;
+  story_id: string | null;
+  rank: number;
+  status: ItemStatus;
+  research_cost_usd: number | string;
+  draft_cost_usd: number | string;
+  web_search_actions: number;
+  error_message: string | null;
+  updated_at: string;
+  story_clusters: { working_title: string } | { working_title: string }[] | null;
+};
+
+type RunEvent = {
+  id: number;
+  stage: string;
+  level: 'info' | 'warning' | 'error';
+  message: string;
+  details: Record<string, unknown>;
+  estimated_cost_usd: number | string;
+  created_at: string;
+};
+
+export type EditorialRunSnapshot = {
+  run: EditorialRun;
+  items: RunItem[];
+  events: RunEvent[];
+  progressPercent: number;
+  message: string;
+};
+
+const money = (value: number | string | null | undefined) => Number(value ?? 0);
+
+function itemTitle(item: RunItem) {
+  if (Array.isArray(item.story_clusters)) return item.story_clusters[0]?.working_title ?? 'Story candidate';
+  return item.story_clusters?.working_title ?? 'Story candidate';
+}
+
+async function addEvent(runId: string, stage: string, message: string, options: {
+  level?: RunEvent['level'];
+  details?: Record<string, unknown>;
+  estimatedCostUsd?: number;
+} = {}) {
+  const { error } = await getSupabaseAdminClient().from('editorial_run_events').insert({
+    run_id: runId,
+    stage,
+    level: options.level ?? 'info',
+    message,
+    details: options.details ?? {},
+    estimated_cost_usd: options.estimatedCostUsd ?? 0,
+  });
+  if (error) throw error;
+}
+
+export async function getEditorialRunSnapshot(runId: string, message = ''): Promise<EditorialRunSnapshot> {
+  const supabase = getSupabaseAdminClient();
+  const [{ data: run, error: runError }, { data: items, error: itemsError }, { data: events, error: eventsError }] = await Promise.all([
+    supabase.from('editorial_runs').select('*').eq('id', runId).single(),
+    supabase.from('editorial_run_items').select('id, cluster_id, story_id, rank, status, research_cost_usd, draft_cost_usd, web_search_actions, error_message, updated_at, story_clusters(working_title)').eq('run_id', runId).order('rank'),
+    supabase.from('editorial_run_events').select('id, stage, level, message, details, estimated_cost_usd, created_at').eq('run_id', runId).order('created_at', { ascending: false }).limit(30),
+  ]);
+  if (runError || !run) throw runError ?? new Error('Editorial run not found.');
+  if (itemsError) throw itemsError;
+  if (eventsError) throw eventsError;
+
+  const typedRun = run as EditorialRun;
+  const typedItems = (items ?? []) as RunItem[];
+  const finishedItems = typedItems.filter((item) => ['drafted', 'failed'].includes(item.status)).length;
+  const baseProgress = typedRun.current_stage === 'collecting' ? 2 : typedRun.current_stage === 'assessing' ? 8 : 12;
+  const itemProgress = typedItems.length ? (finishedItems / typedItems.length) * 88 : typedRun.status === 'running' ? 0 : 88;
+  const progressPercent = typedRun.status === 'running' ? Math.min(99, Math.round(baseProgress + itemProgress)) : 100;
+
+  return { run: typedRun, items: typedItems, events: (events ?? []) as RunEvent[], progressPercent, message };
+}
+
+export async function startEditorialRun(userId: string, maxNewDrafts: number, maxEstimatedCostUsd: number) {
+  const supabase = getSupabaseAdminClient();
+  const safeDrafts = Math.max(1, Math.min(25, Math.round(maxNewDrafts)));
+  const safeBudget = Math.max(0.05, Math.min(100, Math.round(maxEstimatedCostUsd * 100) / 100));
+
+  const { data: active } = await supabase.from('editorial_runs').select('id').eq('status', 'running').maybeSingle();
+  if (active) return getEditorialRunSnapshot(active.id, 'Resumed the run already in progress.');
+
+  const { error: settingsError } = await supabase.from('editorial_run_settings').upsert({
+    id: true,
+    max_new_drafts: safeDrafts,
+    max_estimated_cost_usd: safeBudget,
+    updated_by: userId,
+  });
+  if (settingsError) throw settingsError;
+
+  const { data: budgetStopped } = await supabase
+    .from('editorial_runs')
+    .select('id, estimated_cost_usd')
+    .eq('status', 'budget_stopped')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  if (budgetStopped && safeBudget > money(budgetStopped.estimated_cost_usd)) {
+    const { data: unfinished } = await supabase
+      .from('editorial_run_items')
+      .select('status')
+      .eq('run_id', budgetStopped.id)
+      .in('status', ['pending', 'researched'])
+      .limit(1);
+    if (unfinished?.length) {
+      const nextStage = unfinished[0].status === 'researched' ? 'drafting' : 'researching';
+      const { error: resumeError } = await supabase.from('editorial_runs').update({
+        status: 'running',
+        current_stage: nextStage,
+        max_new_drafts: safeDrafts,
+        max_estimated_cost_usd: safeBudget,
+        completed_at: null,
+        error_summary: null,
+      }).eq('id', budgetStopped.id);
+      if (resumeError) throw resumeError;
+      await addEvent(budgetStopped.id, 'run', `Budget-stopped run resumed with a new $${safeBudget.toFixed(2)} estimated limit.`, {
+        details: { max_estimated_cost_usd: safeBudget },
+      });
+      return getEditorialRunSnapshot(budgetStopped.id, 'Resumed the budget-stopped run.');
+    }
+  }
+
+  const { data: run, error } = await supabase.from('editorial_runs').insert({
+    trigger_type: 'manual',
+    status: 'running',
+    current_stage: 'collecting',
+    max_new_drafts: safeDrafts,
+    max_estimated_cost_usd: safeBudget,
+    triggered_by: userId,
+  }).select('id').single();
+  if (error || !run) throw error ?? new Error('Could not create the editorial run.');
+  await addEvent(run.id, 'run', `Run started with a limit of ${safeDrafts} new drafts and a $${safeBudget.toFixed(2)} estimated budget.`, {
+    details: { max_new_drafts: safeDrafts, max_estimated_cost_usd: safeBudget },
+  });
+  return getEditorialRunSnapshot(run.id, 'Run started.');
+}
+
+async function stopForBudget(run: EditorialRun, nextStage: string, reserve: number) {
+  const spent = money(run.estimated_cost_usd);
+  const budget = money(run.max_estimated_cost_usd);
+  if (spent + reserve <= budget) return false;
+
+  const supabase = getSupabaseAdminClient();
+  await supabase.from('editorial_runs').update({
+    status: 'budget_stopped',
+    current_stage: 'finished',
+    completed_at: new Date().toISOString(),
+    error_summary: `Stopped before ${nextStage}: the next step was projected to exceed the run budget.`,
+  }).eq('id', run.id);
+  await addEvent(run.id, nextStage, `Budget safeguard stopped the run before ${nextStage}.`, {
+    level: 'warning',
+    details: { spent, budget, reserved_for_next_step: reserve },
+  });
+  return true;
+}
+
+async function finishRun(run: EditorialRun) {
+  const status: RunStatus = run.failures > 0 ? 'partial' : 'completed';
+  await getSupabaseAdminClient().from('editorial_runs').update({
+    status,
+    current_stage: 'finished',
+    completed_at: new Date().toISOString(),
+  }).eq('id', run.id);
+  await addEvent(run.id, 'run', status === 'completed' ? 'Daily editorial run completed.' : 'Run completed with one or more failed stories.', { level: status === 'partial' ? 'warning' : 'info' });
+}
+
+async function recoverStaleItems(runId: string) {
+  const supabase = getSupabaseAdminClient();
+  const staleBefore = new Date(Date.now() - STALE_STEP_MINUTES * 60_000).toISOString();
+  const { data: stale } = await supabase.from('editorial_run_items').select('id, status').eq('run_id', runId).in('status', ['researching', 'drafting']).lt('updated_at', staleBefore);
+  for (const item of stale ?? []) {
+    const nextStatus = item.status === 'researching' ? 'pending' : 'researched';
+    await supabase.from('editorial_run_items').update({ status: nextStatus, error_message: 'Recovered after an interrupted request.' }).eq('id', item.id);
+    await addEvent(runId, item.status, 'Recovered an interrupted step and made it ready to retry.', { level: 'warning', details: { item_id: item.id } });
+  }
+}
+
+export async function advanceEditorialRun(runId: string, userId: string): Promise<EditorialRunSnapshot> {
+  const supabase = getSupabaseAdminClient();
+  await recoverStaleItems(runId);
+  const { data: runData, error: runError } = await supabase.from('editorial_runs').select('*').eq('id', runId).single();
+  if (runError || !runData) throw runError ?? new Error('Editorial run not found.');
+  let run = runData as EditorialRun;
+  if (run.status !== 'running') return getEditorialRunSnapshot(run.id, 'This run is no longer active.');
+
+  if (run.current_stage === 'collecting') {
+    const result = await collectEnabledSources('manual');
+    await supabase.from('editorial_runs').update({ ingestion_run_id: result.runId, current_stage: 'assessing' }).eq('id', run.id);
+    await addEvent(run.id, 'collecting', `Checked ${result.sourcesChecked} sources and found ${result.itemsNew} new items.`, {
+      level: result.status === 'completed' ? 'info' : 'warning',
+      details: result,
+    });
+    return getEditorialRunSnapshot(run.id, 'Collection complete. Assessing the new inbox next.');
+  }
+
+  if (run.current_stage === 'assessing') {
+    if (await stopForBudget(run, 'assessment', ASSESSMENT_RESERVE_USD)) return getEditorialRunSnapshot(run.id, 'Stopped at the budget safeguard.');
+    const result = await assessUnprocessedItems(run.max_new_drafts);
+    const nextCost = money(run.estimated_cost_usd) + result.estimatedCostUsd;
+    if (result.selectedClusterIds.length) {
+      const { error: itemError } = await supabase.from('editorial_run_items').insert(result.selectedClusterIds.map((clusterId, index) => ({
+        run_id: run.id,
+        cluster_id: clusterId,
+        rank: index + 1,
+        status: 'pending',
+      })));
+      if (itemError) throw itemError;
+    }
+    const completed = result.selectedClusterIds.length === 0;
+    await supabase.from('editorial_runs').update({
+      current_stage: completed ? 'finished' : 'researching',
+      status: completed ? 'completed' : 'running',
+      completed_at: completed ? new Date().toISOString() : null,
+      candidates_selected: result.selectedClusterIds.length,
+      estimated_cost_usd: nextCost,
+    }).eq('id', run.id);
+    await addEvent(run.id, 'assessing', `Assessed ${result.assessedItems} items and selected ${result.selected} candidates.`, {
+      details: { assessed_items: result.assessedItems, selected: result.selected, rejected: result.rejected },
+      estimatedCostUsd: result.estimatedCostUsd,
+    });
+    if (completed) await addEvent(run.id, 'run', 'Run completed because there were no new qualifying candidates.');
+    return getEditorialRunSnapshot(run.id, completed ? 'No new qualifying candidates were found.' : 'Assessment complete. Researching the first candidate next.');
+  }
+
+  const { data: itemRows, error: itemsError } = await supabase
+    .from('editorial_run_items')
+    .select('id, cluster_id, story_id, rank, status, research_cost_usd, draft_cost_usd, web_search_actions, error_message, updated_at, story_clusters(working_title)')
+    .eq('run_id', run.id)
+    .order('rank');
+  if (itemsError) throw itemsError;
+  const items = (itemRows ?? []) as RunItem[];
+
+  const readyToDraft = items.find((item) => item.status === 'researched');
+  if (readyToDraft) {
+    if (await stopForBudget(run, 'drafting', DRAFT_RESERVE_USD)) return getEditorialRunSnapshot(run.id, 'Stopped at the budget safeguard.');
+    await supabase.from('editorial_run_items').update({ status: 'drafting', error_message: null }).eq('id', readyToDraft.id);
+    await supabase.from('editorial_runs').update({ current_stage: 'drafting' }).eq('id', run.id);
+    try {
+      const result = await generateStoryDraft(readyToDraft.cluster_id, userId);
+      const cost = result.alreadyCompleted ? 0 : result.estimatedCostUsd;
+      const nextCost = money(run.estimated_cost_usd) + cost;
+      await supabase.from('editorial_run_items').update({ status: 'drafted', story_id: result.storyId, draft_cost_usd: cost }).eq('id', readyToDraft.id);
+      await supabase.from('editorial_runs').update({
+        current_stage: 'researching',
+        estimated_cost_usd: nextCost,
+        candidates_processed: run.candidates_processed + 1,
+        drafts_created: run.drafts_created + (result.alreadyCompleted ? 0 : 1),
+      }).eq('id', run.id);
+      await addEvent(run.id, 'drafting', `Draft created: ${result.headline}`, { details: { cluster_id: readyToDraft.cluster_id, story_id: result.storyId }, estimatedCostUsd: cost });
+      return getEditorialRunSnapshot(run.id, `Draft ${run.drafts_created + 1} of ${run.candidates_selected} created.`);
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Unknown drafting error.';
+      await supabase.from('editorial_run_items').update({ status: 'failed', error_message: detail.slice(0, 1000) }).eq('id', readyToDraft.id);
+      await supabase.from('editorial_runs').update({ current_stage: 'researching', candidates_processed: run.candidates_processed + 1, failures: run.failures + 1 }).eq('id', run.id);
+      await addEvent(run.id, 'drafting', `Drafting failed for ${itemTitle(readyToDraft)}.`, { level: 'error', details: { error: detail, cluster_id: readyToDraft.cluster_id } });
+      return getEditorialRunSnapshot(run.id, 'One draft failed; the remaining candidates can continue.');
+    }
+  }
+
+  const readyToResearch = items.find((item) => item.status === 'pending');
+  if (readyToResearch) {
+    const completedResearch = items.filter((item) => money(item.research_cost_usd) > 0);
+    const observedAverage = completedResearch.length ? completedResearch.reduce((sum, item) => sum + money(item.research_cost_usd), 0) / completedResearch.length : 0;
+    const reserve = Math.max(RESEARCH_RESERVE_USD, observedAverage * 1.25);
+    if (await stopForBudget(run, 'researching', reserve)) return getEditorialRunSnapshot(run.id, 'Stopped at the budget safeguard.');
+    await supabase.from('editorial_run_items').update({ status: 'researching', error_message: null }).eq('id', readyToResearch.id);
+    await supabase.from('editorial_runs').update({ current_stage: 'researching' }).eq('id', run.id);
+    try {
+      const result = await researchCandidate(readyToResearch.cluster_id);
+      const cost = result.alreadyCompleted ? 0 : result.estimatedTokenCostUsd + estimateWebSearchCost(result.searchActions);
+      const nextCost = money(run.estimated_cost_usd) + cost;
+      await supabase.from('editorial_run_items').update({ status: 'researched', research_cost_usd: cost, web_search_actions: result.searchActions }).eq('id', readyToResearch.id);
+      await supabase.from('editorial_runs').update({ current_stage: 'drafting', estimated_cost_usd: nextCost }).eq('id', run.id);
+      await addEvent(run.id, 'researching', `Research completed for ${itemTitle(readyToResearch)}.`, {
+        details: { cluster_id: readyToResearch.cluster_id, sources: result.sourceCount, web_search_actions: result.searchActions },
+        estimatedCostUsd: cost,
+      });
+      return getEditorialRunSnapshot(run.id, 'Research complete. Creating its private draft next.');
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : 'Unknown research error.';
+      await supabase.from('editorial_run_items').update({ status: 'failed', error_message: detail.slice(0, 1000) }).eq('id', readyToResearch.id);
+      await supabase.from('editorial_runs').update({ candidates_processed: run.candidates_processed + 1, failures: run.failures + 1 }).eq('id', run.id);
+      await addEvent(run.id, 'researching', `Research failed for ${itemTitle(readyToResearch)}.`, { level: 'error', details: { error: detail, cluster_id: readyToResearch.cluster_id } });
+      return getEditorialRunSnapshot(run.id, 'One research step failed; the remaining candidates can continue.');
+    }
+  }
+
+  run = { ...run, failures: items.filter((item) => item.status === 'failed').length };
+  await finishRun(run);
+  return getEditorialRunSnapshot(run.id, run.failures ? 'Run completed with some failed candidates.' : 'Run completed successfully.');
+}

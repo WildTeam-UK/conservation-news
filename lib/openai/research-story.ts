@@ -1,5 +1,6 @@
 import { getOpenAIClient } from './client';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { estimateLunaTokenCost } from './pricing';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'research-v2-calibrated-coverage';
@@ -378,7 +379,7 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
 
     const inputTokens = response.usage?.input_tokens ?? 0;
     const outputTokens = response.usage?.output_tokens ?? 0;
-    const estimatedTokenCostUsd = (inputTokens * 0.10 + outputTokens * 0.50) / 1_000_000;
+    const estimatedTokenCostUsd = estimateLunaTokenCost(inputTokens, outputTokens);
     const { error: updateError } = await supabase.from('research_packs').update({
       status: 'completed',
       content,

@@ -4,6 +4,7 @@ import type { EditorialImageCredit, UnsplashImageCandidate } from '@/lib/images/
 import { stripSourceMarkers } from '@/lib/article-text';
 import type { ResearchClaim, ResearchContent } from './research-story';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { estimateLunaTokenCost } from './pricing';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'draft-v3-image-fallbacks';
@@ -326,7 +327,7 @@ This is a private first draft for human review, never a finished or published ar
   const slug = await uniqueSlug(content.headline);
   const inputTokens = response.usage?.input_tokens ?? 0;
   const outputTokens = response.usage?.output_tokens ?? 0;
-  const estimatedCostUsd = (inputTokens * 0.10 + outputTokens * 0.50) / 1_000_000;
+  const estimatedCostUsd = estimateLunaTokenCost(inputTokens, outputTokens);
   const generationMetadata = {
     article_content: content,
     source_ids: sourceContext,
@@ -438,7 +439,7 @@ Ecological measures ecological framing versus economic framing. Evidence measure
   const updatedMetadata = { ...metadata, article_content: { ...articleContent, coverage_analysis: coverage }, coverage_analysis: { ...coverage, explanation: 'Coverage scores recalibrated from the completed research pack.' }, coverage_recalculated_at: new Date().toISOString() };
   const inputTokens = response.usage?.input_tokens ?? 0;
   const outputTokens = response.usage?.output_tokens ?? 0;
-  const estimatedCostUsd = (inputTokens * 0.10 + outputTokens * 0.50) / 1_000_000;
+  const estimatedCostUsd = estimateLunaTokenCost(inputTokens, outputTokens);
   const { error: updateError } = await supabase.from('stories').update({ generation_metadata: updatedMetadata, reviewer_id: userId }).eq('id', storyId);
   if (updateError) throw updateError;
   await Promise.all([
