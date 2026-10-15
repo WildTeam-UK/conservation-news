@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { BookOpenText, Newspaper, Rss, Sparkles } from 'lucide-react';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
+import { AdminNav } from '@/components/admin-nav';
 import { Brand } from '@/components/brand';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
@@ -27,6 +28,8 @@ export default async function AdminDashboard() {
         <Brand />
         <div className="admin-account"><span>{name}</span><AdminSignOutButton /></div>
       </header>
+
+      <AdminNav active="dashboard" />
 
       <div className="admin-shell">
         <section className="admin-welcome" aria-labelledby="admin-heading">
