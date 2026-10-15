@@ -50,7 +50,7 @@ export default async function AdminDashboard() {
 
         <section className="collection-panel">
           <div className="collection-panel-copy"><p className="eyebrow">Manual test</p><h2>Collect the latest stories</h2><p>Check every active RSS source and save any items that have not been seen before. Nothing will be drafted or published yet.</p></div>
-          <RunCollectionButton />
+          <div className="collection-panel-actions"><RunCollectionButton />{/* oxlint-disable-next-line next/no-html-link-for-pages */}<a href="/admin/collected">View collected items</a></div>
         </section>
 
         {(runsResult.data?.length ?? 0) > 0 ? <section className="collection-history"><div className="collection-history-heading"><p className="eyebrow">Recent activity</p><h2>Collection runs</h2></div><div className="collection-runs">{runsResult.data?.map((run) => <article key={run.id}><span className={`run-status ${run.status}`}>{run.status}</span><div><strong>{run.items_new} new items</strong><p>{run.items_found} found across {run.sources_checked} {run.sources_checked === 1 ? 'source' : 'sources'}</p></div><time dateTime={run.created_at}>{new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(run.created_at))}</time></article>)}</div></section> : null}
