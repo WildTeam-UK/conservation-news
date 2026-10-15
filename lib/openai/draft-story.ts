@@ -5,7 +5,7 @@ import type { ResearchClaim, ResearchContent } from './research-story';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
 const MODEL = 'gpt-6-luna';
-const PROMPT_VERSION = 'draft-v2-article-template';
+const PROMPT_VERSION = 'draft-v3-image-fallbacks';
 
 export type SourcedDraftText = { text: string; source_ids: string[] };
 
@@ -30,6 +30,7 @@ export type StoryDraftContent = {
   image_url: string;
   image_alt: string;
   image_search_query: string;
+  image_search_fallbacks: string[];
   image_credit: EditorialImageCredit | null;
   byline: string;
   seo_title: string;
@@ -38,7 +39,8 @@ export type StoryDraftContent = {
 
 type GeneratedDraftContent = Pick<StoryDraftContent,
   'headline' | 'standfirst' | 'story_at_a_glance' | 'key_takeaways' | 'why_it_matters' |
-  'what_happens_next' | 'what_we_know' | 'what_we_dont_know' | 'seo_title' | 'seo_description' | 'image_search_query'
+  'what_happens_next' | 'what_we_know' | 'what_we_dont_know' | 'seo_title' | 'seo_description' |
+  'image_search_query' | 'image_search_fallbacks'
 >;
 
 export type DraftResult = {
@@ -85,6 +87,10 @@ function cleanText(value: unknown, maxLength: number) {
   return typeof value === 'string' ? value.trim().slice(0, maxLength) : '';
 }
 
+function stripGeneratedSourceMarkers(value: string) {
+  return value.replace(/\s*\[(?:\s*source-[1-9][0-9]*\s*,?)+\]/gi, '').trim();
+}
+
 function safeImageUrl(value: unknown) {
   const text = cleanText(value, 2000);
   if (!text) return '';
@@ -117,10 +123,14 @@ function cleanImageCredit(value: unknown): EditorialImageCredit | null {
 
 export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<string>): StoryDraftContent {
   const sourced = (item: SourcedDraftText): SourcedDraftText => ({
-    text: cleanText(item?.text, 8000),
+    text: stripGeneratedSourceMarkers(cleanText(item?.text, 8000)),
     source_ids: [...new Set((item?.source_ids ?? []).filter((id) => validSourceIds.has(id)))],
   });
   const sourcedList = (items: SourcedDraftText[], limit: number) => (items ?? []).slice(0, limit).map(sourced).filter((item) => item.text && item.source_ids.length);
+  const primaryImageQuery = cleanText(value.image_search_query, 120) || cleanText(value.headline, 120);
+  const imageSearchFallbacks = [...new Set((value.image_search_fallbacks ?? [])
+    .map((query) => cleanText(query, 120))
+    .filter((query) => query && query.toLowerCase() !== primaryImageQuery.toLowerCase()))].slice(0, 2);
   const cleaned: StoryDraftContent = {
     template_version: 2,
     topics: [...new Set((value.topics ?? []).map((topic) => cleanText(topic, 80)).filter(Boolean))].slice(0, 4),
@@ -135,7 +145,8 @@ export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<
     coverage_analysis: normalizedCoverage(value.coverage_analysis),
     image_url: safeImageUrl(value.image_url),
     image_alt: cleanText(value.image_alt, 300),
-    image_search_query: cleanText(value.image_search_query, 120) || cleanText(value.headline, 120),
+    image_search_query: primaryImageQuery,
+    image_search_fallbacks: imageSearchFallbacks,
     image_credit: cleanImageCredit(value.image_credit),
     byline: cleanText(value.byline, 120) || 'WildNews editorial team',
     seo_title: cleanText(value.seo_title, 180),
@@ -155,6 +166,7 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
       ...content,
       coverage_analysis: normalizedCoverage(content.coverage_analysis),
       image_search_query: cleanText(content.image_search_query, 120) || cleanText(content.headline, 120),
+      image_search_fallbacks: Array.isArray(content.image_search_fallbacks) ? content.image_search_fallbacks.map((query) => cleanText(query, 120)).filter(Boolean).slice(0, 2) : [],
       image_credit: cleanImageCredit(content.image_credit),
     };
   }
@@ -184,6 +196,7 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
     image_url: safeImageUrl(fallback.image_url),
     image_alt: cleanText(fallback.image_alt, 300),
     image_search_query: cleanText(record.headline, 120),
+    image_search_fallbacks: [],
     image_credit: null,
     byline: cleanText(fallback.byline, 120) || 'WildNews editorial team',
     seo_title: cleanText(record.seo_title, 180),
@@ -236,7 +249,7 @@ Write a clear, neutral article of roughly 500 words in British English using onl
 
 The public article template is fixed. Supply exactly two short paragraphs for "The story at a glance", exactly five substantial points for "What you need to know", one concise paragraph for "Why this matters", one concise paragraph for "What happens next", 3-5 points for "What we know", and 3-5 points for "What we don't know". Do not create arbitrary headings or additional article sections. Avoid repeating the same point.
 
-Also supply a concise, visually literal Unsplash search query of 2-6 words. Prefer a clearly established species, habitat or location from the research pack. Do not search for a named individual, organisation, abstract policy concept or an event that a stock photograph could falsely appear to document.
+Also supply three concise, visually literal Unsplash search queries. The primary query must be 2-4 words and identify the clearest established species, habitat or place in the story. Supply exactly two distinct fallbacks that become progressively broader: first the broader species group or subject, then the habitat or ecosystem. Do not use a named individual, organisation, abstract policy concept or an event that a stock photograph could falsely appear to document.
 
 Every factual paragraph and point must cite one or more supplied source IDs. Use only IDs in the supplied source list. If support is missing, omit the claim. "What we don't know" should accurately describe genuine uncertainty, evidence gaps or unresolved questions supported by the reporting. Never manufacture disagreement or balance. The headline and standfirst should be informative rather than sensational. SEO text must be accurate and natural, not keyword-stuffed.
 
@@ -271,8 +284,9 @@ This is a private first draft for human review, never a finished or published ar
           seo_title: { type: 'string' },
           seo_description: { type: 'string' },
           image_search_query: { type: 'string' },
+          image_search_fallbacks: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'string' } },
         },
-        required: ['headline', 'standfirst', 'story_at_a_glance', 'key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know', 'seo_title', 'seo_description', 'image_search_query'],
+        required: ['headline', 'standfirst', 'story_at_a_glance', 'key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know', 'seo_title', 'seo_description', 'image_search_query', 'image_search_fallbacks'],
         additionalProperties: false,
         $defs: { sourced_text: { type: 'object', properties: { text: { type: 'string' }, source_ids: { type: 'array', minItems: 1, items: { type: 'string', pattern: '^source-[1-9][0-9]*$' } } }, required: ['text', 'source_ids'], additionalProperties: false } },
       },
@@ -282,9 +296,19 @@ This is a private first draft for human review, never a finished or published ar
   if (!response.output_text) throw new Error('OpenAI returned no draft output.');
   const generated = JSON.parse(response.output_text) as GeneratedDraftContent;
   let selectedImage: UnsplashImageCandidate | null = null;
+  let selectedImageQuery = generated.image_search_query;
   if (unsplashIsConfigured()) {
     try {
-      selectedImage = (await searchUnsplashImages(generated.image_search_query, 1))[0] ?? null;
+      const imageQueries = [...new Set([generated.image_search_query, ...(generated.image_search_fallbacks ?? [])]
+        .map((query) => cleanText(query, 120))
+        .filter(Boolean))].slice(0, 3);
+      for (const query of imageQueries) {
+        selectedImage = (await searchUnsplashImages(query, 1))[0] ?? null;
+        if (selectedImage) {
+          selectedImageQuery = query;
+          break;
+        }
+      }
       if (selectedImage) await recordUnsplashSelection(selectedImage.credit.download_location);
     } catch (error) {
       console.warn('Draft created without an Unsplash image', error);
@@ -296,8 +320,8 @@ This is a private first draft for human review, never a finished or published ar
     ...generated,
     coverage_analysis: normalizedCoverage(research.coverage_analysis),
     image_url: selectedImage?.image_url ?? '',
-    image_alt: selectedImage?.alt_text || (selectedImage ? `Illustrative image related to ${generated.image_search_query}` : ''),
-    image_search_query: generated.image_search_query,
+    image_alt: selectedImage?.alt_text || (selectedImage ? `Illustrative image related to ${selectedImageQuery}` : ''),
+    image_search_query: selectedImageQuery,
     image_credit: selectedImage?.credit ?? null,
     byline: 'WildNews editorial team',
   }, validSourceIds);

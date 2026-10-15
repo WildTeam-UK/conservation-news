@@ -10,21 +10,25 @@ export type ArticleCoverage = {
   consensus: number;
 };
 
+export type ArticleText = string | { text: string; sourceIds?: string[] };
+
+type ArticleSource = { id?: string; name: string; title?: string; url: string; primary?: boolean };
+
 export type ArticleTemplateData = {
   topics: string[];
   headline: string;
-  storyAtAGlance: string[];
+  storyAtAGlance: ArticleText[];
   imageUrl?: string;
   imageAlt?: string;
   imageCredit?: EditorialImageCredit | null;
   byline: string;
   updatedAt: string;
-  keyTakeaways: string[];
-  whyItMatters: string;
-  whatHappensNext: string;
-  whatWeKnow: string[];
-  whatWeDontKnow: string[];
-  sources: { name: string; title?: string; url: string; primary?: boolean }[];
+  keyTakeaways: ArticleText[];
+  whyItMatters: ArticleText;
+  whatHappensNext: ArticleText;
+  whatWeKnow: ArticleText[];
+  whatWeDontKnow: ArticleText[];
+  sources: ArticleSource[];
   coverage: ArticleCoverage;
 };
 
@@ -56,8 +60,22 @@ function formattedDate(value: string) {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(date);
 }
 
+function articleTextValue(value: ArticleText) {
+  const text = typeof value === 'string' ? value : value.text;
+  return text.replace(/\s*\[(?:\s*source-[1-9][0-9]*\s*,?)+\]/gi, '').trim();
+}
+
+function ArticleTextContent({ value, sources }: { value: ArticleText; sources: Map<string, ArticleSource> }) {
+  const sourceIds = typeof value === 'string' ? [] : [...new Set(value.sourceIds ?? [])];
+  return <>{articleTextValue(value)}{sourceIds.length ? <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
+    const source = sources.get(id);
+    return source ? <a href={source.url} target="_blank" rel="noreferrer" title={`${source.name}${source.title ? `: ${source.title}` : ''}`} aria-label={`Source ${id.replace('source-', '')}: ${source.name}`} key={id}>{id.replace('source-', '')}</a> : null;
+  })}</span> : null}</>;
+}
+
 export function ArticleTemplate({ article }: { article: ArticleTemplateData }) {
   const { coverage } = article;
+  const sourcesById = new Map(article.sources.flatMap((source) => source.id ? [[source.id, source] as const] : []));
   return <article className="article-template">
     <header className="article-hero shell">
       <div className="article-topics">{article.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
@@ -75,15 +93,15 @@ export function ArticleTemplate({ article }: { article: ArticleTemplateData }) {
     <section className="article-overview shell">
       <div className="article-curator-meta"><CuratorByline name={article.byline} /><p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
       <h2>The story at a glance</h2>
-      {article.storyAtAGlance.map((paragraph, index) => <p key={`overview-${index}`}>{paragraph}</p>)}
+      {article.storyAtAGlance.map((paragraph, index) => <p key={`overview-${index}`}><ArticleTextContent value={paragraph} sources={sourcesById} /></p>)}
     </section>
     <div className="article-layout shell">
       <div className="article-main">
-        <section className="story-section"><p className="eyebrow">The story in brief</p><h2>What you need to know</h2><ul className="key-points">{article.keyTakeaways.map((point, index) => <li key={`takeaway-${index}`}>{point}</li>)}</ul></section>
-        <section className="story-section"><p className="eyebrow">Conservation context</p><h2>Why this matters</h2><p className="story-explainer">{article.whyItMatters}</p></section>
-        {article.whatHappensNext ? <section className="story-section"><p className="eyebrow">The developing story</p><h2>What happens next</h2><p className="story-explainer">{article.whatHappensNext}</p></section> : null}
-        <section className="story-section"><p className="eyebrow">Established evidence</p><h2>What we know</h2><ul className="evidence-points">{article.whatWeKnow.map((point, index) => <li key={`known-${index}`}>{point}</li>)}</ul></section>
-        <section className="story-section"><p className="eyebrow">Open questions</p><h2>What we don&apos;t know</h2><ul className="evidence-points">{article.whatWeDontKnow.map((point, index) => <li key={`unknown-${index}`}>{point}</li>)}</ul></section>
+        <section className="story-section"><p className="eyebrow">The story in brief</p><h2>What you need to know</h2><ul className="key-points">{article.keyTakeaways.map((point, index) => <li key={`takeaway-${index}`}><ArticleTextContent value={point} sources={sourcesById} /></li>)}</ul></section>
+        <section className="story-section"><p className="eyebrow">Conservation context</p><h2>Why this matters</h2><p className="story-explainer"><ArticleTextContent value={article.whyItMatters} sources={sourcesById} /></p></section>
+        {articleTextValue(article.whatHappensNext) ? <section className="story-section"><p className="eyebrow">The developing story</p><h2>What happens next</h2><p className="story-explainer"><ArticleTextContent value={article.whatHappensNext} sources={sourcesById} /></p></section> : null}
+        <section className="story-section"><p className="eyebrow">Established evidence</p><h2>What we know</h2><ul className="evidence-points">{article.whatWeKnow.map((point, index) => <li key={`known-${index}`}><ArticleTextContent value={point} sources={sourcesById} /></li>)}</ul></section>
+        <section className="story-section"><p className="eyebrow">Open questions</p><h2>What we don&apos;t know</h2><ul className="evidence-points">{article.whatWeDontKnow.map((point, index) => <li key={`unknown-${index}`}><ArticleTextContent value={point} sources={sourcesById} /></li>)}</ul></section>
         <section className="story-section" id="sources"><p className="eyebrow">Source coverage</p><h2>Read the reporting</h2><div className="source-list">{article.sources.map((source, index) => <a href={source.url} target="_blank" rel="noreferrer" key={`${source.url}-${index}`} title={source.title}><span>{source.primary ? 'Primary story' : 'Also covering'}</span><strong>{source.name}</strong><ExternalLink /></a>)}</div></section>
       </div>
       <aside className="coverage-card">
