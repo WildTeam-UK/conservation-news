@@ -22,7 +22,6 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   if (!story) return <main className="missing shell"><h1>Story not found</h1><Link href="/">Back to WildNews</Link></main>;
   const related = stories.filter((item) => item.slug !== story.slug && item.topics.some((topic) => story.topics.includes(topic))).slice(0, 6);
   if (related.length < 6) related.push(...stories.filter((item) => item.slug !== story.slug && !related.includes(item)).slice(0, 6 - related.length));
-  const [politicalLeft, politicalCentre, politicalRight] = story.balance;
   const coverage = getCoverageAnalysis(story);
   const insights = getStoryInsights(story);
   const article: ArticleTemplateData = {
@@ -39,7 +38,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
     whatWeKnow: insights.known,
     whatWeDontKnow: insights.unknown,
     sources: story.sources,
-    coverage: { ecological: coverage.ecological, evidence: coverage.evidence, consensus: coverage.consensus, politicalLeft, politicalCentre, politicalRight },
+    coverage: { ecological: coverage.ecological, evidence: coverage.evidence, consensus: coverage.consensus },
   };
 
   return <main>

@@ -1,7 +1,7 @@
 'use client';
 
 import { type SyntheticEvent, useMemo, useState } from 'react';
-import { Check, LoaderCircle, Save, ShieldCheck } from 'lucide-react';
+import { Check, LoaderCircle, RotateCcw, Save, ShieldCheck } from 'lucide-react';
 import { ArticleTemplate, type ArticleTemplateData } from '@/components/article-template';
 import type { DraftCoverageAnalysis, SourcedDraftText, StoryDraftContent } from '@/lib/openai/draft-story';
 
@@ -28,6 +28,7 @@ function SingleSourcedField({ label, item, sources, onChange }: { label: string;
 export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: { storyId: string; initialContent: StoryDraftContent; sourceList: DraftSource[]; updatedAt: string }) {
   const [content, setContent] = useState(initialContent);
   const [saving, setSaving] = useState(false);
+  const [recalculating, setRecalculating] = useState(false);
   const [message, setMessage] = useState('');
   const [failed, setFailed] = useState(false);
   const sources = useMemo(() => new Map(sourceList.map((source) => [source.id, source])), [sourceList]);
@@ -58,6 +59,28 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
     setContent((current) => ({ ...current, coverage_analysis: { ...current.coverage_analysis, [key]: Math.max(0, Math.min(100, Number(value) || 0)) } }));
   };
 
+  async function recalculateCoverage() {
+    setRecalculating(true);
+    setMessage('');
+    setFailed(false);
+    try {
+      const response = await fetch(`/api/admin/drafts/${storyId}/coverage`, { method: 'POST' });
+      const result = await response.json() as { coverage?: DraftCoverageAnalysis; estimatedCostUsd?: number; error?: string };
+      if (!response.ok || !result.coverage) {
+        setFailed(true);
+        setMessage(result.error ?? 'Coverage analysis could not be recalculated.');
+      } else {
+        setContent((current) => ({ ...current, coverage_analysis: result.coverage! }));
+        setMessage(`Coverage recalculated from the research pack. Estimated model cost $${Number(result.estimatedCostUsd ?? 0).toFixed(4)}.`);
+      }
+    } catch {
+      setFailed(true);
+      setMessage('Coverage analysis could not be recalculated.');
+    } finally {
+      setRecalculating(false);
+    }
+  }
+
   const article: ArticleTemplateData = {
     topics: content.topics,
     headline: content.headline,
@@ -76,11 +99,9 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
       ecological: content.coverage_analysis.ecological,
       evidence: content.coverage_analysis.evidence,
       consensus: content.coverage_analysis.consensus,
-      politicalLeft: content.coverage_analysis.political_left,
-      politicalCentre: content.coverage_analysis.political_centre,
-      politicalRight: content.coverage_analysis.political_right,
     },
   };
+  const coverageLooksUncalibrated = [content.coverage_analysis.ecological, content.coverage_analysis.evidence, content.coverage_analysis.consensus].every((score) => score <= 1);
 
   return <>
     <form className="draft-editor" onSubmit={save}>
@@ -105,13 +126,11 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt }: 
         <SourcedFields label="What we don't know" items={content.what_we_dont_know} sources={sources} onChange={(what_we_dont_know) => setContent({ ...content, what_we_dont_know })} />
       </section>
 
-      <section className="draft-edit-section"><h3>Coverage analysis</h3><p className="draft-section-note">These scores come from the research stage and power both coverage panels in the article.</p><div className="draft-score-fields">
+      <section className="draft-edit-section"><div className="draft-section-heading"><div><h3>Coverage analysis</h3><p className="draft-section-note">These calibrated scores power both coverage panels in the article.</p></div><button className="admin-secondary-button" type="button" onClick={recalculateCoverage} disabled={recalculating}>{recalculating ? <><LoaderCircle className="admin-spinner" /> Recalculating</> : <><RotateCcw /> Recalculate coverage</>}</button></div><div className="draft-score-fields">
+        {coverageLooksUncalibrated ? <p className="draft-coverage-warning">These scores came from the earlier decimal-conversion bug. Use “Recalculate coverage” before publishing.</p> : null}
         <label><span>Ecological</span><input type="number" min="0" max="100" value={content.coverage_analysis.ecological} onChange={(event) => setCoverage('ecological', event.target.value)} /></label>
         <label><span>Evidence-led</span><input type="number" min="0" max="100" value={content.coverage_analysis.evidence} onChange={(event) => setCoverage('evidence', event.target.value)} /></label>
         <label><span>Consensus</span><input type="number" min="0" max="100" value={content.coverage_analysis.consensus} onChange={(event) => setCoverage('consensus', event.target.value)} /></label>
-        <label><span>Political left</span><input type="number" min="0" max="100" value={content.coverage_analysis.political_left} onChange={(event) => setCoverage('political_left', event.target.value)} /></label>
-        <label><span>Political centre</span><input type="number" min="0" max="100" value={content.coverage_analysis.political_centre} onChange={(event) => setCoverage('political_centre', event.target.value)} /></label>
-        <label><span>Political right</span><input type="number" min="0" max="100" value={content.coverage_analysis.political_right} onChange={(event) => setCoverage('political_right', event.target.value)} /></label>
       </div></section>
 
       <section className="draft-edit-section"><h3>Search preview</h3><label><span>SEO title</span><input value={content.seo_title} onChange={(event) => setContent({ ...content, seo_title: event.target.value })} maxLength={180} /></label><label><span>SEO description</span><textarea value={content.seo_description} onChange={(event) => setContent({ ...content, seo_description: event.target.value })} rows={3} maxLength={320} /></label></section>
