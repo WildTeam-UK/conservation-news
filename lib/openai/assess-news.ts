@@ -49,7 +49,7 @@ function sourceName(source: SourceItem['sources']) {
 
 const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
-export async function assessUnprocessedItems(maxSelected = 10): Promise<AssessmentResult> {
+export async function assessUnprocessedItems(): Promise<AssessmentResult> {
   const supabase = getSupabaseAdminClient();
   const { data: recentItems, error: itemError } = await supabase
     .from('source_items')
@@ -176,7 +176,10 @@ Use concise neutral wording. This is triage, not fact checking. Never invent fac
   const eligible = cleaned
     .filter((cluster) => cluster.relevant && cluster.relevance_score >= 60 && cluster.overall_score >= 55)
     .sort((a, b) => b.overall_score - a.overall_score);
-  const selectedSet = new Set(eligible.slice(0, Math.max(1, Math.min(25, maxSelected))));
+  // Every story that clears the editorial threshold enters the candidate pool.
+  // The daily runner applies its configurable limit only after it has ranked
+  // this batch together with recent undrafted candidates from earlier runs.
+  const selectedSet = new Set(eligible);
   let selected = 0;
   let rejected = 0;
   const selectedClusterIds: string[] = [];
@@ -200,7 +203,7 @@ Use concise neutral wording. This is triage, not fact checking. Never invent fac
         overall_score: cluster.overall_score,
         selection_rank: isSelected ? eligible.indexOf(cluster) + 1 : null,
         assessment: { primary_topic: cluster.primary_topic, rationale: cluster.rationale, prompt_version: PROMPT_VERSION },
-        rejection_reason: isSelected ? null : (cluster.rejection_reason ?? (eligible.includes(cluster) ? 'Below the daily top-ten selection.' : 'Did not meet the editorial selection threshold.')),
+        rejection_reason: isSelected ? null : (cluster.rejection_reason ?? 'Did not meet the editorial selection threshold.'),
       })
       .select('id')
       .single();

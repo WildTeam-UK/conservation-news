@@ -9,6 +9,7 @@ const ASSESSMENT_RESERVE_USD = 0.03;
 const RESEARCH_RESERVE_USD = 0.06;
 const DRAFT_RESERVE_USD = 0.015;
 const STALE_STEP_MINUTES = 10;
+const CANDIDATE_FRESHNESS_DAYS = 7;
 
 type RunStatus = 'running' | 'completed' | 'partial' | 'failed' | 'budget_stopped';
 type RunStage = 'collecting' | 'assessing' | 'researching' | 'drafting' | 'finished';
@@ -66,6 +67,58 @@ const money = (value: number | string | null | undefined) => Number(value ?? 0);
 function itemTitle(item: RunItem) {
   if (Array.isArray(item.story_clusters)) return item.story_clusters[0]?.working_title ?? 'Story candidate';
   return item.story_clusters?.working_title ?? 'Story candidate';
+}
+
+type RankedCandidate = {
+  id: string;
+  overall_score: number | null;
+  relevance_score: number | null;
+  created_at: string;
+};
+
+async function selectRecentUndraftedCandidates(limit: number) {
+  const supabase = getSupabaseAdminClient();
+  const cutoff = new Date(Date.now() - CANDIDATE_FRESHNESS_DAYS * 24 * 60 * 60_000);
+  const { data: candidateRows, error: candidateError } = await supabase
+    .from('story_clusters')
+    .select('id, overall_score, relevance_score, created_at')
+    .eq('status', 'selected')
+    .order('overall_score', { ascending: false, nullsFirst: false })
+    .limit(250);
+  if (candidateError) throw candidateError;
+  const candidates = (candidateRows ?? []) as RankedCandidate[];
+  if (!candidates.length) return [];
+
+  const candidateIds = candidates.map((candidate) => candidate.id);
+  const [{ data: existingStories, error: storyError }, { data: clusterLinks, error: linkError }] = await Promise.all([
+    supabase.from('stories').select('cluster_id').in('cluster_id', candidateIds),
+    supabase.from('story_cluster_items').select('cluster_id, source_item_id').in('cluster_id', candidateIds),
+  ]);
+  if (storyError) throw storyError;
+  if (linkError) throw linkError;
+
+  const draftedIds = new Set((existingStories ?? []).flatMap((story) => story.cluster_id ? [story.cluster_id] : []));
+  const sourceItemIds = [...new Set((clusterLinks ?? []).map((link) => link.source_item_id))];
+  const { data: sourceItems, error: sourceError } = sourceItemIds.length
+    ? await supabase.from('source_items').select('id, published_at, discovered_at').in('id', sourceItemIds)
+    : { data: [], error: null };
+  if (sourceError) throw sourceError;
+
+  const sourceDates = new Map((sourceItems ?? []).map((item) => [item.id, item.published_at ?? item.discovered_at]));
+  const latestDateByCluster = new Map<string, number>();
+  for (const link of clusterLinks ?? []) {
+    const date = Date.parse(sourceDates.get(link.source_item_id) ?? '');
+    if (Number.isFinite(date)) latestDateByCluster.set(link.cluster_id, Math.max(latestDateByCluster.get(link.cluster_id) ?? 0, date));
+  }
+
+  return candidates
+    .filter((candidate) => !draftedIds.has(candidate.id))
+    .filter((candidate) => {
+      const sourceDate = latestDateByCluster.get(candidate.id);
+      return sourceDate ? sourceDate >= cutoff.getTime() : Date.parse(candidate.created_at) >= cutoff.getTime();
+    })
+    .sort((a, b) => Number(b.overall_score ?? 0) - Number(a.overall_score ?? 0) || Number(b.relevance_score ?? 0) - Number(a.relevance_score ?? 0) || Date.parse(b.created_at) - Date.parse(a.created_at))
+    .slice(0, Math.max(1, Math.min(25, limit)));
 }
 
 async function addEvent(runId: string, stage: string, message: string, options: {
@@ -228,27 +281,28 @@ export async function advanceEditorialRun(runId: string, userId: string): Promis
 
   if (run.current_stage === 'assessing') {
     if (await stopForBudget(run, 'assessment', ASSESSMENT_RESERVE_USD)) return getEditorialRunSnapshot(run.id, 'Stopped at the budget safeguard.');
-    const result = await assessUnprocessedItems(run.max_new_drafts);
+    const result = await assessUnprocessedItems();
+    const shortlist = await selectRecentUndraftedCandidates(run.max_new_drafts);
     const nextCost = money(run.estimated_cost_usd) + result.estimatedCostUsd;
-    if (result.selectedClusterIds.length) {
-      const { error: itemError } = await supabase.from('editorial_run_items').insert(result.selectedClusterIds.map((clusterId, index) => ({
+    if (shortlist.length) {
+      const { error: itemError } = await supabase.from('editorial_run_items').insert(shortlist.map((candidate, index) => ({
         run_id: run.id,
-        cluster_id: clusterId,
+        cluster_id: candidate.id,
         rank: index + 1,
         status: 'pending',
       })));
       if (itemError) throw itemError;
     }
-    const completed = result.selectedClusterIds.length === 0;
+    const completed = shortlist.length === 0;
     await supabase.from('editorial_runs').update({
       current_stage: completed ? 'finished' : 'researching',
       status: completed ? 'completed' : 'running',
       completed_at: completed ? new Date().toISOString() : null,
-      candidates_selected: result.selectedClusterIds.length,
+      candidates_selected: shortlist.length,
       estimated_cost_usd: nextCost,
     }).eq('id', run.id);
-    await addEvent(run.id, 'assessing', `Assessed ${result.assessedItems} items and selected ${result.selected} candidates.`, {
-      details: { assessed_items: result.assessedItems, selected: result.selected, rejected: result.rejected },
+    await addEvent(run.id, 'assessing', `Assessed ${result.assessedItems} new items, then selected the top ${shortlist.length} recent undrafted candidates.`, {
+      details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, recent_pool_shortlist: shortlist.length, freshness_days: CANDIDATE_FRESHNESS_DAYS },
       estimatedCostUsd: result.estimatedCostUsd,
     });
     if (completed) await addEvent(run.id, 'run', 'Run completed because there were no new qualifying candidates.');

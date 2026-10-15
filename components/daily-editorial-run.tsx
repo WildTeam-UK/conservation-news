@@ -94,8 +94,8 @@ export function DailyEditorialRun({ defaultMaxDrafts, defaultMaxCostUsd, hasActi
       <div className="daily-run-intro">
         <p className="eyebrow">Daily editorial workflow</p>
         <h2 id="daily-run-heading">Create today&apos;s private drafts</h2>
-        <p>Collect, assess, research and draft each qualifying story. Every article stays private until you review and publish it.</p>
-        <div className="daily-run-safeguards"><span><ShieldCheck /> No automatic publishing</span><span><CircleDollarSign /> Stops before a projected overspend</span><span><RotateCcw /> Safe to resume</span></div>
+        <p>Collect and assess the latest items, rank them alongside recent undrafted candidates, then research and draft the strongest stories. Every article stays private until you review and publish it.</p>
+        <div className="daily-run-safeguards"><span><ShieldCheck /> No automatic publishing</span><span><SearchCheck /> Seven-day candidate pool</span><span><CircleDollarSign /> Stops before a projected overspend</span><span><RotateCcw /> Safe to resume</span></div>
       </div>
 
       <div className="daily-run-controls">
