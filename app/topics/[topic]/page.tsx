@@ -4,7 +4,7 @@ import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
-import { allTopics, cleanCopy, getTopic, stories, storyImage, topicSlug } from '@/lib/stories';
+import { allTopics, cleanCopy, getTopic, storyImage, topicSlug } from '@/lib/stories';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,8 +24,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
   if (!topic) return <main className="missing shell"><h1>Topic not found</h1><a href="/">Back to WildNews</a></main>;
 
   const published = (await getPublishedStories(100)).map(publishedStoryToListing);
-  const liveStories = [...published, ...stories.filter((story) => !published.some((item) => item.slug === story.slug))];
-  const topicStories = liveStories.filter((story) => story.topic === topic || story.topics.includes(topic));
+  const topicStories = published.filter((story) => story.topic === topic || story.topics.includes(topic));
 
   return <main className="archive-page">
     <InteriorHeader />

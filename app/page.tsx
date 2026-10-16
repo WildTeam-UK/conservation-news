@@ -4,7 +4,7 @@ import { Brand } from '@/components/brand';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
-import { cleanCopy, stories, storyImage, topicSlug } from '@/lib/stories';
+import { cleanCopy, storyImage, topicSlug } from '@/lib/stories';
 
 const shelfTopics = ['Wildlife', 'Oceans', 'Forests', 'Freshwater', 'Land & climate'];
 
@@ -12,7 +12,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function Home() {
   const published = (await getPublishedStories(30)).map(publishedStoryToListing);
-  const liveStories = [...published, ...stories.filter((story) => !published.some((item) => item.slug === story.slug))];
+  const liveStories = published;
   const [lead, ...moreStories] = liveStories;
   const primaryLatest = moreStories.slice(0, 6);
   const compactLatest = moreStories.slice(6, 16);
