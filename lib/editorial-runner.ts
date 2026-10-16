@@ -8,7 +8,10 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 const ASSESSMENT_RESERVE_USD = 0.03;
 const RESEARCH_RESERVE_USD = 0.06;
 const DRAFT_RESERVE_USD = 0.015;
-const STALE_STEP_MINUTES = 10;
+// Vercel ends an automation request after 60 seconds and the database lease
+// lasts 90 seconds. Three minutes leaves a full extra heartbeat for any late
+// completion while recovering genuinely interrupted work promptly.
+const STALE_STEP_MINUTES = 3;
 const CANDIDATE_FRESHNESS_DAYS = 7;
 
 type RunStatus = 'running' | 'completed' | 'partial' | 'failed' | 'budget_stopped';
