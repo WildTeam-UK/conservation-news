@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { CheckCircle2, CircleDollarSign, FilePenLine, LoaderCircle, Play, RotateCcw, SearchCheck, ShieldCheck } from 'lucide-react';
+import { CheckCircle2, CircleDollarSign, Clock3, FilePenLine, LoaderCircle, Play, RotateCcw, Save, SearchCheck, ShieldCheck } from 'lucide-react';
 
 type RunItem = {
   id: string;
@@ -42,6 +42,10 @@ type RunSnapshot = {
 type DailyEditorialRunProps = {
   defaultMaxDrafts: number;
   defaultMaxCostUsd: number;
+  defaultAutomationEnabled: boolean;
+  defaultDailyRunTime: string;
+  lastAutomationTickAt: string | null;
+  lastAutomationError: string | null;
   hasActiveRun: boolean;
 };
 
@@ -49,13 +53,25 @@ function candidateTitle(item: RunItem) {
   return Array.isArray(item.story_clusters) ? item.story_clusters[0]?.working_title : item.story_clusters?.working_title;
 }
 
-export function DailyEditorialRun({ defaultMaxDrafts, defaultMaxCostUsd, hasActiveRun }: DailyEditorialRunProps) {
+export function DailyEditorialRun({
+  defaultMaxDrafts,
+  defaultMaxCostUsd,
+  defaultAutomationEnabled,
+  defaultDailyRunTime,
+  lastAutomationTickAt,
+  lastAutomationError,
+  hasActiveRun,
+}: DailyEditorialRunProps) {
   const router = useRouter();
   const [maxDrafts, setMaxDrafts] = useState(defaultMaxDrafts);
   const [maxCost, setMaxCost] = useState(defaultMaxCostUsd);
+  const [automationEnabled, setAutomationEnabled] = useState(defaultAutomationEnabled);
+  const [dailyRunTime, setDailyRunTime] = useState(defaultDailyRunTime.slice(0, 5));
   const [running, setRunning] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [snapshot, setSnapshot] = useState<RunSnapshot | null>(null);
   const [error, setError] = useState('');
+  const [scheduleMessage, setScheduleMessage] = useState('');
 
   async function request(body: Record<string, unknown>) {
     const response = await fetch('/api/admin/editorial-run', {
@@ -68,6 +84,28 @@ export function DailyEditorialRun({ defaultMaxDrafts, defaultMaxCostUsd, hasActi
     return result;
   }
 
+  async function saveSchedule() {
+    setSaving(true);
+    setScheduleMessage('');
+    try {
+      const response = await fetch('/api/admin/editorial-settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ automationEnabled, dailyRunTime, maxNewDrafts: maxDrafts, maxEstimatedCostUsd: maxCost }),
+      });
+      const result = await response.json() as { saved?: boolean; error?: string };
+      if (!response.ok) throw new Error(result.error ?? 'The automation settings could not be saved.');
+      setScheduleMessage(automationEnabled
+        ? `Automation enabled. Up to ${maxDrafts} drafts will be prepared daily after ${dailyRunTime} UK time.`
+        : 'Automation is switched off. Your limits and preferred time have still been saved.');
+      router.refresh();
+    } catch (caught) {
+      setScheduleMessage(caught instanceof Error ? caught.message : 'The automation settings could not be saved.');
+    } finally {
+      setSaving(false);
+    }
+  }
+
   async function run() {
     setRunning(true);
     setError('');
@@ -75,6 +113,7 @@ export function DailyEditorialRun({ defaultMaxDrafts, defaultMaxCostUsd, hasActi
       let next = await request({ action: 'start', maxNewDrafts: maxDrafts, maxEstimatedCostUsd: maxCost });
       setSnapshot(next);
       while (next.run.status === 'running') {
+        await new Promise((resolve) => setTimeout(resolve, next.message.startsWith('Another request') ? 5_000 : 300));
         next = await request({ action: 'advance', runId: next.run.id });
         setSnapshot(next);
       }
@@ -88,6 +127,9 @@ export function DailyEditorialRun({ defaultMaxDrafts, defaultMaxCostUsd, hasActi
 
   const runState = snapshot?.run;
   const finished = runState && runState.status !== 'running';
+  const lastTick = lastAutomationTickAt
+    ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(lastAutomationTickAt))
+    : null;
 
   return (
     <section className="daily-run-panel" aria-labelledby="daily-run-heading">
@@ -96,15 +138,23 @@ export function DailyEditorialRun({ defaultMaxDrafts, defaultMaxCostUsd, hasActi
         <h2 id="daily-run-heading">Create today&apos;s private drafts</h2>
         <p>Collect and assess the latest items, rank them alongside recent undrafted candidates, then research and draft the strongest stories. Every article stays private until you review and publish it.</p>
         <div className="daily-run-safeguards"><span><ShieldCheck /> No automatic publishing</span><span><SearchCheck /> Seven-day candidate pool</span><span><CircleDollarSign /> Stops before a projected overspend</span><span><RotateCcw /> Safe to resume</span></div>
+        <div className={`automation-status ${automationEnabled ? 'enabled' : ''}`}>
+          <Clock3 />
+          <div><strong>{automationEnabled ? `Scheduled daily at ${dailyRunTime}` : 'Automation switched off'}</strong><small>UK time · feeds are also checked every two hours{lastTick ? ` · last heartbeat ${lastTick}` : ''}</small>{lastAutomationError ? <em>{lastAutomationError}</em> : null}</div>
+        </div>
       </div>
 
       <div className="daily-run-controls">
-        <label><span>Maximum new drafts</span><input type="number" min="1" max="25" step="1" value={maxDrafts} disabled={running} onChange={(event) => setMaxDrafts(Number(event.target.value))} /></label>
-        <label><span>Estimated cost limit (USD)</span><div className="money-input"><span>$</span><input type="number" min="0.05" max="100" step="0.05" value={maxCost} disabled={running} onChange={(event) => setMaxCost(Number(event.target.value))} /></div></label>
-        <button className="admin-primary-button daily-run-button" type="button" onClick={run} disabled={running || maxDrafts < 1 || maxCost < 0.05}>
-          {running ? <><LoaderCircle className="admin-spinner" /> {snapshot?.message || 'Starting run'}</> : hasActiveRun || runState?.status === 'running' || runState?.status === 'budget_stopped' ? <><RotateCcw /> Resume run</> : <><Play /> Run now</>}
+        <label><span>Maximum new drafts</span><input type="number" min="1" max="25" step="1" value={maxDrafts} disabled={running || saving} onChange={(event) => setMaxDrafts(Number(event.target.value))} /></label>
+        <label><span>Estimated cost limit (USD)</span><div className="money-input"><span>$</span><input type="number" min="0.05" max="100" step="0.05" value={maxCost} disabled={running || saving} onChange={(event) => setMaxCost(Number(event.target.value))} /></div></label>
+        <label><span>Daily run time</span><input type="time" value={dailyRunTime} disabled={running || saving} onChange={(event) => setDailyRunTime(event.target.value)} /></label>
+        <label className="automation-toggle"><span>Daily scheduler</span><span className="automation-toggle-control"><input type="checkbox" checked={automationEnabled} disabled={running || saving} onChange={(event) => setAutomationEnabled(event.target.checked)} /> <strong>{automationEnabled ? 'Enabled' : 'Off'}</strong></span></label>
+        <button className="admin-secondary-button schedule-save-button" type="button" onClick={saveSchedule} disabled={running || saving || maxDrafts < 1 || maxCost < 0.05 || !dailyRunTime}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving settings</> : <><Save /> Save automation</>}</button>
+        <button className="admin-primary-button daily-run-button" type="button" onClick={run} disabled={running || saving || maxDrafts < 1 || maxCost < 0.05}>
+          {running ? <><LoaderCircle className="admin-spinner" /> {snapshot?.message || 'Starting run'}</> : hasActiveRun || runState?.status === 'running' || runState?.status === 'budget_stopped' ? <><RotateCcw /> Resume run now</> : <><Play /> Run manually now</>}
         </button>
-        <small>The limits you enter are saved as the defaults for the next run. Actual API billing may vary slightly from these estimates.</small>
+        <small>The draft and cost limits are shared by manual and scheduled runs. Scheduled articles always remain private.</small>
+        {scheduleMessage ? <output className="schedule-message">{scheduleMessage}</output> : null}
       </div>
 
       {snapshot ? <div className={`daily-run-progress ${finished ? snapshot.run.status : ''}`}>

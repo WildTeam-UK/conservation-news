@@ -215,7 +215,7 @@ async function uniqueSlug(headline: string) {
   return `${base}-${Date.now()}`;
 }
 
-export async function generateStoryDraft(clusterId: string, userId: string): Promise<DraftResult> {
+export async function generateStoryDraft(clusterId: string, userId: string | null): Promise<DraftResult> {
   const supabase = getSupabaseAdminClient();
   const { data: existing, error: existingError } = await supabase.from('stories').select('id, headline, generation_metadata').eq('cluster_id', clusterId).maybeSingle();
   if (existingError) throw existingError;

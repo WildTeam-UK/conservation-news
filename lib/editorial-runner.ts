@@ -158,7 +158,7 @@ export async function getEditorialRunSnapshot(runId: string, message = ''): Prom
   return { run: typedRun, items: typedItems, events: (events ?? []) as RunEvent[], progressPercent, message };
 }
 
-export async function startEditorialRun(userId: string, maxNewDrafts: number, maxEstimatedCostUsd: number) {
+export async function startEditorialRun(userId: string | null, maxNewDrafts: number, maxEstimatedCostUsd: number) {
   const supabase = getSupabaseAdminClient();
   const safeDrafts = Math.max(1, Math.min(25, Math.round(maxNewDrafts)));
   const safeBudget = Math.max(0.05, Math.min(100, Math.round(maxEstimatedCostUsd * 100) / 100));
@@ -261,8 +261,13 @@ async function recoverStaleItems(runId: string) {
   }
 }
 
-export async function advanceEditorialRun(runId: string, userId: string): Promise<EditorialRunSnapshot> {
+export async function advanceEditorialRun(runId: string, userId: string | null): Promise<EditorialRunSnapshot> {
   const supabase = getSupabaseAdminClient();
+  const { data: leaseToken, error: leaseError } = await supabase.rpc('claim_editorial_run_step', { target_run_id: runId, lease_seconds: 90 });
+  if (leaseError) throw leaseError;
+  if (!leaseToken) return getEditorialRunSnapshot(runId, 'Another request is already advancing this run.');
+
+  try {
   await recoverStaleItems(runId);
   const { data: runData, error: runError } = await supabase.from('editorial_runs').select('*').eq('id', runId).single();
   if (runError || !runData) throw runError ?? new Error('Editorial run not found.');
@@ -381,7 +386,14 @@ export async function advanceEditorialRun(runId: string, userId: string): Promis
     }
   }
 
+  if (items.some((item) => ['researching', 'drafting'].includes(item.status))) {
+    return getEditorialRunSnapshot(run.id, 'Waiting for an in-progress step to finish or become ready for recovery.');
+  }
+
   run = { ...run, failures: items.filter((item) => item.status === 'failed').length };
   await finishRun(run);
   return getEditorialRunSnapshot(run.id, run.failures ? 'Run completed with some failed candidates.' : 'Run completed successfully.');
+  } finally {
+    await supabase.rpc('release_editorial_run_step', { target_run_id: runId, target_lease_token: leaseToken });
+  }
 }
