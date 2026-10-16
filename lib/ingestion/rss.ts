@@ -88,7 +88,7 @@ function parseFeed(xml: string): FeedItem[] {
   const isRecord = (value: unknown): value is Record<string, unknown> => Boolean(value) && typeof value === 'object';
   const rawItems = asArray<unknown>(parsed.rss?.channel?.item ?? parsed.feed?.entry).filter(isRecord);
 
-  return rawItems.slice(0, 50).flatMap((item): FeedItem[] => {
+  const items = rawItems.slice(0, 50).flatMap((item): FeedItem[] => {
     const linkCandidates = asArray(item.link);
     const url = linkCandidates
       .map((link) => textValue(link))
@@ -115,6 +115,25 @@ function parseFeed(xml: string): FeedItem[] {
       contentHash: createHash('sha256').update(`${title}\n${rawContent ?? summary ?? ''}`).digest('hex'),
     }];
   });
+
+  // Some publishers repeat the same article in more than one RSS category.
+  // Keep the first occurrence so one duplicate cannot make the database reject
+  // the source's entire collection batch.
+  return [...new Map(items.map((item) => [item.url, item])).values()];
+}
+
+function errorMessage(error: unknown) {
+  if (error instanceof Error) return error.message;
+  if (typeof error === 'string') return error;
+
+  if (error && typeof error === 'object') {
+    const record = error as Record<string, unknown>;
+    const details = [record.message, record.details, record.hint, record.code]
+      .filter((value): value is string => typeof value === 'string' && Boolean(value.trim()));
+    if (details.length) return details.join(' · ');
+  }
+
+  return 'Unknown collection error.';
 }
 
 async function collectSource(source: SourceRecord, runId: string) {
@@ -201,7 +220,7 @@ export async function collectEnabledSources(runType: 'manual' | 'scheduled' = 'm
         last_error: null,
       }).eq('id', source.id);
     } catch (error) {
-      const detail = error instanceof Error ? error.message : 'Unknown collection error.';
+      const detail = errorMessage(error);
       errors.push(`${source.name}: ${detail}`);
       await supabase.from('sources').update({
         last_checked_at: checkedAt,

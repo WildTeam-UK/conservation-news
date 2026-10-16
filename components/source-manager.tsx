@@ -96,7 +96,7 @@ export function SourceManager({ sources }: { sources: EditorialSource[] }) {
           <div className="source-list">
             {sources.map((source) => (
               <article className="source-row" key={source.id}>
-                <div className="source-identity"><span><Rss /></span><div><h3>{source.name}</h3><a href={source.feed_url} target="_blank" rel="noreferrer">{source.feed_url} <ExternalLink /></a></div></div>
+                <div className="source-identity"><span><Rss /></span><div><h3>{source.name}</h3><a href={source.feed_url} target="_blank" rel="noreferrer">{source.feed_url} <ExternalLink /></a>{source.last_error ? <p className="source-collection-error">Last collection failed: {source.last_error}</p> : null}</div></div>
                 <div className="source-labels"><span>{source.source_kind}</span><span className={`trust-${source.trust_status}`}>{source.trust_status}</span></div>
                 <button className={`source-toggle ${source.enabled ? 'enabled' : ''}`} type="button" aria-pressed={source.enabled} disabled={updatingId === source.id} onClick={() => setEnabled(source, !source.enabled)}><span aria-hidden="true" />{source.enabled ? 'Active' : 'Paused'}</button>
               </article>

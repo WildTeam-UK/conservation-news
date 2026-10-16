@@ -32,7 +32,11 @@ export function RunCollectionButton() {
         setFailed(true);
         setMessage(result.errors?.[0] ?? result.error ?? 'Collection failed.');
       } else {
-        setMessage(`Checked ${result.sourcesChecked ?? 0} source and found ${result.itemsNew ?? 0} new items from ${result.itemsFound ?? 0} available.`);
+        const sourceCount = result.sourcesChecked ?? 0;
+        const summary = `Checked ${sourceCount} ${sourceCount === 1 ? 'source' : 'sources'} and found ${result.itemsNew ?? 0} new items from ${result.itemsFound ?? 0} available.`;
+        const errorDetail = result.errors?.length ? ` ${result.errors.join(' ')}` : '';
+        setFailed(Boolean(result.errors?.length));
+        setMessage(`${summary}${errorDetail}`);
         router.refresh();
       }
     } catch {

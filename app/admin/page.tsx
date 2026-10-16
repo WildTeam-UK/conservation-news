@@ -21,7 +21,7 @@ export default async function AdminDashboard() {
     supabase.from('stories').select('*', { count: 'exact', head: true }).eq('status', 'published'),
     supabase.from('sources').select('*', { count: 'exact', head: true }).eq('enabled', true),
     supabase.from('source_items').select('*', { count: 'exact', head: true }),
-    supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, created_at').order('created_at', { ascending: false }).limit(5),
+    supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, error_summary, created_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd').eq('id', true).maybeSingle(),
     supabase.from('editorial_runs').select('id, status, max_new_drafts, estimated_cost_usd, drafts_created, candidates_selected, failures, created_at, completed_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('editorial_runs').select('id').eq('status', 'running').maybeSingle(),
@@ -65,7 +65,7 @@ export default async function AdminDashboard() {
           <div className="collection-panel-actions"><RunCollectionButton />{/* oxlint-disable-next-line next/no-html-link-for-pages */}<a href="/admin/collected">View collected items</a></div>
         </section>
 
-        {(runsResult.data?.length ?? 0) > 0 ? <section className="collection-history"><div className="collection-history-heading"><p className="eyebrow">Recent activity</p><h2>Collection runs</h2></div><div className="collection-runs">{runsResult.data?.map((run) => <article key={run.id}><span className={`run-status ${run.status}`}>{run.status}</span><div><strong>{run.items_new} new items</strong><p>{run.items_found} found across {run.sources_checked} {run.sources_checked === 1 ? 'source' : 'sources'}</p></div><time dateTime={run.created_at}>{new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(run.created_at))}</time></article>)}</div></section> : null}
+        {(runsResult.data?.length ?? 0) > 0 ? <section className="collection-history"><div className="collection-history-heading"><p className="eyebrow">Recent activity</p><h2>Collection runs</h2></div><div className="collection-runs">{runsResult.data?.map((run) => <article key={run.id}><span className={`run-status ${run.status}`}>{run.status}</span><div><strong>{run.items_new} new items</strong><p>{run.items_found} found across {run.sources_checked} {run.sources_checked === 1 ? 'source' : 'sources'}</p>{run.error_summary ? <p className="collection-run-error">{run.error_summary}</p> : null}</div><time dateTime={run.created_at}>{new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(run.created_at))}</time></article>)}</div></section> : null}
       </div>
     </main>
   );
