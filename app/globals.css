@@ -192,6 +192,7 @@ img{border-radius:18px}
 .topic-nav.is-dragging{cursor:grabbing}
 .topic-ticker-track{animation:none}
 .topic-nav:hover .topic-ticker-track,.topic-nav:focus-within .topic-ticker-track{animation-play-state:running}
+.topic-nav .topic-tag:first-child{font-weight:500}
 
 .topic-page-grid{column-gap:40px}
 .topic-story:not(.topic-story-featured),
