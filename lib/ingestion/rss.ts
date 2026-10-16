@@ -116,10 +116,18 @@ function parseFeed(xml: string): FeedItem[] {
     }];
   });
 
-  // Some publishers repeat the same article in more than one RSS category.
-  // Keep the first occurrence so one duplicate cannot make the database reject
-  // the source's entire collection batch.
-  return [...new Map(items.map((item) => [item.url, item])).values()];
+  // Some publishers repeat the same article in more than one RSS category. A
+  // repeated GUID can also arrive with two slightly different URLs. Keep only
+  // the first occurrence of either identifier so one noisy feed cannot make
+  // the database reject the source's entire collection batch.
+  const seenUrls = new Set<string>();
+  const seenExternalIds = new Set<string>();
+  return items.filter((item) => {
+    if (seenUrls.has(item.url) || (item.externalId && seenExternalIds.has(item.externalId))) return false;
+    seenUrls.add(item.url);
+    if (item.externalId) seenExternalIds.add(item.externalId);
+    return true;
+  });
 }
 
 function errorMessage(error: unknown) {
@@ -155,14 +163,24 @@ async function collectSource(source: SourceRecord, runId: string) {
   const items = parseFeed(xml);
   const supabase = getSupabaseAdminClient();
   const urls = items.map((item) => item.url);
-  const { data: existing, error: existingError } = urls.length
-    ? await supabase.from('source_items').select('url').in('url', urls)
-    : { data: [], error: null };
+  const externalIds = items.flatMap((item) => item.externalId ? [item.externalId] : []);
+  const [existingUrlResult, existingIdResult] = await Promise.all([
+    urls.length
+      ? supabase.from('source_items').select('url').in('url', urls)
+      : Promise.resolve({ data: [], error: null }),
+    externalIds.length
+      ? supabase.from('source_items').select('external_id').eq('source_id', source.id).in('external_id', externalIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
 
-  if (existingError) throw existingError;
+  if (existingUrlResult.error) throw existingUrlResult.error;
+  if (existingIdResult.error) throw existingIdResult.error;
 
-  const existingUrls = new Set((existing ?? []).map((item) => item.url));
-  const newItems = items.filter((item) => !existingUrls.has(item.url));
+  const existingUrls = new Set((existingUrlResult.data ?? []).map((item) => item.url));
+  const existingExternalIds = new Set((existingIdResult.data ?? []).map((item) => item.external_id));
+  const newItems = items.filter((item) =>
+    !existingUrls.has(item.url) && (!item.externalId || !existingExternalIds.has(item.externalId))
+  );
 
   if (newItems.length) {
     const { error } = await supabase.from('source_items').insert(newItems.map((item) => ({
