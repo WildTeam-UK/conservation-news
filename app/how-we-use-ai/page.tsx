@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { ArrowRight, CheckCircle2, Search, Sparkles } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
@@ -29,7 +30,7 @@ export default function AiTransparencyPage() {
         <div className="ai-process-grid">
           <article><Search /><span>01</span><h3>Find and group</h3><p>AI helps identify conservation stories across different outlets and group reports that appear to describe the same underlying event.</p></article>
           <article><Sparkles /><span>02</span><h3>Summarise and tag</h3><p>AI helps draft concise overviews, key points and topic labels so readers can understand the shape of a story quickly.</p></article>
-          <article><CheckCircle2 /><span>03</span><h3>Compare coverage</h3><p>AI helps surface differences in framing, evidence, agreement and political source mix. These coverage signals describe the reporting we found, not factual accuracy.</p></article>
+          <article><CheckCircle2 /><span>03</span><h3>Compare coverage</h3><p>AI helps surface differences in framing, evidence and agreement across the reporting. These coverage signals describe the sources we found, not factual accuracy.</p></article>
         </div>
       </section>
 
@@ -38,7 +39,7 @@ export default function AiTransparencyPage() {
         <section><p className="eyebrow">Our publishing standard</p><h2>Source links stay visible</h2><p>Every article page keeps the original source links close to the summary. Readers can compare the briefing with the primary material, check other coverage and form their own view.</p><p>Where a briefing is wrong or misleading, it should be corrected clearly. AI assistance is never a reason to hide responsibility for what appears on the site.</p></section>
       </div>
 
-      <section className="ai-next-step"><div><p className="eyebrow">Keep reading critically</p><h2>Go to the evidence.</h2></div><p>Use WILDNEWS to discover what is happening, then follow the source links for the detail, uncertainty and reporting behind each story.</p><a className="action-button" href="/">Explore the stories <ArrowRight /></a></section>
+      <section className="ai-next-step"><div><p className="eyebrow">Keep reading critically</p><h2>Go to the evidence.</h2></div><p>Use WILDNEWS to discover what is happening, then follow the source links for the detail, uncertainty and reporting behind each story.</p><Link className="action-button" href="/">Explore the stories <ArrowRight /></Link></section>
     </article>
 
     <SiteFooter />

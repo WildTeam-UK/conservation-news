@@ -1,0 +1,93 @@
+import type { UnsplashImageCandidate } from './types';
+
+const API_URL = 'https://api.unsplash.com';
+const APP_NAME = 'wildnews';
+
+type UnsplashPhoto = {
+  id: string;
+  width: number;
+  height: number;
+  color: string | null;
+  description: string | null;
+  alt_description: string | null;
+  urls: { raw: string; small: string };
+  links: { html: string; download_location: string };
+  user: { name: string; links: { html: string } };
+};
+
+function accessKey() {
+  return process.env.UNSPLASH_ACCESS_KEY?.trim() ?? '';
+}
+
+function withAttributionTracking(value: string) {
+  const url = new URL(value);
+  url.searchParams.set('utm_source', APP_NAME);
+  url.searchParams.set('utm_medium', 'referral');
+  return url.toString();
+}
+
+function imageUrl(value: string, width: number, height: number) {
+  const url = new URL(value);
+  url.searchParams.set('auto', 'format');
+  url.searchParams.set('fit', 'crop');
+  url.searchParams.set('crop', 'entropy');
+  url.searchParams.set('w', String(width));
+  url.searchParams.set('h', String(height));
+  url.searchParams.set('q', '85');
+  return url.toString();
+}
+
+function toCandidate(photo: UnsplashPhoto): UnsplashImageCandidate {
+  return {
+    id: photo.id,
+    image_url: imageUrl(photo.urls.raw, 1800, 1000),
+    thumbnail_url: imageUrl(photo.urls.raw, 640, 400),
+    alt_text: (photo.alt_description ?? photo.description ?? '').trim(),
+    description: (photo.description ?? photo.alt_description ?? '').trim(),
+    colour: photo.color ?? '#d4d7ce',
+    width: photo.width,
+    height: photo.height,
+    credit: {
+      provider: 'unsplash',
+      source_id: photo.id,
+      creator_name: photo.user.name,
+      creator_url: withAttributionTracking(photo.user.links.html),
+      source_name: 'Unsplash',
+      source_url: withAttributionTracking(photo.links.html),
+      licence_name: 'Unsplash License',
+      licence_url: 'https://unsplash.com/license',
+      download_location: photo.links.download_location,
+      illustrative: true,
+    },
+  };
+}
+
+export function unsplashIsConfigured() {
+  return Boolean(accessKey());
+}
+
+export async function searchUnsplashImages(query: string, limit = 6): Promise<UnsplashImageCandidate[]> {
+  const key = accessKey();
+  if (!key) throw new Error('Unsplash has not been connected yet.');
+  const url = new URL(`${API_URL}/search/photos`);
+  url.searchParams.set('query', query.trim());
+  url.searchParams.set('orientation', 'landscape');
+  url.searchParams.set('content_filter', 'high');
+  url.searchParams.set('per_page', String(Math.max(1, Math.min(12, limit))));
+  const response = await fetch(url, { headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' }, cache: 'no-store' });
+  if (!response.ok) {
+    const detail = response.status === 401 ? 'Check the Unsplash access key.' : `Unsplash returned ${response.status}.`;
+    throw new Error(`Image search failed. ${detail}`);
+  }
+  const result = await response.json() as { results?: UnsplashPhoto[] };
+  return (result.results ?? []).map(toCandidate);
+}
+
+export async function recordUnsplashSelection(downloadLocation: string) {
+  const key = accessKey();
+  if (!key || !downloadLocation) return;
+  const url = new URL(downloadLocation);
+  if (url.origin !== API_URL) return;
+  const response = await fetch(url, { headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' }, cache: 'no-store' });
+  if (!response.ok) console.warn(`Unsplash selection tracking returned ${response.status}.`);
+}

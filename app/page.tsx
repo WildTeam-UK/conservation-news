@@ -1,15 +1,19 @@
 import { ArrowRight } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
 import { Brand } from '@/components/brand';
-import { CuratorByline } from '@/components/curator-byline';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
-import { cleanCopy, stories, storyImage, topicSlug } from '@/lib/stories';
+import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
+import { cleanCopy, storyImage, topicSlug } from '@/lib/stories';
 
 const shelfTopics = ['Wildlife', 'Oceans', 'Forests', 'Freshwater', 'Land & climate'];
 
-export default function Home() {
-  const [lead, ...moreStories] = stories;
+export const dynamic = 'force-dynamic';
+
+export default async function Home() {
+  const published = (await getPublishedStories(30)).map(publishedStoryToListing);
+  const liveStories = published;
+  const [lead, ...moreStories] = liveStories;
   const primaryLatest = moreStories.slice(0, 6);
   const compactLatest = moreStories.slice(6, 16);
 
@@ -35,17 +39,17 @@ export default function Home() {
     <section className="latest shell" id="latest" aria-labelledby="latest-heading">
       <div className="section-heading"><h2 id="latest-heading">Latest stories</h2><p>Reporting, analysis and ideas from the people protecting nature.</p></div>
       <div className="latest-columns">
-        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={`/stories/${story.slug}`} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" /></a><div className="story-copy"><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p><CuratorByline name={story.byline} /></div></article>)}</div>
+        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={`/stories/${story.slug}`} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" /></a><div className="story-copy"><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p></div></article>)}</div>
         <aside className="latest-compact" aria-label="More latest stories">{compactLatest.map((story) => <article className="compact-story" key={story.slug}>
           <a className="compact-story-image" href={`/stories/${story.slug}`}><img src={storyImage(story)} alt="" /></a>
-          <div><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3><CuratorByline name={story.byline} showAvatar={false} /></div>
+          <div><TopicTag topic={story.topic} /><h3><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h3></div>
         </article>)}</aside>
       </div>
     </section>
 
     <section className="topic-shelves" aria-label="Stories by topic">
       {shelfTopics.map((topic) => {
-        const topicStories = stories.filter((story) => story.topic === topic || story.topics.includes(topic));
+        const topicStories = liveStories.filter((story) => story.topic === topic || story.topics.includes(topic));
         return <section className="topic-shelf shell" key={topic}>
           <div className="shelf-heading"><div><h2><a href={`/topics/${topicSlug(topic)}`}>{topic}</a></h2></div><a href={`/topics/${topicSlug(topic)}`}>See all {topic.toLowerCase()} <ArrowRight /></a></div>
           <div className="topic-track">{topicStories.map((story) => <article className="carousel-card" key={story.slug}>

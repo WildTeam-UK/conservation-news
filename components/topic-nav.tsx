@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { TopicTag } from '@/components/topic-tag';
 
 export function TopicNav({ topics }: { topics: string[] }) {
@@ -11,6 +11,7 @@ export function TopicNav({ topics }: { topics: string[] }) {
   const draggingRef = useRef(false);
   const movedRef = useRef(false);
   const pointerStartRef = useRef({ x: 0, position: 0 });
+  const [groupCount, setGroupCount] = useState(2);
 
   useEffect(() => {
     let animationFrame = 0;
@@ -32,6 +33,23 @@ export function TopicNav({ topics }: { topics: string[] }) {
     animationFrame = requestAnimationFrame(animate);
     return () => cancelAnimationFrame(animationFrame);
   }, []);
+
+  useEffect(() => {
+    const nav = navRef.current;
+    const group = groupRef.current;
+    if (!nav || !group) return;
+
+    const ensureContinuousTrack = () => {
+      const groupWidth = group.offsetWidth;
+      if (!groupWidth) return;
+      setGroupCount(Math.max(2, Math.ceil(nav.clientWidth / groupWidth) + 2));
+    };
+    const observer = new ResizeObserver(ensureContinuousTrack);
+    observer.observe(nav);
+    observer.observe(group);
+    ensureContinuousTrack();
+    return () => observer.disconnect();
+  }, [topics]);
 
   const wrapPosition = (position: number) => {
     const groupWidth = groupRef.current?.offsetWidth ?? 0;
@@ -86,9 +104,9 @@ export function TopicNav({ topics }: { topics: string[] }) {
       <div className="topic-ticker-group" ref={groupRef}>
         {topics.map((topic) => <TopicTag topic={topic} key={topic} className="topic-nav-tag" />)}
       </div>
-      <div className="topic-ticker-group" aria-hidden="true">
+      {Array.from({ length: groupCount - 1 }, (_, groupIndex) => <div className="topic-ticker-group" aria-hidden="true" key={groupIndex}>
         {topics.map((topic) => <TopicTag topic={topic} key={topic} className="topic-nav-tag" tabIndex={-1} />)}
-      </div>
+      </div>)}
     </div>
   </nav>;
 }
