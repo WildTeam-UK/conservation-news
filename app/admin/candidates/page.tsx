@@ -85,7 +85,7 @@ function ResearchPackView({ pack }: { pack: ResearchPack }) {
     <div className="research-pack-heading"><div><p className="eyebrow">Completed research pack</p><h3>Evidence gathered before drafting</h3></div><span><FileSearch /> {content.sources.length} sources</span></div>
     <p className="research-summary">{content.summary}</p>
     <div className="research-topics"><strong>{content.topic_classification.primary_topic}</strong>{content.topic_classification.secondary_topics.map((topic) => <span key={topic}>{topic}</span>)}</div>
-    {content.tags?.length ? <section className="research-tags"><h4>Suggested discovery tags</h4><div>{content.tags.map((tag) => <span key={`${tag.tag_type}-${tag.name}`} title={tag.rationale}><small>{tag.tag_type}</small>{tag.name}<em>{tag.confidence}%</em></span>)}</div><p>New tags are saved as proposals. They will not create public SEO pages until approved.</p></section> : null}
+    {content.tags?.length ? <section className="research-tags"><h4>Suggested discovery tags</h4><div>{content.tags.map((tag) => <span key={`${tag.tag_type}-${tag.name}`} title={tag.rationale}><small>{tag.tag_type}</small>{tag.name}<em>{tag.confidence}%</em></span>)}</div><p>New tags grow privately and become public SEO archives automatically once they reach the published-article threshold.</p></section> : null}
     <div className="research-columns">
       <section><h4>Key facts</h4><ResearchClaims claims={content.key_facts} sourceNumbers={sourceNumbers} /></section>
       <section><h4>Areas of agreement</h4><ResearchClaims claims={content.areas_of_agreement} sourceNumbers={sourceNumbers} /></section>
