@@ -1,3 +1,5 @@
+import { ALL_TOPICS } from '@/lib/taxonomy';
+
 export type Story = {
   slug: string;
   topic: string;
@@ -14,7 +16,7 @@ export type Story = {
 
 // These are the permanent editorial categories. Story content itself now comes
 // exclusively from published Supabase records.
-export const allTopics = ['Wildlife', 'Oceans', 'Forests', 'Freshwater', 'Land & climate', 'Solutions'];
+export const allTopics = [...ALL_TOPICS];
 
 export const cleanCopy = (text: string) => text.replace(/\s*—\s*/g, ', ');
 

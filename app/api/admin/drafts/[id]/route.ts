@@ -2,6 +2,7 @@ import { cleanDraftContent, type StoryDraftContent } from '@/lib/openai/draft-st
 import { recordUnsplashSelection } from '@/lib/images/unsplash';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { queueReadyDrafts } from '@/lib/publication-queue';
+import { normalizeEditorialTopics } from '@/lib/taxonomy';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,10 +28,17 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const validSourceIds = new Set((metadata.source_ids ?? []).flatMap((source) => source.id ? [source.id] : []));
 
   try {
-    const content = cleanDraftContent(body.content, validSourceIds);
+    const content = cleanDraftContent({ ...body.content, topics: normalizeEditorialTopics(body.content.topics ?? []) }, validSourceIds);
     const previousContent = metadata.article_content as Partial<StoryDraftContent> | undefined;
     const selectedNewUnsplashImage = content.image_credit?.provider === 'unsplash' && content.image_credit.source_id !== previousContent?.image_credit?.source_id;
-    const updatedMetadata = { ...metadata, article_content: content, last_edited_at: new Date().toISOString() };
+    const taxonomyReady = content.topics.length > 0;
+    const currentClassification = (metadata.topic_classification ?? {}) as Record<string, unknown>;
+    const updatedMetadata = { ...metadata, article_content: content, topic_classification: { ...currentClassification, primary_topic: content.topics[0] ?? null, secondary_topics: content.topics.slice(1), confidence: taxonomyReady ? 100 : 0, review_required: !taxonomyReady, review_reason: taxonomyReady ? '' : 'Choose at least one controlled topic.' }, last_edited_at: new Date().toISOString() };
+    const { data: storedTopics, error: storedTopicsError } = content.topics.length
+      ? await supabase.from('topics').select('id, name').in('name', content.topics).eq('active', true)
+      : { data: [], error: null };
+    if (storedTopicsError) throw storedTopicsError;
+    const primaryTopic = storedTopics?.find((topic) => topic.name === content.topics[0]);
     const { error: updateError } = await supabase.from('stories').update({
       headline: content.headline,
       standfirst: content.standfirst,
@@ -45,9 +53,19 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       image_alt: content.image_alt || null,
       byline: content.byline,
       reviewer_id: user.id,
+      primary_topic_id: primaryTopic?.id ?? null,
+      taxonomy_review_required: !taxonomyReady,
+      taxonomy_review_reason: taxonomyReady ? null : 'Choose at least one controlled topic.',
+      taxonomy_confidence: taxonomyReady ? 100 : 0,
       generation_metadata: updatedMetadata,
     }).eq('id', id);
     if (updateError) throw updateError;
+    const { error: clearTopicsError } = await supabase.from('story_topics').delete().eq('story_id', id);
+    if (clearTopicsError) throw clearTopicsError;
+    if (storedTopics?.length) {
+      const { error: linkTopicsError } = await supabase.from('story_topics').insert(storedTopics.map((topic) => ({ story_id: id, topic_id: topic.id })));
+      if (linkTopicsError) throw linkTopicsError;
+    }
     if (selectedNewUnsplashImage) {
       try {
         await recordUnsplashSelection(content.image_credit?.download_location ?? '');

@@ -4,6 +4,7 @@ import { stripSourceMarkers } from '@/lib/article-text';
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
 import type { Story } from '@/lib/stories';
 import { getPublicSupabaseConfig } from '@/lib/supabase/config';
+import { normalizeEditorialTopics } from '@/lib/taxonomy';
 
 type PublishedSource = { source_name: string; source_title: string; source_url: string; source_role: string; display_order: number };
 type PublishedTopicLink = { topics: { name: string; slug: string } | { name: string; slug: string }[] | null };
@@ -41,7 +42,7 @@ function one<T>(value: T | T[] | null): T | null {
 export function publishedTopics(story: PublishedStory) {
   const content = (story.generation_metadata.article_content ?? {}) as Partial<StoryDraftContent>;
   const linked = story.story_topics.flatMap((link) => one(link.topics)?.name ?? []);
-  return [...new Set([...(content.topics ?? []), ...linked].filter(Boolean))];
+  return normalizeEditorialTopics([...(content.topics ?? []), ...linked].filter(Boolean));
 }
 
 export function publishedTags(story: PublishedStory) {
@@ -102,7 +103,7 @@ export function publishedStoryToListing(story: PublishedStory): Story {
   const topics = publishedTopics(story);
   return {
     slug: story.slug,
-    topic: topics[0] ?? 'Solutions',
+    topic: topics[0] ?? 'Conservation Practice',
     topics,
     title: story.headline,
     summary: stripSourceMarkers(story.standfirst),

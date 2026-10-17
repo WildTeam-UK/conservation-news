@@ -6,6 +6,7 @@ import { Check, ImageIcon, LoaderCircle, RotateCcw, Save, Search, ShieldCheck, X
 import { ArticleTemplate, type ArticleTemplateData } from '@/components/article-template';
 import type { EditorialImageCredit, UnsplashImageCandidate } from '@/lib/images/types';
 import type { DraftCoverageAnalysis, SourcedDraftText, StoryDraftContent } from '@/lib/openai/draft-story';
+import { EDITORIAL_TOPICS } from '@/lib/taxonomy';
 
 export type DraftSource = { id: string; title: string; publisher: string; url: string; source_type: string };
 
@@ -134,6 +135,15 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, re
     setContent((current) => ({ ...current, image_credit: { ...(current.image_credit?.provider === 'manual' ? current.image_credit : blankManualCredit()), ...changes, provider: 'manual' } }));
   }
 
+  function toggleTopic(topic: string) {
+    setContent((current) => {
+      const selected = current.topics.includes(topic)
+        ? current.topics.filter((item) => item !== topic)
+        : current.topics.length < 3 ? [...current.topics, topic] : current.topics;
+      return { ...current, topics: selected };
+    });
+  }
+
   const article: ArticleTemplateData = {
     topics: content.topics,
     headline: content.headline,
@@ -163,7 +173,7 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, re
       {message ? <output className={failed ? 'draft-save-message failed' : 'draft-save-message'}>{failed ? null : <Check />}{message}</output> : null}
 
       <section className="draft-edit-section"><h3>Article identity</h3>
-        <label><span>Topics, separated by commas</span><input value={content.topics.join(', ')} onChange={(event) => setContent({ ...content, topics: event.target.value.split(',').map((topic) => topic.trim()).filter(Boolean).slice(0, 4) })} required /></label>
+        <fieldset className="draft-topic-selector"><legend>Topics — choose a primary topic first, then up to two additional topics</legend><div>{EDITORIAL_TOPICS.map((topic) => <label key={topic}><input type="checkbox" checked={content.topics.includes(topic)} disabled={!content.topics.includes(topic) && content.topics.length >= 3} onChange={() => toggleTopic(topic)} /><span>{topic}</span>{content.topics[0] === topic ? <small>Primary</small> : null}</label>)}</div>{!content.topics.length ? <p>At least one controlled topic is required before this article can be published.</p> : null}</fieldset>
         <label><span>Headline</span><input value={content.headline} onChange={(event) => setContent({ ...content, headline: event.target.value })} maxLength={180} required /></label>
         <label><span>Standfirst for listings and search</span><textarea value={content.standfirst} onChange={(event) => setContent({ ...content, standfirst: event.target.value })} rows={3} maxLength={400} required /></label>
       </section>

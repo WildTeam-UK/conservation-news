@@ -32,6 +32,14 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   try {
     if (body.action === 'approve' || body.action === 'retire' || body.action === 'restore') {
+      if (body.action === 'approve') {
+        const [{ count, error: countError }, { data: settings, error: settingsError }] = await Promise.all([
+          supabase.from('story_tags').select('story_id, stories!inner(status)', { count: 'exact', head: true }).eq('tag_id', id).eq('stories.status', 'published'),
+          supabase.from('taxonomy_settings').select('min_published_stories').eq('id', true).single(),
+        ]);
+        if (countError || settingsError || !settings) throw countError ?? settingsError ?? new Error('Taxonomy settings were not found.');
+        if ((count ?? 0) < settings.min_published_stories) return Response.json({ error: `This tag needs ${settings.min_published_stories} published articles before it can go live.` }, { status: 409 });
+      }
       const status = body.action === 'restore' ? 'proposed' : body.action === 'retire' ? 'retired' : 'approved';
       const { error } = await supabase.from('content_tags').update({ status }).eq('id', id);
       if (error) throw error;

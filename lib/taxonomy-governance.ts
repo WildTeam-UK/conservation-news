@@ -126,12 +126,21 @@ export async function runTaxonomyGovernance(options: GovernanceOptions = {}): Pr
       if (story) tagStories.set(link.tag_id, [...(tagStories.get(link.tag_id) ?? []), story.headline]);
     }
 
+    const thinLiveTagIds = (tags ?? []).filter((tag) => tag.status === 'approved' && (tagStories.get(tag.id)?.length ?? 0) < settings.min_published_stories).map((tag) => tag.id);
+    if (thinLiveTagIds.length) {
+      const { error: demoteError } = await supabase.from('content_tags').update({ status: 'proposed' }).in('id', thinLiveTagIds);
+      if (demoteError) throw demoteError;
+      for (const tag of tags ?? []) if (thinLiveTagIds.includes(tag.id)) tag.status = 'proposed';
+    }
+
     const eligibleTagIds = new Set((tags ?? []).filter((tag) => (tagStories.get(tag.id)?.length ?? 0) >= settings.min_published_stories).map((tag) => tag.id));
     const entities: TaxonomyEntity[] = [];
     if (options.includeTopics !== false) {
       for (const topic of topics ?? []) {
+        const headlines = topicStories.get(topic.id) ?? [];
+        if (!headlines.length) continue;
         const incomplete = !topic.description || !topic.seo_title || !topic.meta_description;
-        if (options.force || incomplete) entities.push({ id: topic.id, kind: 'topic', name: topic.name, currentDescription: topic.description, headlines: (topicStories.get(topic.id) ?? []).slice(0, 20) });
+        if (options.force || incomplete) entities.push({ id: topic.id, kind: 'topic', name: topic.name, currentDescription: topic.description, headlines: headlines.slice(0, 20) });
       }
     }
     for (const tag of tags ?? []) {

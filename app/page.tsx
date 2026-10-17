@@ -5,8 +5,9 @@ import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 import { cleanCopy, storyImage, topicSlug } from '@/lib/stories';
+import { EDITORIAL_TOPICS } from '@/lib/taxonomy';
 
-const shelfTopics = ['Wildlife', 'Oceans', 'Forests', 'Freshwater', 'Land & climate'];
+const shelfTopics = [...EDITORIAL_TOPICS];
 
 export const dynamic = 'force-dynamic';
 
@@ -50,6 +51,7 @@ export default async function Home() {
     <section className="topic-shelves" aria-label="Stories by topic">
       {shelfTopics.map((topic) => {
         const topicStories = liveStories.filter((story) => story.topic === topic || story.topics.includes(topic));
+        if (!topicStories.length) return null;
         return <section className="topic-shelf shell" key={topic}>
           <div className="shelf-heading"><div><h2><a href={`/topics/${topicSlug(topic)}`}>{topic}</a></h2></div><a href={`/topics/${topicSlug(topic)}`}>See all {topic.toLowerCase()} <ArrowRight /></a></div>
           <div className="topic-track">{topicStories.map((story) => <article className="carousel-card" key={story.slug}>

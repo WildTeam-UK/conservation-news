@@ -22,12 +22,13 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   if (!user) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
   const supabase = getSupabaseAdminClient();
   const [{ data: story, error: storyError }, { count: sourceCount, error: sourcesError }] = await Promise.all([
-    supabase.from('stories').select('id, status, generation_metadata').eq('id', id).single(),
+    supabase.from('stories').select('id, status, generation_metadata, taxonomy_review_required, taxonomy_review_reason').eq('id', id).single(),
     supabase.from('story_sources').select('*', { count: 'exact', head: true }).eq('story_id', id),
   ]);
   if (storyError || !story) return Response.json({ error: 'Draft not found.' }, { status: 404 });
   if (sourcesError) return Response.json({ error: 'Sources could not be verified.' }, { status: 500 });
   if (story.status !== 'draft') return Response.json({ error: 'Only a draft can be published.' }, { status: 409 });
+  if (story.taxonomy_review_required) return Response.json({ error: story.taxonomy_review_reason || 'Choose a valid topic before publishing.' }, { status: 422 });
   const content = (story.generation_metadata as { article_content?: StoryDraftContent } | null)?.article_content;
   if (!content) return Response.json({ error: 'The article content could not be verified.' }, { status: 422 });
   const failed = publicationChecks(content, sourceCount ?? 0).filter((check) => !check.passed);
@@ -40,7 +41,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     supabase.from('publication_queue').update({ status: 'published', published_at: publishedAt, scheduled_for: publishedAt, claimed_at: null, hold_reason: null }).eq('story_id', id).in('status', ['queued', 'scheduled', 'publishing', 'held']),
   ]);
   try {
-    await runTaxonomyGovernance({ includeTopics: false, maxEntities: 5 });
+    await runTaxonomyGovernance({ includeTopics: true, maxEntities: 8 });
   } catch (error) {
     console.warn('Article published, but taxonomy governance could not be refreshed', error);
   }
