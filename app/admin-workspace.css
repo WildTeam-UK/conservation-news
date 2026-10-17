@@ -81,6 +81,10 @@
 @media(max-width:1120px) and (min-width:921px){
   .overview-system-grid{grid-template-columns:1fr}.overview-system-grid article{grid-template-columns:auto minmax(0,1fr) 100px}
   .overview-columns{grid-template-columns:1fr}.overview-flow-track{grid-template-columns:repeat(5,1fr)}.overview-flow-track>svg{display:none}
+  .draft-library-tools{align-items:stretch;flex-direction:column}
+  .draft-library-tools nav{max-width:100%;overflow-x:auto;padding-bottom:3px}
+  .draft-library-tools form{justify-content:flex-end}
+  .draft-library-tools form label{min-width:280px}
 }
 @media(max-width:920px){
   .admin-page{display:block}
