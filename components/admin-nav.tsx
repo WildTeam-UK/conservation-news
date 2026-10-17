@@ -17,7 +17,7 @@ export function AdminNav({ active }: AdminNavProps) {
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'candidates' ? 'active' : ''} href="/admin/candidates"><BrainCircuit /> Candidates</a>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
-      <a className={active === 'drafts' ? 'active' : ''} href="/admin/drafts"><FilePenLine /> Drafts</a>
+      <a className={active === 'drafts' ? 'active' : ''} href="/admin/drafts"><FilePenLine /> Articles</a>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'queue' ? 'active' : ''} href="/admin/queue"><CalendarClock /> Queue</a>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
