@@ -197,12 +197,13 @@ export async function rebuildSourceSuggestionsFromResearch() {
   return registerInputs(inputs);
 }
 
-export async function enrichSourceSuggestionDescriptions(limit = 30) {
+export async function enrichSourceSuggestionDescriptions(limit = 60) {
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from('source_suggestions')
     .select('id, name, domain, source_type, source_suggestion_mentions(source_title, reason)')
     .eq('status', 'suggested')
+    .neq('feed_status', 'not_found')
     .is('description', null)
     .order('recommendation_score', { ascending: false })
     .limit(limit);
