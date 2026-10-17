@@ -34,7 +34,7 @@ export type SuggestedSource = {
   citationCount: number;
 };
 
-export function SourceManager({ sources, suggestions }: { sources: EditorialSource[]; suggestions: SuggestedSource[] }) {
+export function SourceManager({ sources, suggestions, view }: { sources: EditorialSource[]; suggestions: SuggestedSource[]; view: 'monitored' | 'recommendations' }) {
   const router = useRouter();
   const [name, setName] = useState('');
   const [feedUrl, setFeedUrl] = useState('');
@@ -117,7 +117,7 @@ export function SourceManager({ sources, suggestions }: { sources: EditorialSour
 
   return (
     <div className="source-manager">
-      <section className="source-add-card" aria-labelledby="add-source-heading">
+      {view === 'monitored' ? <section className="source-add-card" aria-labelledby="add-source-heading">
         <div className="source-card-heading"><span><Plus /></span><div><p className="eyebrow">Add a source</p><h2 id="add-source-heading">Monitor something new</h2></div></div>
         <form className="source-form" onSubmit={addSource}>
           <div className="admin-field"><label htmlFor="source-name">Source name</label><input id="source-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Mongabay" required /></div>
@@ -129,9 +129,9 @@ export function SourceManager({ sources, suggestions }: { sources: EditorialSour
           {message ? <output className={message.includes('successfully') ? 'source-message success' : 'source-message'}>{message}</output> : null}
           <button className="admin-primary-button" type="submit" disabled={submitting}>{submitting ? <><LoaderCircle className="admin-spinner" /> Adding source</> : <><Plus /> Add source</>}</button>
         </form>
-      </section>
+      </section> : null}
 
-      <section className="source-suggestion-section" aria-labelledby="source-suggestions-heading">
+      {view === 'recommendations' ? <section className="source-suggestion-section" aria-labelledby="source-suggestions-heading">
         <div className="source-suggestion-heading"><div><p className="eyebrow">Discovered during research</p><h2 id="source-suggestions-heading">Recommended sources</h2><p>WildNews learns from the evidence it already consults. Repeated, authoritative domains rise through this list; nothing is monitored until you add it.</p></div><button type="button" disabled={refreshingSuggestions} onClick={refreshSuggestions}>{refreshingSuggestions ? <LoaderCircle className="admin-spinner" /> : <Radar />} Refresh recommendations</button></div>
         {suggestionMessage ? <output className={suggestionMessage.includes('could not') ? 'source-message' : 'source-message success'}>{suggestionMessage}</output> : null}
         {suggestions.length ? <div className="source-suggestion-list">{suggestions.map((suggestion) => (
@@ -141,9 +141,9 @@ export function SourceManager({ sources, suggestions }: { sources: EditorialSour
             <div className="source-suggestion-actions">{suggestion.feed_status === 'found' ? <button className="source-suggestion-add" type="button" disabled={updatingId === suggestion.id} onClick={() => runSuggestionAction(suggestion, 'add')}>{updatingId === suggestion.id ? <LoaderCircle className="admin-spinner" /> : <Check />} Add feed</button> : <button type="button" disabled={updatingId === suggestion.id} onClick={() => runSuggestionAction(suggestion, 'find_feed')}>{updatingId === suggestion.id ? <LoaderCircle className="admin-spinner" /> : <Search />} {suggestion.feed_status === 'not_found' ? 'Check again' : 'Find RSS feed'}</button>}<button className="source-suggestion-dismiss" type="button" disabled={updatingId === suggestion.id} onClick={() => runSuggestionAction(suggestion, 'dismiss')}><X /> Dismiss</button></div>
           </article>
         ))}</div> : <div className="source-empty"><Radar /><h3>No recommendations yet</h3><p>Refresh recommendations to analyse completed research packs. Future research will update this list automatically.</p></div>}
-      </section>
+      </section> : null}
 
-      <section className="source-list-section" aria-labelledby="source-list-heading">
+      {view === 'monitored' ? <section className="source-list-section" aria-labelledby="source-list-heading">
         <div className="source-list-heading"><div><p className="eyebrow">Source library</p><h2 id="source-list-heading">{sources.length} {sources.length === 1 ? 'source' : 'sources'}</h2></div><p>New sources begin as provisional and will never publish stories automatically.</p></div>
         {sources.length === 0 ? (
           <div className="source-empty"><Rss /><h3>No sources yet</h3><p>Add the first RSS feed or website using the form.</p></div>
@@ -158,7 +158,7 @@ export function SourceManager({ sources, suggestions }: { sources: EditorialSour
             ))}
           </div>
         )}
-      </section>
+      </section> : null}
     </div>
   );
 }
