@@ -179,7 +179,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
         <Brand />
         <div className="admin-account"><span>{name}</span><AdminSignOutButton /></div>
       </header>
-      <AdminNav active="pipeline" />
+      <AdminNav active="pipeline" subview="candidates" />
 
       <div className="admin-shell admin-candidates-shell">
         <section className="admin-welcome candidates-heading" aria-labelledby="candidates-heading">

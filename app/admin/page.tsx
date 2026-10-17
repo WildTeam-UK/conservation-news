@@ -1,6 +1,6 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads reliably refresh the protected Supabase session in Vinext */
 import type { Metadata } from 'next';
-import { Activity, AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, CircleDollarSign, FileText, Newspaper, Radio, Rss } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, FileText, Newspaper, Radio, Rss } from 'lucide-react';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { AdminNav } from '@/components/admin-nav';
 import { Brand } from '@/components/brand';
@@ -133,10 +133,10 @@ export default async function AdminDashboard() {
           </section>
         </div>
 
-        <section className="overview-activity">
-          <div className="overview-section-heading"><div><p className="eyebrow">Recent activity</p><h2>Latest editorial runs</h2></div><span><CircleDollarSign /> ${Number(latestEditorialRun?.estimated_cost_usd ?? 0).toFixed(4)} last run</span></div>
+        <details className="overview-activity">
+          <summary><span><Activity /><span><strong>Recent editorial runs</strong><small>Latest run: {latestEditorialRun?.drafts_created ?? 0} drafts · ${Number(latestEditorialRun?.estimated_cost_usd ?? 0).toFixed(4)}</small></span></span><span>View history</span></summary>
           <div className="collection-runs">{editorialRunsResult.data?.map((run) => <article key={run.id}><span className={`run-status ${run.status}`}>{run.status.replace('_', ' ')}</span><div><strong>{run.drafts_created} private {run.drafts_created === 1 ? 'draft' : 'drafts'}</strong><p>{run.trigger_type === 'scheduled' ? 'Scheduled' : 'Manual'} · {run.candidates_selected} selected · ${Number(run.estimated_cost_usd).toFixed(4)} estimated{run.failures ? ` · ${run.failures} failed` : ''}</p></div><time dateTime={run.created_at}>{dateTime.format(new Date(run.created_at))}</time></article>)}</div>
-        </section>
+        </details>
 
         <details className="overview-manual-controls">
           <summary><span><strong>Manual controls</strong><small>Run or test individual workflow stages when needed.</small></span><ArrowRight /></summary>

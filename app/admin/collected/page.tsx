@@ -55,7 +55,7 @@ export default async function CollectedItemsPage() {
         <Brand />
         <div className="admin-account"><span>{name}</span><AdminSignOutButton /></div>
       </header>
-      <AdminNav active="pipeline" />
+      <AdminNav active="pipeline" subview="collected" />
 
       <div className="admin-shell admin-collected-shell">
         <section className="admin-welcome collected-heading" aria-labelledby="collected-heading">

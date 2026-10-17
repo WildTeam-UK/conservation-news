@@ -117,22 +117,8 @@ export function SourceManager({ sources, suggestions, view }: { sources: Editori
 
   return (
     <div className="source-manager">
-      {view === 'monitored' ? <section className="source-add-card" aria-labelledby="add-source-heading">
-        <div className="source-card-heading"><span><Plus /></span><div><p className="eyebrow">Add a source</p><h2 id="add-source-heading">Monitor something new</h2></div></div>
-        <form className="source-form" onSubmit={addSource}>
-          <div className="admin-field"><label htmlFor="source-name">Source name</label><input id="source-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Mongabay" required /></div>
-          <div className="source-form-row">
-            <div className="admin-field"><label htmlFor="source-kind">Source type</label><select id="source-kind" value={sourceKind} onChange={(event) => setSourceKind(event.target.value as EditorialSource['source_kind'])}><option value="rss">RSS feed</option><option value="website">Website</option><option value="api">API</option></select></div>
-            <div className="admin-field"><label htmlFor="feed-url">{sourceKind === 'rss' ? 'RSS feed URL' : 'Source URL'}</label><input id="feed-url" type="url" value={feedUrl} onChange={(event) => setFeedUrl(event.target.value)} placeholder="https://example.org/feed" required /></div>
-          </div>
-          <div className="admin-field"><label htmlFor="homepage-url">Homepage URL <span>optional</span></label><input id="homepage-url" type="url" value={homepageUrl} onChange={(event) => setHomepageUrl(event.target.value)} placeholder="https://example.org" /></div>
-          {message ? <output className={message.includes('successfully') ? 'source-message success' : 'source-message'}>{message}</output> : null}
-          <button className="admin-primary-button" type="submit" disabled={submitting}>{submitting ? <><LoaderCircle className="admin-spinner" /> Adding source</> : <><Plus /> Add source</>}</button>
-        </form>
-      </section> : null}
-
       {view === 'recommendations' ? <section className="source-suggestion-section" aria-labelledby="source-suggestions-heading">
-        <div className="source-suggestion-heading"><div><p className="eyebrow">Discovered during research</p><h2 id="source-suggestions-heading">Recommended sources</h2><p>WildNews learns from the evidence it already consults. Repeated, authoritative domains rise through this list; nothing is monitored until you add it.</p></div><button type="button" disabled={refreshingSuggestions} onClick={refreshSuggestions}>{refreshingSuggestions ? <LoaderCircle className="admin-spinner" /> : <Radar />} Refresh recommendations</button></div>
+        <div className="source-suggestion-heading"><div><h2 id="source-suggestions-heading">{suggestions.length} ranked {suggestions.length === 1 ? 'source' : 'sources'}</h2><p>Ranked using research reuse, article citations, editorial fit and RSS availability. Nothing is monitored until you add it.</p></div><button type="button" disabled={refreshingSuggestions} onClick={refreshSuggestions}>{refreshingSuggestions ? <LoaderCircle className="admin-spinner" /> : <Radar />} Refresh</button></div>
         {suggestionMessage ? <output className={suggestionMessage.includes('could not') ? 'source-message' : 'source-message success'}>{suggestionMessage}</output> : null}
         {suggestions.length ? <div className="source-suggestion-list">{suggestions.map((suggestion) => (
           <article className="source-suggestion-card" key={suggestion.id}>
@@ -144,7 +130,7 @@ export function SourceManager({ sources, suggestions, view }: { sources: Editori
       </section> : null}
 
       {view === 'monitored' ? <section className="source-list-section" aria-labelledby="source-list-heading">
-        <div className="source-list-heading"><div><p className="eyebrow">Source library</p><h2 id="source-list-heading">{sources.length} {sources.length === 1 ? 'source' : 'sources'}</h2></div><p>New sources begin as provisional and will never publish stories automatically.</p></div>
+        <div className="source-list-heading"><div><p className="eyebrow">Source library</p><h2 id="source-list-heading">{sources.length} monitored {sources.length === 1 ? 'source' : 'sources'}</h2></div><p>Pause a source at any time without removing its history.</p></div>
         {sources.length === 0 ? (
           <div className="source-empty"><Rss /><h3>No sources yet</h3><p>Add the first RSS feed or website using the form.</p></div>
         ) : (
@@ -159,6 +145,23 @@ export function SourceManager({ sources, suggestions, view }: { sources: Editori
           </div>
         )}
       </section> : null}
+
+      {view === 'monitored' ? <details className="source-add-disclosure">
+        <summary><span><Plus /><span><strong>Add a source</strong><small>Monitor another RSS feed, website or API.</small></span></span><span>Open form</span></summary>
+        <section className="source-add-card" aria-labelledby="add-source-heading">
+          <div className="source-card-heading"><span><Plus /></span><div><p className="eyebrow">New source</p><h2 id="add-source-heading">Monitor something new</h2></div></div>
+          <form className="source-form" onSubmit={addSource}>
+            <div className="admin-field"><label htmlFor="source-name">Source name</label><input id="source-name" value={name} onChange={(event) => setName(event.target.value)} placeholder="e.g. Mongabay" required /></div>
+            <div className="source-form-row">
+              <div className="admin-field"><label htmlFor="source-kind">Source type</label><select id="source-kind" value={sourceKind} onChange={(event) => setSourceKind(event.target.value as EditorialSource['source_kind'])}><option value="rss">RSS feed</option><option value="website">Website</option><option value="api">API</option></select></div>
+              <div className="admin-field"><label htmlFor="feed-url">{sourceKind === 'rss' ? 'RSS feed URL' : 'Source URL'}</label><input id="feed-url" type="url" value={feedUrl} onChange={(event) => setFeedUrl(event.target.value)} placeholder="https://example.org/feed" required /></div>
+            </div>
+            <div className="admin-field"><label htmlFor="homepage-url">Homepage URL <span>optional</span></label><input id="homepage-url" type="url" value={homepageUrl} onChange={(event) => setHomepageUrl(event.target.value)} placeholder="https://example.org" /></div>
+            {message ? <output className={message.includes('successfully') ? 'source-message success' : 'source-message'}>{message}</output> : null}
+            <button className="admin-primary-button" type="submit" disabled={submitting}>{submitting ? <><LoaderCircle className="admin-spinner" /> Adding source</> : <><Plus /> Add source</>}</button>
+          </form>
+        </section>
+      </details> : null}
     </div>
   );
 }

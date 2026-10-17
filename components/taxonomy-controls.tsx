@@ -63,16 +63,19 @@ export function TaxonomyControls({ settings }: { settings: TaxonomySettings }) {
     finally { setWorking(null); }
   }
 
-  return <section className="taxonomy-automation-panel">
-    <div className="taxonomy-automation-copy"><span><Bot /></span><div><p className="eyebrow">Automatic governance</p><h2>Reuse first, then grow what is missing</h2><p>Every research pack checks the existing vocabulary before proposing a new tag. Growing tags stay private while they accumulate coverage; at the threshold, AI writes their archive copy and makes them public automatically.</p>{settings.last_governance_run_at ? <small>Last run {new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(settings.last_governance_run_at))} · ${Number(settings.last_estimated_cost_usd ?? 0).toFixed(4)}</small> : null}{settings.last_governance_error ? <small className="taxonomy-error">Last error: {settings.last_governance_error}</small> : null}</div></div>
-    <form onSubmit={save}>
-      <label className="automation-toggle-control"><input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} /><strong>Automation enabled</strong></label>
-      <label><span>Articles before tag goes live</span><input type="number" min="1" max="100" value={minimum} onChange={(event) => setMinimum(Number(event.target.value))} /><small>Only published articles count.</small></label>
-      <div className="taxonomy-fixed-rule"><span>Article display</span><strong>Top 3 tags</strong><small>All relationships remain stored and feed their archives.</small></div>
-      <button type="submit" disabled={Boolean(working)}>{working === 'save' ? <LoaderCircle className="admin-spinner" /> : <Save />} Save settings</button>
-      <button className="taxonomy-run-button" type="button" disabled={Boolean(working)} onClick={runGovernance}>{working === 'run' ? <LoaderCircle className="admin-spinner" /> : <Sparkles />} Run governance now</button>
-      <button className="taxonomy-reconcile-button" type="button" disabled={Boolean(working)} onClick={reconcileArticles}>{working === 'reconcile' ? <LoaderCircle className="admin-spinner" /> : <Sparkles />} Reclassify existing articles</button>
-    </form>
-    {message ? <output className={failed ? 'taxonomy-message failed' : 'taxonomy-message'}>{message}</output> : null}
-  </section>;
+  return <details className="taxonomy-settings-disclosure">
+    <summary><span><Bot /><span><strong>Taxonomy automation</strong><small>{enabled ? 'Enabled' : 'Paused'} · tags become public after {minimum} published articles</small></span></span><span>Settings</span></summary>
+    <section className="taxonomy-automation-panel">
+      <div className="taxonomy-automation-copy"><span><Bot /></span><div><p className="eyebrow">Automatic governance</p><h2>Reuse first, then grow what is missing</h2><p>Research reuses the existing vocabulary before creating a tag. At the threshold, AI prepares its archive copy and makes it public.</p>{settings.last_governance_run_at ? <small>Last run {new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(settings.last_governance_run_at))} · ${Number(settings.last_estimated_cost_usd ?? 0).toFixed(4)}</small> : null}{settings.last_governance_error ? <small className="taxonomy-error">Last error: {settings.last_governance_error}</small> : null}</div></div>
+      <form onSubmit={save}>
+        <label className="automation-toggle-control"><input type="checkbox" checked={enabled} onChange={(event) => setEnabled(event.target.checked)} /><strong>Automation enabled</strong></label>
+        <label><span>Articles before tag goes live</span><input type="number" min="1" max="100" value={minimum} onChange={(event) => setMinimum(Number(event.target.value))} /><small>Only published articles count.</small></label>
+        <div className="taxonomy-fixed-rule"><span>Article display</span><strong>Top 3 tags</strong><small>All relationships remain stored and feed their archives.</small></div>
+        <button type="submit" disabled={Boolean(working)}>{working === 'save' ? <LoaderCircle className="admin-spinner" /> : <Save />} Save settings</button>
+        <button className="taxonomy-run-button" type="button" disabled={Boolean(working)} onClick={runGovernance}>{working === 'run' ? <LoaderCircle className="admin-spinner" /> : <Sparkles />} Run governance now</button>
+        <button className="taxonomy-reconcile-button" type="button" disabled={Boolean(working)} onClick={reconcileArticles}>{working === 'reconcile' ? <LoaderCircle className="admin-spinner" /> : <Sparkles />} Reclassify existing articles</button>
+      </form>
+      {message ? <output className={failed ? 'taxonomy-message failed' : 'taxonomy-message'}>{message}</output> : null}
+    </section>
+  </details>;
 }

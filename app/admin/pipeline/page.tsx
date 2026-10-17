@@ -75,7 +75,7 @@ export default async function PipelinePage() {
   return (
     <main className="admin-page">
       <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
-      <AdminNav active="pipeline" />
+      <AdminNav active="pipeline" subview="pipeline-status" />
 
       <div className="admin-shell admin-pipeline-shell">
         <section className="pipeline-heading" aria-labelledby="pipeline-heading">
@@ -89,13 +89,16 @@ export default async function PipelinePage() {
           <a href="/admin/candidates"><span><BrainCircuit /></span><div><small>Recommended</small><strong>{selectedResult.count ?? 0}</strong><p>{rejectedResult.count ?? 0} assessed but not selected</p></div><ArrowRight /></a>
         </section>
 
-        <section className="pipeline-controls" aria-labelledby="pipeline-controls-heading">
-          <div className="overview-section-heading"><div><p className="eyebrow">Manual tools</p><h2 id="pipeline-controls-heading">Run an individual stage</h2></div><p>The scheduled workflow already runs both stages. Use these for testing or an extra check during the day.</p></div>
-          <div className="pipeline-control-grid">
-            <article><span><Rss /></span><div><h3>Collect source items</h3><p>Check every active RSS feed and save anything the system has not seen before.</p></div><RunCollectionButton /></article>
-            <article><span><BrainCircuit /></span><div><h3>Assess pending items</h3><p>Group related coverage, score the stories and add qualifying recommendations to Candidates.</p></div><RunAssessmentButton /></article>
-          </div>
-        </section>
+        <details className="pipeline-tools-disclosure">
+          <summary><span><Activity /><span><strong>Manual pipeline tools</strong><small>Run collection or assessment outside the daily workflow.</small></span></span><span>Open tools</span></summary>
+          <section className="pipeline-controls" aria-labelledby="pipeline-controls-heading">
+            <div className="overview-section-heading"><div><p className="eyebrow">Manual tools</p><h2 id="pipeline-controls-heading">Run an individual stage</h2></div><p>The scheduled workflow already runs both stages. Use these for testing or an extra check during the day.</p></div>
+            <div className="pipeline-control-grid">
+              <article><span><Rss /></span><div><h3>Collect source items</h3><p>Check every active RSS feed and save anything the system has not seen before.</p></div><RunCollectionButton /></article>
+              <article><span><BrainCircuit /></span><div><h3>Assess pending items</h3><p>Group related coverage, score the stories and add qualifying recommendations to Candidates.</p></div><RunAssessmentButton /></article>
+            </div>
+          </section>
+        </details>
 
         <div className="pipeline-columns">
           <section className="pipeline-panel">
