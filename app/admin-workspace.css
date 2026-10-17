@@ -13,6 +13,10 @@
   .admin-nav a small{color:var(--muted);font-size:8px;font-weight:600;letter-spacing:0;text-transform:none}
   .admin-nav a.active small{color:rgba(255,255,255,.7)}
   .admin-nav a>svg{width:17px;height:17px;flex:0 0 17px}
+  .admin-nav .admin-nav-subitems{display:grid;gap:2px;margin:-1px 0 5px 38px;padding-left:10px;border-left:1px solid var(--rule)}
+  .admin-nav .admin-nav-subitems a{min-height:29px;padding:6px 9px;border:0;border-radius:7px;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.02em}
+  .admin-nav .admin-nav-subitems a:hover{background:var(--cream);color:var(--ink)}
+  .admin-nav .admin-nav-subitems a.active{border:0;background:#efe7f0;color:var(--forest)}
   .admin-shell{grid-column:2;grid-row:2;width:min(1220px,calc(100% - 56px));margin:0 auto}
 }
 
@@ -145,6 +149,9 @@
   .admin-nav a{display:flex;align-items:center;gap:7px;flex:0 0 auto;padding:0 13px;border-bottom:3px solid transparent;color:var(--muted);text-transform:none}
   .admin-nav a.active{border-bottom-color:var(--lime);background:transparent;color:var(--ink)}
   .admin-nav a>span{display:block}.admin-nav a strong{font-size:9px;text-transform:uppercase}.admin-nav a small{display:none}.admin-nav a>svg{width:14px}
+  .admin-nav .admin-nav-subitems{display:flex;align-items:stretch;flex:0 0 auto}
+  .admin-nav .admin-nav-subitems a{min-height:52px;padding:0 11px;border:0;border-bottom:3px solid transparent;border-radius:0;color:var(--muted);font-size:8px;font-weight:800;white-space:nowrap}
+  .admin-nav .admin-nav-subitems a.active{border-bottom-color:var(--lime);background:transparent;color:var(--ink)}
   .admin-shell{width:min(100% - 34px,860px);margin:0 auto}
   .overview-heading{align-items:flex-start;flex-direction:column}.overview-health-pill{align-self:flex-start}
   .overview-system-grid{grid-template-columns:1fr}.overview-columns{grid-template-columns:1fr}
