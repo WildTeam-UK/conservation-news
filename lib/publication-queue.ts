@@ -2,6 +2,7 @@ import type { StoryDraftContent } from '@/lib/openai/draft-story';
 import { stripSourceMarkers } from '@/lib/article-text';
 import { publicationChecks } from '@/lib/publishing';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
 
 const ZONE = 'Europe/London';
 const MINIMUM_AUTOMATIC_SOURCES = 3;
@@ -323,6 +324,11 @@ export async function publishClaimedQueueItem(queueId: string) {
     if (publishError || !published) throw publishError ?? new Error('The draft changed before it could be published.');
     const { error: queueUpdateError } = await supabase.from('publication_queue').update({ status: 'published', published_at: publishedAt, claimed_at: null, hold_reason: null, last_error: null }).eq('id', queueId);
     await supabase.from('editorial_actions').insert({ story_id: story.id, user_id: null, action: 'published', notes: 'Article passed the automatic publication checklist and was published from the scheduled queue.' });
+    try {
+      await runTaxonomyGovernance({ includeTopics: false, maxEntities: 5 });
+    } catch (error) {
+      console.warn('Article published, but taxonomy governance could not be refreshed', error);
+    }
     return { action: queueUpdateError ? 'published_with_queue_warning' : 'published', storyId: story.id, headline: story.headline, publishedAt, warning: queueUpdateError?.message };
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'Unknown automatic publication error.';

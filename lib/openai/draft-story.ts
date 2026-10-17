@@ -383,8 +383,8 @@ This is a private first draft for human review, never a finished or published ar
   }));
   const { error: sourcesError } = await supabase.from('story_sources').insert(sourceRows);
   if (sourcesError) throw sourcesError;
-  const { data: clusterTags } = await supabase.from('story_cluster_tags').select('tag_id').eq('cluster_id', clusterId);
-  if (clusterTags?.length) await supabase.from('story_tags').insert(clusterTags.map((tag) => ({ story_id: story.id, tag_id: tag.tag_id })));
+  const { data: clusterTags } = await supabase.from('story_cluster_tags').select('tag_id, confidence, rationale').eq('cluster_id', clusterId);
+  if (clusterTags?.length) await supabase.from('story_tags').insert(clusterTags.map((tag) => ({ story_id: story.id, tag_id: tag.tag_id, confidence: tag.confidence, rationale: tag.rationale })));
   await Promise.all([
     supabase.from('story_clusters').update({ status: 'drafted' }).eq('id', clusterId),
     supabase.from('ai_generations').insert({ story_id: story.id, cluster_id: clusterId, purpose: 'draft', provider: 'openai', model: MODEL, prompt_version: PROMPT_VERSION, input_tokens: inputTokens, output_tokens: outputTokens, estimated_cost_usd: estimatedCostUsd, warnings: [] }),

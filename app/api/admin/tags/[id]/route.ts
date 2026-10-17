@@ -26,7 +26,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   if (!uuidPattern.test(id)) return Response.json({ error: 'A valid tag is required.' }, { status: 400 });
   if (!await requireAdmin()) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
-  const body = await request.json().catch(() => null) as { action?: string; name?: string; tagType?: string; description?: string; aliases?: string[]; targetId?: string } | null;
+  const body = await request.json().catch(() => null) as { action?: string; name?: string; tagType?: string; description?: string; seoTitle?: string; metaDescription?: string; aliases?: string[]; targetId?: string } | null;
   if (!body?.action) return Response.json({ error: 'Choose a tag action.' }, { status: 400 });
   const supabase = getSupabaseAdminClient();
 
@@ -40,7 +40,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const tagType = body.tagType ?? '';
       if (!name || !tagTypes.has(tagType)) return Response.json({ error: 'Enter a valid tag name and type.' }, { status: 400 });
       const aliases = [...new Set((body.aliases ?? []).map((alias) => alias.trim().slice(0, 120)).filter((alias) => alias && normalizeTag(alias) !== normalizeTag(name)))].slice(0, 20);
-      const { error: updateError } = await supabase.from('content_tags').update({ name, slug: tagSlug(name), tag_type: tagType, description: body.description?.trim().slice(0, 500) || null }).eq('id', id);
+      const { error: updateError } = await supabase.from('content_tags').update({ name, slug: tagSlug(name), tag_type: tagType, description: body.description?.trim().slice(0, 500) || null, seo_title: body.seoTitle?.trim().slice(0, 120) || null, meta_description: body.metaDescription?.trim().slice(0, 200) || null }).eq('id', id);
       if (updateError) throw updateError;
       const { error: deleteError } = await supabase.from('content_tag_aliases').delete().eq('tag_id', id);
       if (deleteError) throw deleteError;

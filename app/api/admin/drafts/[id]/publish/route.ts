@@ -2,6 +2,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
 import { publicationChecks } from '@/lib/publishing';
+import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
 
 export const dynamic = 'force-dynamic';
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -38,6 +39,11 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
     supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'published', notes: 'Article passed the publication checklist and was published.' }),
     supabase.from('publication_queue').update({ status: 'published', published_at: publishedAt, scheduled_for: publishedAt, claimed_at: null, hold_reason: null }).eq('story_id', id).in('status', ['queued', 'scheduled', 'publishing', 'held']),
   ]);
+  try {
+    await runTaxonomyGovernance({ includeTopics: false, maxEntities: 5 });
+  } catch (error) {
+    console.warn('Article published, but taxonomy governance could not be refreshed', error);
+  }
   return Response.json({ saved: true, publishedAt });
 }
 
