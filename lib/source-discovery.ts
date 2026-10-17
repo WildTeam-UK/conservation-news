@@ -6,13 +6,13 @@ type SourceType = ResearchSource['source_type'];
 type ResearchPackRow = { cluster_id: string; content: { sources?: ResearchSource[] } | null };
 type DiscoveryInput = { clusterId: string; sources: ResearchSource[] };
 
-const sourceTypeScores: Record<SourceType, { quality: number; originality: number }> = {
-  primary: { quality: 94, originality: 98 },
-  academic: { quality: 92, originality: 96 },
-  government: { quality: 88, originality: 92 },
-  organisation: { quality: 80, originality: 82 },
-  news: { quality: 74, originality: 68 },
-  other: { quality: 52, originality: 52 },
+const sourceTypeScores: Record<SourceType, { quality: number; originality: number; monitoring: number }> = {
+  primary: { quality: 94, originality: 98, monitoring: 38 },
+  academic: { quality: 92, originality: 96, monitoring: 48 },
+  government: { quality: 88, originality: 92, monitoring: 70 },
+  organisation: { quality: 82, originality: 84, monitoring: 88 },
+  news: { quality: 80, originality: 76, monitoring: 94 },
+  other: { quality: 52, originality: 52, monitoring: 42 },
 };
 
 const commonSecondLevelSuffixes = new Set([
@@ -45,8 +45,8 @@ function siteDomain(hostname: string) {
 function sourceSite(value: string) {
   const url = safeWebUrl(value);
   if (!url) return null;
-  const domain = siteDomain(url.hostname);
-  return { domain, homepageUrl: `${url.protocol}//${domain}/` };
+  const domain = url.hostname.toLowerCase().replace(/^www\./, '');
+  return { domain, siteKey: siteDomain(domain), homepageUrl: `${url.protocol}//${domain}/` };
 }
 
 function scoreFor(type: SourceType, mentionCount: number) {
@@ -55,7 +55,7 @@ function scoreFor(type: SourceType, mentionCount: number) {
   return {
     quality: base.quality,
     originality: base.originality,
-    recommendation: Math.round(base.quality * 0.45 + base.originality * 0.35 + repeatEvidence * 0.2),
+    recommendation: Math.round(base.quality * 0.25 + base.originality * 0.2 + base.monitoring * 0.4 + repeatEvidence * 0.15),
   };
 }
 
@@ -65,7 +65,7 @@ async function existingSourceDomains() {
   return new Set((data ?? []).flatMap((source) => [source.homepage_url, source.feed_url]).flatMap((value) => {
     if (!value) return [];
     const site = sourceSite(value);
-    return site ? [site.domain] : [];
+    return site ? [site.siteKey] : [];
   }));
 }
 
@@ -80,7 +80,7 @@ async function registerInputs(inputs: DiscoveryInput[]) {
     const seenInStory = new Set<string>();
     for (const source of input.sources) {
       const site = sourceSite(source.url);
-      if (!site || monitoredDomains.has(site.domain) || seenInStory.has(site.domain)) continue;
+      if (!site || monitoredDomains.has(site.siteKey) || seenInStory.has(site.domain)) continue;
       seenInStory.add(site.domain);
       const scores = sourceTypeScores[source.source_type];
       const current = bestByDomain.get(site.domain);
@@ -174,8 +174,12 @@ function feedLinks(html: string, baseUrl: string) {
 
 function looksLikeFeed(xml: string) {
   try {
-    const parsed = new XMLParser({ ignoreAttributes: false, removeNSPrefix: true }).parse(xml) as Record<string, unknown>;
-    return Boolean(parsed.rss || parsed.feed || parsed.RDF);
+    const parsed = new XMLParser({ ignoreAttributes: false, removeNSPrefix: true }).parse(xml) as {
+      rss?: { channel?: { item?: unknown } };
+      feed?: { entry?: unknown };
+      RDF?: { item?: unknown };
+    };
+    return Boolean(parsed.rss?.channel?.item || parsed.feed?.entry || parsed.RDF?.item);
   } catch {
     return false;
   }
@@ -194,7 +198,7 @@ async function validFeed(url: string) {
 
 export async function discoverSuggestionFeed(id: string) {
   const supabase = getSupabaseAdminClient();
-  const { data: suggestion, error } = await supabase.from('source_suggestions').select('id, homepage_url, last_article_url').eq('id', id).single();
+  const { data: suggestion, error } = await supabase.from('source_suggestions').select('id, homepage_url, last_article_url, feed_url').eq('id', id).single();
   if (error || !suggestion) throw error ?? new Error('Source suggestion not found.');
   await supabase.from('source_suggestions').update({ feed_status: 'checking', last_feed_check_at: new Date().toISOString() }).eq('id', id);
 
@@ -213,7 +217,7 @@ export async function discoverSuggestionFeed(id: string) {
     }
     const home = new URL(suggestion.homepage_url);
     const conventional = ['/feed', '/feed.xml', '/rss', '/rss.xml', '/atom.xml'].map((path) => new URL(path, home).toString());
-    const candidates = [...new Set([...discovered, ...conventional])].slice(0, 10);
+    const candidates = [...new Set([suggestion.feed_url, ...discovered, ...conventional].filter(Boolean) as string[])].slice(0, 10);
     const results = await Promise.all(candidates.map(async (url) => ({ url, valid: await validFeed(url) })));
     const found = results.find((result) => result.valid)?.url ?? null;
     await supabase.from('source_suggestions').update({ feed_url: found, feed_status: found ? 'found' : 'not_found', last_feed_check_at: new Date().toISOString() }).eq('id', id);
@@ -226,8 +230,12 @@ export async function discoverSuggestionFeed(id: string) {
 
 export async function scanBestSourceSuggestions(limit = 8) {
   const supabase = getSupabaseAdminClient();
-  const { data, error } = await supabase.from('source_suggestions').select('id').eq('status', 'suggested').in('feed_status', ['unchecked', 'failed']).order('recommendation_score', { ascending: false }).limit(limit);
-  if (error) throw error;
-  const results = await Promise.allSettled((data ?? []).map((suggestion) => discoverSuggestionFeed(suggestion.id)));
+  const [{ data: existingFeeds, error: existingError }, { data: unchecked, error: uncheckedError }] = await Promise.all([
+    supabase.from('source_suggestions').select('id').eq('status', 'suggested').eq('feed_status', 'found').order('recommendation_score', { ascending: false }).limit(limit),
+    supabase.from('source_suggestions').select('id').eq('status', 'suggested').in('feed_status', ['unchecked', 'failed']).order('recommendation_score', { ascending: false }).limit(limit),
+  ]);
+  if (existingError || uncheckedError) throw existingError ?? uncheckedError;
+  const candidates = [...(existingFeeds ?? []), ...(unchecked ?? [])].filter((suggestion, index, all) => all.findIndex((item) => item.id === suggestion.id) === index).slice(0, limit);
+  const results = await Promise.allSettled(candidates.map((suggestion) => discoverSuggestionFeed(suggestion.id)));
   return { checked: results.length, found: results.filter((result) => result.status === 'fulfilled' && result.value.found).length };
 }
