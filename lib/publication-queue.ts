@@ -165,10 +165,10 @@ export async function rebalancePublicationQueue() {
   return { scheduled: cursor };
 }
 
-export async function queueReadyDrafts(sourceRunId: string | null = null, onlyStoryId: string | null = null, forceRebalance = true) {
+export async function queueReadyDrafts(sourceRunId: string | null = null, onlyStoryId: string | null = null, forceRebalance = true, allowCancelled = false, allowWhenPaused = false) {
   const supabase = getSupabaseAdminClient();
   const settings = await getSettings();
-  if (!settings.auto_publish_enabled) return { queued: 0, held: 0, scheduled: 0 };
+  if (!settings.auto_publish_enabled && !allowWhenPaused) return { queued: 0, held: 0, scheduled: 0 };
 
   let storyQuery = supabase
     .from('stories')
@@ -204,7 +204,8 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
 
   for (const story of stories) {
     const existingStatus = existingByStory.get(story.id);
-    if (existingStatus && ['publishing', 'published', 'cancelled'].includes(existingStatus)) continue;
+    if (existingStatus && ['publishing', 'published'].includes(existingStatus)) continue;
+    if (existingStatus === 'cancelled' && !allowCancelled) continue;
     const metadata = (story.generation_metadata ?? {}) as Record<string, unknown> & { article_content?: StoryDraftContent };
     let content = metadata.article_content;
     if (content) {
@@ -227,7 +228,7 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
     if (!cluster || Number(cluster.evidence_score ?? 0) < settings.min_auto_publish_evidence_score) reasons.push(`Evidence score is below ${settings.min_auto_publish_evidence_score}.`);
 
     const status = reasons.length ? 'held' : existingStatus === 'scheduled' ? 'scheduled' : 'queued';
-    const priorityRank = existingStatus === 'held' && status === 'queued'
+    const priorityRank = ['held', 'cancelled'].includes(existingStatus ?? '') && status === 'queued'
       ? 1_000_000
       : runRanks.get(story.id) ?? (cluster ? 1000 - Number(cluster.overall_score ?? 0) : 2000);
     if (existingStatus === 'scheduled' && status === 'scheduled') continue;
@@ -248,6 +249,23 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
 
   const scheduled = forceRebalance || membershipChanged ? await rebalancePublicationQueue() : { scheduled: 0 };
   return { queued, held, scheduled: scheduled.scheduled };
+}
+
+export async function restoreDraftToQueue(storyId: string) {
+  const supabase = getSupabaseAdminClient();
+  const { data: story, error: storyError } = await supabase.from('stories').select('id, status').eq('id', storyId).maybeSingle();
+  if (storyError) throw storyError;
+  if (!story || story.status !== 'draft') throw new Error('Only a private draft can be added to the publishing queue.');
+
+  await queueReadyDrafts(null, storyId, true, true, true);
+  const { data: queueItem, error: queueError } = await supabase
+    .from('publication_queue')
+    .select('id, status, scheduled_for, hold_reason')
+    .eq('story_id', storyId)
+    .maybeSingle();
+  if (queueError) throw queueError;
+  if (!queueItem) throw new Error('The draft could not be added to the publishing queue.');
+  return queueItem;
 }
 
 export async function cancelQueuedPublication(queueId: string) {
