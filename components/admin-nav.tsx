@@ -24,10 +24,10 @@ export function AdminNav({ active, subview }: AdminNavProps) {
       <span className="admin-nav-group">Library</span>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'sources' ? 'active' : ''} href="/admin/sources"><Rss /><span><strong>Sources</strong><small>Feeds and source health</small></span></a>
-      {active === 'sources' ? <div className="admin-nav-subitems" aria-label="Source views"><Link className={subview === 'monitored' ? 'active' : ''} href="/admin/sources?view=monitored">Monitored sources</Link><Link className={subview === 'recommendations' ? 'active' : ''} href="/admin/sources?view=recommendations">Recommendations</Link></div> : null}
+      <div className="admin-nav-subitems" aria-label="Source views"><Link className={subview === 'monitored' ? 'active' : ''} href="/admin/sources?view=monitored">Monitored sources</Link><Link className={subview === 'recommendations' ? 'active' : ''} href="/admin/sources?view=recommendations">Recommendations</Link></div>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'tags' ? 'active' : ''} href="/admin/tags"><Tags /><span><strong>Taxonomy</strong><small>Topics and tags</small></span></a>
-      {active === 'tags' ? <div className="admin-nav-subitems" aria-label="Taxonomy views"><Link className={subview === 'topics' ? 'active' : ''} href="/admin/tags?view=topics">Topics</Link><Link className={subview === 'tags' ? 'active' : ''} href="/admin/tags?view=tags">Tags</Link></div> : null}
+      <div className="admin-nav-subitems" aria-label="Taxonomy views"><Link className={subview === 'topics' ? 'active' : ''} href="/admin/tags?view=topics">Topics</Link><Link className={subview === 'tags' ? 'active' : ''} href="/admin/tags?view=tags">Tags</Link></div>
     </nav>
     </>
   );
