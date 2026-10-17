@@ -85,7 +85,7 @@ function ResearchPackView({ pack }: { pack: ResearchPack }) {
     <div className="research-pack-heading"><div><p className="eyebrow">Completed research pack</p><h3>Evidence gathered before drafting</h3></div><span><FileSearch /> {content.sources.length} sources</span></div>
     <p className="research-summary">{content.summary}</p>
     <div className="research-topics"><strong>{content.topic_classification.primary_topic}</strong>{content.topic_classification.secondary_topics.map((topic) => <span key={topic}>{topic}</span>)}</div>
-    {content.tags?.length ? <section className="research-tags"><h4>Suggested discovery tags</h4><div>{content.tags.map((tag) => <span key={`${tag.tag_type}-${tag.name}`} title={tag.rationale}><small>{tag.tag_type}</small>{tag.name}<em>{tag.confidence}%</em></span>)}</div><p>New tags are saved as proposals. They will not create public SEO pages until approved.</p></section> : null}
+    {content.tags?.length ? <section className="research-tags"><h4>Suggested discovery tags</h4><div>{content.tags.map((tag) => <span key={`${tag.tag_type}-${tag.name}`} title={tag.rationale}><small>{tag.tag_type}</small>{tag.name}<em>{tag.confidence}%</em></span>)}</div><p>New tags grow privately and become public SEO archives automatically once they reach the published-article threshold.</p></section> : null}
     <div className="research-columns">
       <section><h4>Key facts</h4><ResearchClaims claims={content.key_facts} sourceNumbers={sourceNumbers} /></section>
       <section><h4>Areas of agreement</h4><ResearchClaims claims={content.areas_of_agreement} sourceNumbers={sourceNumbers} /></section>
@@ -179,7 +179,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
         <Brand />
         <div className="admin-account"><span>{name}</span><AdminSignOutButton /></div>
       </header>
-      <AdminNav active="candidates" />
+      <AdminNav active="pipeline" subview="candidates" />
 
       <div className="admin-shell admin-candidates-shell">
         <section className="admin-welcome candidates-heading" aria-labelledby="candidates-heading">
@@ -206,7 +206,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
               const draftId = draftMap.get(candidate.id);
               const latestSourceAt = Math.max(...sources.map((source) => Date.parse(source.published_at ?? source.discovered_at)).filter(Number.isFinite), 0);
               return (
-                <article className="candidate-card" key={candidate.id}>
+                <article className="candidate-card" id={`candidate-${candidate.id}`} key={candidate.id}>
                   <div className="candidate-rank"><span>Position</span><strong>{index + 1}</strong></div>
                   <div className="candidate-main">
                     <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span>{!draftId && latestSourceAt > 0 ? <span className="candidate-stale-label"><ClockAlert /> Source dated {new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeZone: 'Europe/London' }).format(new Date(latestSourceAt))} · automation uses 7 days</span> : null}</div>

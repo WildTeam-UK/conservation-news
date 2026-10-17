@@ -5,6 +5,7 @@ import { stripSourceMarkers } from '@/lib/article-text';
 import type { ResearchClaim, ResearchContent } from './research-story';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { estimateLunaTokenCost } from './pricing';
+import { normalizeEditorialTopics, TAXONOMY_REVIEW_TOPIC } from '@/lib/taxonomy';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'draft-v3-image-fallbacks';
@@ -131,7 +132,7 @@ export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<
     .filter((query) => query && query.toLowerCase() !== primaryImageQuery.toLowerCase()))].slice(0, 2);
   const cleaned: StoryDraftContent = {
     template_version: 2,
-    topics: [...new Set((value.topics ?? []).map((topic) => cleanText(topic, 80)).filter(Boolean))].slice(0, 4),
+    topics: normalizeEditorialTopics((value.topics ?? []).map((topic) => cleanText(topic, 80)).filter(Boolean)).slice(0, 3),
     headline: stripSourceMarkers(cleanText(value.headline, 180)),
     standfirst: stripSourceMarkers(cleanText(value.standfirst, 400)),
     story_at_a_glance: sourcedList(value.story_at_a_glance, 3),
@@ -150,7 +151,7 @@ export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<
     seo_title: stripSourceMarkers(cleanText(value.seo_title, 180)),
     seo_description: cleanText(value.seo_description, 320),
   };
-  if (!cleaned.topics.length || !cleaned.headline || !cleaned.standfirst || cleaned.story_at_a_glance.length < 2 || cleaned.key_takeaways.length !== 5 || !cleaned.why_it_matters.text || !cleaned.why_it_matters.source_ids.length || !cleaned.what_happens_next.text || !cleaned.what_happens_next.source_ids.length || !cleaned.what_we_know.length || !cleaned.what_we_dont_know.length) {
+  if (!cleaned.headline || !cleaned.standfirst || cleaned.story_at_a_glance.length < 2 || cleaned.key_takeaways.length !== 5 || !cleaned.why_it_matters.text || !cleaned.why_it_matters.source_ids.length || !cleaned.what_happens_next.text || !cleaned.what_happens_next.source_ids.length || !cleaned.what_we_know.length || !cleaned.what_we_dont_know.length) {
     throw new Error('The article is incomplete or insufficiently sourced for the WildNews template.');
   }
   return cleaned;
@@ -184,7 +185,7 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
   const fallbackSourced: SourcedDraftText = { text: cleanText(record.standfirst, 8000), source_ids: sourceIds };
   return {
     template_version: 2,
-    topics: fallback.topics?.length ? fallback.topics : ['Solutions'],
+    topics: fallback.topics?.length ? fallback.topics : ['Conservation Practice'],
     headline: stripSourceMarkers(cleanText(record.headline, 180)),
     standfirst: stripSourceMarkers(cleanText(record.standfirst, 400)),
     story_at_a_glance: overview.length >= 2 ? overview.slice(0, 3) : [fallbackSourced, ...overview].slice(0, 2),
@@ -238,7 +239,10 @@ export async function generateStoryDraft(clusterId: string, userId: string | nul
   const sourceIdByUrl = new Map(research.sources.map((source, index) => [source.url, `source-${index + 1}`]));
   const validSourceIds = new Set(sourceIdByUrl.values());
   const sourceContext = research.sources.map((source, index) => ({ id: `source-${index + 1}`, ...source }));
-  const topics = [research.topic_classification.primary_topic, ...research.topic_classification.secondary_topics];
+  const taxonomyReviewRequired = research.topic_classification.review_required
+    || research.topic_classification.primary_topic === TAXONOMY_REVIEW_TOPIC
+    || research.topic_classification.confidence < 65;
+  const topics = taxonomyReviewRequired ? [] : normalizeEditorialTopics([research.topic_classification.primary_topic, ...research.topic_classification.secondary_topics]).slice(0, 3);
 
   const response = await getOpenAIClient().responses.create({
     model: MODEL,
@@ -364,14 +368,26 @@ This is a private first draft for human review, never a finished or published ar
     disputed_points: content.what_we_dont_know,
     open_questions: content.what_we_dont_know.map((item) => item.text),
     reviewer_id: userId,
+    taxonomy_review_required: taxonomyReviewRequired,
+    taxonomy_review_reason: taxonomyReviewRequired ? (research.topic_classification.review_reason || 'The research stage could not confidently assign a controlled topic.') : null,
+    taxonomy_confidence: research.topic_classification.confidence ?? null,
     generation_metadata: generationMetadata,
   }).select('id').single();
   if (storyError || !story) throw storyError ?? new Error('Could not save the generated draft.');
 
-  const { data: topic } = await supabase.from('topics').select('id').eq('name', research.topic_classification.primary_topic).maybeSingle();
-  if (topic) {
-    await supabase.from('stories').update({ primary_topic_id: topic.id }).eq('id', story.id);
-    await supabase.from('story_topics').upsert({ story_id: story.id, topic_id: topic.id }, { onConflict: 'story_id,topic_id' });
+  const { data: storedTopics, error: topicsError } = await supabase.from('topics').select('id, name').in('name', topics);
+  if (topicsError) throw topicsError;
+  const primaryTopic = taxonomyReviewRequired ? null : storedTopics?.find((topic) => topic.name === topics[0]);
+  if (primaryTopic) {
+    const { error: primaryTopicError } = await supabase.from('stories').update({ primary_topic_id: primaryTopic.id }).eq('id', story.id);
+    if (primaryTopicError) throw primaryTopicError;
+  }
+  if (storedTopics?.length) {
+    const { error: topicLinksError } = await supabase.from('story_topics').upsert(
+      storedTopics.map((topic) => ({ story_id: story.id, topic_id: topic.id })),
+      { onConflict: 'story_id,topic_id' },
+    );
+    if (topicLinksError) throw topicLinksError;
   }
   const sourceRows = research.sources.map((source, index) => ({
     story_id: story.id,
@@ -383,8 +399,8 @@ This is a private first draft for human review, never a finished or published ar
   }));
   const { error: sourcesError } = await supabase.from('story_sources').insert(sourceRows);
   if (sourcesError) throw sourcesError;
-  const { data: clusterTags } = await supabase.from('story_cluster_tags').select('tag_id').eq('cluster_id', clusterId);
-  if (clusterTags?.length) await supabase.from('story_tags').insert(clusterTags.map((tag) => ({ story_id: story.id, tag_id: tag.tag_id })));
+  const { data: clusterTags } = await supabase.from('story_cluster_tags').select('tag_id, confidence, rationale').eq('cluster_id', clusterId);
+  if (clusterTags?.length) await supabase.from('story_tags').insert(clusterTags.map((tag) => ({ story_id: story.id, tag_id: tag.tag_id, confidence: tag.confidence, rationale: tag.rationale })));
   await Promise.all([
     supabase.from('story_clusters').update({ status: 'drafted' }).eq('id', clusterId),
     supabase.from('ai_generations').insert({ story_id: story.id, cluster_id: clusterId, purpose: 'draft', provider: 'openai', model: MODEL, prompt_version: PROMPT_VERSION, input_tokens: inputTokens, output_tokens: outputTokens, estimated_cost_usd: estimatedCostUsd, warnings: [] }),

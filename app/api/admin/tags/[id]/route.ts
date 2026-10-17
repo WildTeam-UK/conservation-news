@@ -26,12 +26,20 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   if (!uuidPattern.test(id)) return Response.json({ error: 'A valid tag is required.' }, { status: 400 });
   if (!await requireAdmin()) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
-  const body = await request.json().catch(() => null) as { action?: string; name?: string; tagType?: string; description?: string; aliases?: string[]; targetId?: string } | null;
+  const body = await request.json().catch(() => null) as { action?: string; name?: string; tagType?: string; description?: string; seoTitle?: string; metaDescription?: string; aliases?: string[]; targetId?: string } | null;
   if (!body?.action) return Response.json({ error: 'Choose a tag action.' }, { status: 400 });
   const supabase = getSupabaseAdminClient();
 
   try {
     if (body.action === 'approve' || body.action === 'retire' || body.action === 'restore') {
+      if (body.action === 'approve') {
+        const [{ count, error: countError }, { data: settings, error: settingsError }] = await Promise.all([
+          supabase.from('story_tags').select('story_id, stories!inner(status)', { count: 'exact', head: true }).eq('tag_id', id).eq('stories.status', 'published'),
+          supabase.from('taxonomy_settings').select('min_published_stories').eq('id', true).single(),
+        ]);
+        if (countError || settingsError || !settings) throw countError ?? settingsError ?? new Error('Taxonomy settings were not found.');
+        if ((count ?? 0) < settings.min_published_stories) return Response.json({ error: `This tag needs ${settings.min_published_stories} published articles before it can go live.` }, { status: 409 });
+      }
       const status = body.action === 'restore' ? 'proposed' : body.action === 'retire' ? 'retired' : 'approved';
       const { error } = await supabase.from('content_tags').update({ status }).eq('id', id);
       if (error) throw error;
@@ -40,7 +48,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const tagType = body.tagType ?? '';
       if (!name || !tagTypes.has(tagType)) return Response.json({ error: 'Enter a valid tag name and type.' }, { status: 400 });
       const aliases = [...new Set((body.aliases ?? []).map((alias) => alias.trim().slice(0, 120)).filter((alias) => alias && normalizeTag(alias) !== normalizeTag(name)))].slice(0, 20);
-      const { error: updateError } = await supabase.from('content_tags').update({ name, slug: tagSlug(name), tag_type: tagType, description: body.description?.trim().slice(0, 500) || null }).eq('id', id);
+      const { error: updateError } = await supabase.from('content_tags').update({ name, slug: tagSlug(name), tag_type: tagType, description: body.description?.trim().slice(0, 500) || null, seo_title: body.seoTitle?.trim().slice(0, 120) || null, meta_description: body.metaDescription?.trim().slice(0, 200) || null }).eq('id', id);
       if (updateError) throw updateError;
       const { error: deleteError } = await supabase.from('content_tag_aliases').delete().eq('tag_id', id);
       if (deleteError) throw deleteError;

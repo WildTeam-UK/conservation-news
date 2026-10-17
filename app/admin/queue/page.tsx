@@ -34,14 +34,13 @@ export default async function PublicationQueuePage() {
   const { supabase, admin } = await requireContentAdmin();
   const [{ data: settings, error: settingsError }, { data: queue, error: queueError }] = await Promise.all([
     supabase.from('editorial_run_settings').select('auto_publish_enabled, publish_window_start, publish_window_end, max_auto_publishes_per_day, min_auto_publish_overall_score, min_auto_publish_evidence_score').eq('id', true).single(),
-    supabase.from('publication_queue').select('id, status, scheduled_for, published_at, hold_reason, last_error, stories(id, headline, slug, status)').order('scheduled_for', { ascending: true, nullsFirst: false }).limit(250),
+    supabase.from('publication_queue').select('id, status, scheduled_for, published_at, hold_reason, last_error, stories(id, headline, slug, status)').in('status', ['queued', 'scheduled', 'publishing', 'held']).order('scheduled_for', { ascending: true, nullsFirst: false }).limit(250),
   ]);
   if (settingsError) throw new Error('Unable to load automatic publishing settings.');
   if (queueError) throw new Error('Unable to load the publishing queue.');
   const items = (queue ?? []) as QueueItem[];
   const upcoming = items.filter((item) => ['queued', 'scheduled', 'publishing'].includes(item.status));
   const held = items.filter((item) => item.status === 'held');
-  const recent = items.filter((item) => item.status === 'published').sort((a, b) => Date.parse(b.published_at ?? '') - Date.parse(a.published_at ?? '')).slice(0, 20);
   const name = admin.display_name || admin.email;
 
   return (
@@ -50,7 +49,7 @@ export default async function PublicationQueuePage() {
       <AdminNav active="queue" />
       <div className="admin-shell admin-queue-shell">
         <section className="admin-welcome candidates-heading">
-          <div><p className="eyebrow">Publication control</p><h1>Publishing queue</h1><p>Control when complete articles go live and see exactly what is scheduled, held back or recently published.</p></div>
+          <div><p className="eyebrow">Publication control</p><h1>Schedule</h1><p>See what publishes next, adjust the queue and review anything being held back.</p></div>
           <div className="candidate-summary"><CalendarClock /><strong>{upcoming.length}</strong><span>upcoming</span></div>
         </section>
 
@@ -73,7 +72,6 @@ export default async function PublicationQueuePage() {
           {held.length ? <div className="queue-list held">{held.map((item) => { const story = storyFor(item); return story ? <article key={item.id}><span className="queue-alert"><CircleAlert /></span><div><strong>{story.headline}</strong><small>{item.hold_reason || item.last_error || 'Held for editorial review.'}</small></div><QueueItemActions queueId={item.id} storyId={story.id} held /></article> : null; })}</div> : <div className="queue-empty compact"><PauseCircle /><p>Nothing is being held back.</p></div>}
         </section>
 
-        {recent.length ? <section className="queue-section"><div className="source-list-heading"><div><p className="eyebrow">Recently automated</p><h2>Published from the queue</h2></div></div><div className="queue-list recent">{recent.map((item) => { const story = storyFor(item); return story ? <article key={item.id}><span className="run-status published">published</span><div><strong>{story.headline}</strong><small>{item.published_at ? dateTime.format(new Date(item.published_at)) : ''}</small></div><a href={`/stories/${story.slug}`} target="_blank" rel="noreferrer">View live</a></article> : null; })}</div></section> : null}
       </div>
     </main>
   );

@@ -2,6 +2,7 @@ import type { StoryDraftContent } from '@/lib/openai/draft-story';
 import { stripSourceMarkers } from '@/lib/article-text';
 import { publicationChecks } from '@/lib/publishing';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
 
 const ZONE = 'Europe/London';
 const MINIMUM_AUTOMATIC_SOURCES = 3;
@@ -172,7 +173,7 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
 
   let storyQuery = supabase
     .from('stories')
-    .select('id, cluster_id, generation_metadata, created_at')
+    .select('id, cluster_id, generation_metadata, taxonomy_review_required, taxonomy_review_reason, created_at')
     .eq('status', 'draft')
     .order('created_at');
   if (onlyStoryId) storyQuery = storyQuery.eq('id', onlyStoryId);
@@ -221,6 +222,7 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
     const sourceCount = sourceCounts.get(story.id) ?? 0;
     const cluster = story.cluster_id ? scores.get(story.cluster_id) : null;
     const reasons: string[] = [];
+    if (story.taxonomy_review_required) reasons.push(story.taxonomy_review_reason || 'Topic classification needs editorial review.');
     if (!content) reasons.push('Article content could not be verified.');
     else reasons.push(...publicationChecks(content, sourceCount).filter((check) => !check.passed).map((check) => check.label));
     if (sourceCount < MINIMUM_AUTOMATIC_SOURCES) reasons.push(`Automatic publishing requires at least ${MINIMUM_AUTOMATIC_SOURCES} sources.`);
@@ -323,6 +325,11 @@ export async function publishClaimedQueueItem(queueId: string) {
     if (publishError || !published) throw publishError ?? new Error('The draft changed before it could be published.');
     const { error: queueUpdateError } = await supabase.from('publication_queue').update({ status: 'published', published_at: publishedAt, claimed_at: null, hold_reason: null, last_error: null }).eq('id', queueId);
     await supabase.from('editorial_actions').insert({ story_id: story.id, user_id: null, action: 'published', notes: 'Article passed the automatic publication checklist and was published from the scheduled queue.' });
+    try {
+      await runTaxonomyGovernance({ includeTopics: true, maxEntities: 8 });
+    } catch (error) {
+      console.warn('Article published, but taxonomy governance could not be refreshed', error);
+    }
     return { action: queueUpdateError ? 'published_with_queue_warning' : 'published', storyId: story.id, headline: story.headline, publishedAt, warning: queueUpdateError?.message };
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'Unknown automatic publication error.';

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import './globals.css';
+import './admin-workspace.css';
 
 export const metadata: Metadata = {
   title: 'WILDNEWS | Conservation, clearly told',

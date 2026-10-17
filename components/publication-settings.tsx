@@ -55,27 +55,30 @@ export function PublicationSettings({ enabled, windowStart, windowEnd, dailyMaxi
   const valid = start && end && end > start && maximum >= 1 && maximum <= 200 && overall >= 0 && overall <= 100 && evidence >= 0 && evidence <= 100;
 
   return (
-    <section className="publication-settings-panel" aria-labelledby="publication-settings-heading">
-      <div className="publication-settings-intro">
-        <p className="eyebrow">Automatic publishing</p>
-        <h2 id="publication-settings-heading">Publishing schedule</h2>
-        <p>Complete drafts enter the queue automatically. Articles are distributed across the publishing window with controlled variation, while overflow moves into later days.</p>
-        <div className={`publication-mode ${autoPublishEnabled ? 'enabled' : ''}`}>
-          {autoPublishEnabled ? <PlayCircle /> : <PauseCircle />}
-          <div><strong>{autoPublishEnabled ? 'Automatic publishing active' : 'Automatic publishing paused'}</strong><small>Only complete, sourced articles above both quality thresholds can go live.</small></div>
+    <details className="publication-settings-disclosure">
+      <summary><span>{autoPublishEnabled ? <PlayCircle /> : <PauseCircle />}<span><strong>Publishing settings</strong><small>{autoPublishEnabled ? 'Automatic publishing active' : 'Automatic publishing paused'} · {start}–{end} · up to {maximum} per day</small></span></span><span>Edit settings</span></summary>
+      <section className="publication-settings-panel" aria-labelledby="publication-settings-heading">
+        <div className="publication-settings-intro">
+          <p className="eyebrow">Automatic publishing</p>
+          <h2 id="publication-settings-heading">Publishing schedule</h2>
+          <p>Complete, sourced drafts above both quality thresholds are distributed across your publishing window. Overflow moves into later days.</p>
+          <div className={`publication-mode ${autoPublishEnabled ? 'enabled' : ''}`}>
+            {autoPublishEnabled ? <PlayCircle /> : <PauseCircle />}
+            <div><strong>{autoPublishEnabled ? 'Automatic publishing active' : 'Automatic publishing paused'}</strong><small>The publication checklist is rechecked immediately before an article goes live.</small></div>
+          </div>
+          <div className="publication-safeguards"><span><Clock3 /> UK publishing hours</span><span><ShieldCheck /> Final checklist</span></div>
         </div>
-        <div className="publication-safeguards"><span><Clock3 /> UK publishing hours</span><span><ShieldCheck /> Checklist rechecked at publication</span></div>
-      </div>
-      <div className="publication-settings-controls">
-        <label><span>Publishing starts</span><input type="time" value={start} disabled={saving} onChange={(event) => setStart(event.target.value)} /></label>
-        <label><span>Publishing ends</span><input type="time" value={end} disabled={saving} onChange={(event) => setEnd(event.target.value)} /></label>
-        <label><span>Maximum per day</span><input type="number" min="1" max="200" step="1" value={maximum} disabled={saving} onChange={(event) => setMaximum(Number(event.target.value))} /><small>Saving a new limit reschedules unpublished articles across the available days.</small></label>
-        <label><span>Minimum overall score</span><input type="number" min="0" max="100" step="1" value={overall} disabled={saving} onChange={(event) => setOverall(Number(event.target.value))} /></label>
-        <label><span>Minimum evidence score</span><input type="number" min="0" max="100" step="1" value={evidence} disabled={saving} onChange={(event) => setEvidence(Number(event.target.value))} /></label>
-        <label className="automation-toggle"><span>Automatic publishing</span><span className="automation-toggle-control"><input type="checkbox" checked={autoPublishEnabled} disabled={saving} onChange={(event) => setAutoPublishEnabled(event.target.checked)} /> <strong>{autoPublishEnabled ? 'Enabled' : 'Paused'}</strong></span></label>
-        <button className="admin-primary-button publication-save-button" type="button" disabled={saving || !valid} onClick={save}>{saving ? <><LoaderCircle className="admin-spinner" /> Updating queue</> : <><Save /> Save publishing settings</>}</button>
-        {message ? <output className="schedule-message">{message}</output> : null}
-      </div>
-    </section>
+        <div className="publication-settings-controls">
+          <label><span>Publishing starts</span><input type="time" value={start} disabled={saving} onChange={(event) => setStart(event.target.value)} /></label>
+          <label><span>Publishing ends</span><input type="time" value={end} disabled={saving} onChange={(event) => setEnd(event.target.value)} /></label>
+          <label><span>Maximum per day</span><input type="number" min="1" max="200" step="1" value={maximum} disabled={saving} onChange={(event) => setMaximum(Number(event.target.value))} /><small>Changing this reschedules unpublished articles.</small></label>
+          <label><span>Minimum overall score</span><input type="number" min="0" max="100" step="1" value={overall} disabled={saving} onChange={(event) => setOverall(Number(event.target.value))} /></label>
+          <label><span>Minimum evidence score</span><input type="number" min="0" max="100" step="1" value={evidence} disabled={saving} onChange={(event) => setEvidence(Number(event.target.value))} /></label>
+          <label className="automation-toggle"><span>Automatic publishing</span><span className="automation-toggle-control"><input type="checkbox" checked={autoPublishEnabled} disabled={saving} onChange={(event) => setAutoPublishEnabled(event.target.checked)} /> <strong>{autoPublishEnabled ? 'Enabled' : 'Paused'}</strong></span></label>
+          <button className="admin-primary-button publication-save-button" type="button" disabled={saving || !valid} onClick={save}>{saving ? <><LoaderCircle className="admin-spinner" /> Updating queue</> : <><Save /> Save publishing settings</>}</button>
+          {message ? <output className="schedule-message">{message}</output> : null}
+        </div>
+      </section>
+    </details>
   );
 }

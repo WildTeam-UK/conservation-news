@@ -4,6 +4,7 @@ import { generateStoryDraft } from '@/lib/openai/draft-story';
 import { estimateWebSearchCost } from '@/lib/openai/pricing';
 import { researchCandidate } from '@/lib/openai/research-story';
 import { queueReadyDrafts } from '@/lib/publication-queue';
+import { enrichSourceSuggestionDescriptions, rebuildSourceSuggestionsFromResearch, scanBestSourceSuggestions } from '@/lib/source-discovery';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
 const ASSESSMENT_RESERVE_USD = 0.03;
@@ -267,6 +268,23 @@ async function finishRun(run: EditorialRun) {
       details: { error: detail },
     });
   }
+  await refreshSourceRecommendations(run.id);
+}
+
+async function refreshSourceRecommendations(runId: string) {
+  try {
+    const rebuilt = await rebuildSourceSuggestionsFromResearch();
+    const enriched = await enrichSourceSuggestionDescriptions();
+    const scanned = await scanBestSourceSuggestions(8);
+    await addEvent(runId, 'sources', `Source recommendations updated automatically; ${scanned.found} usable RSS ${scanned.found === 1 ? 'feed was' : 'feeds were'} found.`, {
+      details: { suggestions: rebuilt.suggestions, descriptions_created: enriched.described, feeds_checked: scanned.checked, feeds_found: scanned.found },
+    });
+  } catch (error) {
+    await addEvent(runId, 'sources', 'The editorial run completed, but source recommendations could not be refreshed.', {
+      level: 'warning',
+      details: { error: error instanceof Error ? error.message : 'Unknown source recommendation error.' },
+    });
+  }
 }
 
 async function recoverStaleItems(runId: string) {
@@ -338,7 +356,10 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
       details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, matched_items: result.matchedItems, updates_flagged: result.updatesFlagged, expired_items: result.expiredItems, recent_pool_shortlist: shortlist.length, freshness_days: CANDIDATE_FRESHNESS_DAYS },
       estimatedCostUsd: result.estimatedCostUsd,
     });
-    if (completed) await addEvent(run.id, 'run', 'Run completed because there were no new qualifying candidates.');
+    if (completed) {
+      await addEvent(run.id, 'run', 'Run completed because there were no new qualifying candidates.');
+      await refreshSourceRecommendations(run.id);
+    }
     return getEditorialRunSnapshot(run.id, completed ? 'No new qualifying candidates were found.' : 'Assessment complete. Researching the first candidate next.');
   }
 

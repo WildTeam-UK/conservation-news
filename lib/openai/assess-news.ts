@@ -1,6 +1,7 @@
 import { getOpenAIClient } from './client';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { estimateLunaTokenCost } from './pricing';
+import { EDITORIAL_TOPICS, type EditorialTopicName } from '@/lib/taxonomy';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'assessment-v2-recent-event-matching';
@@ -36,7 +37,7 @@ type AssessmentCluster = {
   working_title: string;
   item_ids: string[];
   relevant: boolean;
-  primary_topic: 'Wildlife' | 'Oceans' | 'Forests' | 'Freshwater' | 'Land & climate' | 'Solutions';
+  primary_topic: EditorialTopicName;
   relevance_score: number;
   evidence_score: number;
   practitioner_value_score: number;
@@ -221,7 +222,7 @@ Use concise neutral wording. This is triage and event matching, not fact checkin
                 type: 'object',
                 properties: {
                   working_title: { type: 'string' }, item_ids: { type: 'array', items: { type: 'string' } }, relevant: { type: 'boolean' },
-                  primary_topic: { type: 'string', enum: ['Wildlife', 'Oceans', 'Forests', 'Freshwater', 'Land & climate', 'Solutions'] },
+                  primary_topic: { type: 'string', enum: [...EDITORIAL_TOPICS] },
                   relevance_score: { type: 'number' }, evidence_score: { type: 'number' }, practitioner_value_score: { type: 'number' }, novelty_score: { type: 'number' }, overall_score: { type: 'number' },
                   rationale: { type: 'string' }, rejection_reason: { anyOf: [{ type: 'string' }, { type: 'null' }] }, existing_cluster_id: { anyOf: [{ type: 'string' }, { type: 'null' }] },
                   relationship: { type: 'string', enum: ['new_story', 'same_event', 'meaningful_update'] },
@@ -251,7 +252,7 @@ Use concise neutral wording. This is triage and event matching, not fact checkin
       return [{ ...cluster, item_ids: itemIds, existing_cluster_id: canMatch ? cluster.existing_cluster_id : null, relationship: canMatch ? cluster.relationship : 'new_story', relevance_score: clampScore(cluster.relevance_score), evidence_score: clampScore(cluster.evidence_score), practitioner_value_score: clampScore(cluster.practitioner_value_score), novelty_score: clampScore(cluster.novelty_score), overall_score: clampScore(cluster.overall_score) }];
     });
 
-    for (const item of items) if (!usedItemIds.has(item.id)) cleaned.push({ working_title: item.title, item_ids: [item.id], relevant: false, primary_topic: 'Solutions', relevance_score: 0, evidence_score: 0, practitioner_value_score: 0, novelty_score: 0, overall_score: 0, rationale: 'The item was not returned in the structured assessment.', rejection_reason: 'Incomplete AI assessment; requires manual review.', existing_cluster_id: null, relationship: 'new_story' });
+    for (const item of items) if (!usedItemIds.has(item.id)) cleaned.push({ working_title: item.title, item_ids: [item.id], relevant: false, primary_topic: 'Conservation Practice', relevance_score: 0, evidence_score: 0, practitioner_value_score: 0, novelty_score: 0, overall_score: 0, rationale: 'The item was not returned in the structured assessment.', rejection_reason: 'Incomplete AI assessment; requires manual review.', existing_cluster_id: null, relationship: 'new_story' });
 
     const eligible = cleaned.filter((cluster) => cluster.relevant && cluster.relevance_score >= 60 && cluster.overall_score >= 55).sort((a, b) => b.overall_score - a.overall_score);
     const eligibleSet = new Set(eligible);

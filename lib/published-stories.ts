@@ -4,10 +4,13 @@ import { stripSourceMarkers } from '@/lib/article-text';
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
 import type { Story } from '@/lib/stories';
 import { getPublicSupabaseConfig } from '@/lib/supabase/config';
+import { normalizeEditorialTopics } from '@/lib/taxonomy';
 
 type PublishedSource = { source_name: string; source_title: string; source_url: string; source_role: string; display_order: number };
 type PublishedTopicLink = { topics: { name: string; slug: string } | { name: string; slug: string }[] | null };
-type PublishedTagLink = { content_tags: { name: string; slug: string; status: string } | { name: string; slug: string; status: string }[] | null };
+type PublishedTagLink = { confidence: number | null; content_tags: { name: string; slug: string; status: string } | { name: string; slug: string; status: string }[] | null };
+
+export type PublicTaxonomyArchive = { name: string; slug: string; description: string | null; seo_title: string | null; meta_description: string | null };
 
 export type PublishedStory = {
   id: string;
@@ -30,7 +33,7 @@ function publicClient() {
   return createClient(url, publishableKey, { auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false } });
 }
 
-const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, byline, published_at, updated_at, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(content_tags(name, slug, status))';
+const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, byline, published_at, updated_at, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status))';
 
 function one<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? value[0] ?? null : value;
@@ -39,14 +42,26 @@ function one<T>(value: T | T[] | null): T | null {
 export function publishedTopics(story: PublishedStory) {
   const content = (story.generation_metadata.article_content ?? {}) as Partial<StoryDraftContent>;
   const linked = story.story_topics.flatMap((link) => one(link.topics)?.name ?? []);
-  return [...new Set([...(content.topics ?? []), ...linked].filter(Boolean))];
+  return normalizeEditorialTopics([...(content.topics ?? []), ...linked].filter(Boolean));
 }
 
 export function publishedTags(story: PublishedStory) {
   return story.story_tags.flatMap((link) => {
     const tag = one(link.content_tags);
-    return tag?.status === 'approved' ? [{ name: tag.name, slug: tag.slug }] : [];
-  });
+    return tag?.status === 'approved' ? [{ name: tag.name, slug: tag.slug, confidence: link.confidence ?? 0 }] : [];
+  }).sort((a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name));
+}
+
+export async function getPublicTopic(slug: string): Promise<PublicTaxonomyArchive | null> {
+  const { data, error } = await publicClient().from('topics').select('name, slug, description, seo_title, meta_description').eq('slug', slug).eq('active', true).maybeSingle();
+  if (error) throw error;
+  return data as PublicTaxonomyArchive | null;
+}
+
+export async function getPublicTag(slug: string): Promise<PublicTaxonomyArchive | null> {
+  const { data, error } = await publicClient().from('content_tags').select('name, slug, description, seo_title, meta_description').eq('slug', slug).eq('status', 'approved').maybeSingle();
+  if (error) throw error;
+  return data as PublicTaxonomyArchive | null;
 }
 
 export async function getPublishedStory(slug: string): Promise<PublishedStory | null> {
@@ -66,7 +81,7 @@ export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateD
   const sources = [...story.story_sources].sort((a, b) => a.display_order - b.display_order);
   return {
     topics: publishedTopics(story),
-    discoveryTags: publishedTags(story),
+    discoveryTags: publishedTags(story).slice(0, 3),
     headline: story.headline,
     storyAtAGlance: content.story_at_a_glance.map((item) => ({ text: item.text, sourceIds: item.source_ids })),
     imageUrl: story.image_url ?? content.image_url,
@@ -88,7 +103,7 @@ export function publishedStoryToListing(story: PublishedStory): Story {
   const topics = publishedTopics(story);
   return {
     slug: story.slug,
-    topic: topics[0] ?? 'Solutions',
+    topic: topics[0] ?? 'Conservation Practice',
     topics,
     title: story.headline,
     summary: stripSourceMarkers(story.standfirst),
