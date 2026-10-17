@@ -3,20 +3,20 @@
   .admin-page{display:grid;grid-template-columns:244px minmax(0,1fr);grid-template-rows:76px minmax(calc(100vh - 76px),auto);min-height:100vh}
   .admin-header{grid-column:1/-1;grid-row:1;position:sticky;top:0;z-index:30;min-height:76px;padding:0 28px;background:#fff}
   .admin-nav{grid-column:1;grid-row:2;position:sticky;top:76px;align-self:start;display:flex;flex-direction:column;align-items:stretch;gap:4px;width:244px;height:calc(100vh - 76px);min-height:0;padding:24px 14px;border-right:1px solid var(--rule);border-bottom:0;background:#fff;overflow-y:auto}
-  .admin-nav-group{display:block;margin:17px 11px 4px;color:var(--muted);font-size:8px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
+  .admin-nav-group{display:block;margin:17px 11px 4px;color:var(--muted);font-size:9px;font-weight:900;letter-spacing:.12em;text-transform:uppercase}
   .admin-nav-group:first-child{margin-top:0}
   .admin-nav a{display:flex;align-items:center;gap:11px;min-height:52px;padding:9px 11px;border:0;border-radius:10px;text-transform:none;letter-spacing:0}
   .admin-nav a:hover{background:var(--cream);color:var(--ink)}
-  .admin-nav a.active{border:0;background:var(--forest);color:#fff}
+  .admin-nav a.active{border:0;background:transparent;color:var(--forest)}
   .admin-nav a>span{display:grid;gap:2px}
   .admin-nav a strong{font-size:10px;font-weight:900;letter-spacing:.035em;text-transform:uppercase}
-  .admin-nav a small{color:var(--muted);font-size:8px;font-weight:600;letter-spacing:0;text-transform:none}
-  .admin-nav a.active small{color:rgba(255,255,255,.7)}
+  .admin-nav a small{color:var(--muted);font-size:9px;font-weight:600;letter-spacing:0;text-transform:none}
+  .admin-nav a.active strong,.admin-nav a.active small{color:var(--forest);font-weight:950}
   .admin-nav a>svg{width:17px;height:17px;flex:0 0 17px}
   .admin-nav .admin-nav-subitems{display:grid;gap:2px;margin:-1px 0 5px 38px;padding-left:10px;border-left:1px solid var(--rule)}
-  .admin-nav .admin-nav-subitems a{min-height:29px;padding:6px 9px;border:0;border-radius:7px;color:var(--muted);font-size:8px;font-weight:800;letter-spacing:.02em}
+  .admin-nav .admin-nav-subitems a{min-height:31px;padding:6px 9px;border:0;border-radius:7px;color:var(--muted);font-size:9px;font-weight:800;letter-spacing:.02em}
   .admin-nav .admin-nav-subitems a:hover{background:var(--cream);color:var(--ink)}
-  .admin-nav .admin-nav-subitems a.active{border:0;background:#efe7f0;color:var(--forest)}
+  .admin-nav .admin-nav-subitems a.active{border:0;background:transparent;color:var(--forest);font-weight:950}
   .admin-shell{grid-column:2;grid-row:2;width:min(1220px,calc(100% - 56px));margin:0 auto}
 }
 
@@ -161,11 +161,11 @@
   .admin-nav{position:sticky;top:70px;z-index:25;display:flex;align-items:stretch;gap:0;min-height:52px;padding:0 12px;border-bottom:1px solid var(--rule);background:#fff;overflow-x:auto}
   .admin-nav-group{display:none}
   .admin-nav a{display:flex;align-items:center;gap:7px;flex:0 0 auto;padding:0 13px;border-bottom:3px solid transparent;color:var(--muted);text-transform:none}
-  .admin-nav a.active{border-bottom-color:var(--lime);background:transparent;color:var(--ink)}
-  .admin-nav a>span{display:block}.admin-nav a strong{font-size:9px;text-transform:uppercase}.admin-nav a small{display:none}.admin-nav a>svg{width:14px}
+  .admin-nav a.active{border-bottom-color:transparent;background:transparent;color:var(--forest)}
+  .admin-nav a>span{display:block}.admin-nav a strong{font-size:10px;text-transform:uppercase}.admin-nav a small{display:none}.admin-nav a>svg{width:14px}
   .admin-nav .admin-nav-subitems{display:flex;align-items:stretch;flex:0 0 auto}
-  .admin-nav .admin-nav-subitems a{min-height:52px;padding:0 11px;border:0;border-bottom:3px solid transparent;border-radius:0;color:var(--muted);font-size:8px;font-weight:800;white-space:nowrap}
-  .admin-nav .admin-nav-subitems a.active{border-bottom-color:var(--lime);background:transparent;color:var(--ink)}
+  .admin-nav .admin-nav-subitems a{min-height:52px;padding:0 11px;border:0;border-bottom:3px solid transparent;border-radius:0;color:var(--muted);font-size:9px;font-weight:800;white-space:nowrap}
+  .admin-nav .admin-nav-subitems a.active{border-bottom-color:transparent;background:transparent;color:var(--forest);font-weight:950}
   .admin-shell{width:min(100% - 34px,860px);margin:0 auto}
   .overview-heading{align-items:flex-start;flex-direction:column}.overview-health-pill{align-self:flex-start}
   .overview-system-grid{grid-template-columns:1fr}.overview-columns{grid-template-columns:1fr}
@@ -184,3 +184,55 @@
   .admin-taxonomy-shell{padding-top:38px}.taxonomy-heading h1{font-size:49px}.taxonomy-summary{align-self:stretch}.taxonomy-automation-panel{padding:22px 19px}.taxonomy-automation-panel form{grid-template-columns:1fr}.taxonomy-automation-panel form>.taxonomy-reconcile-button{grid-column:auto}.taxonomy-view-heading{align-items:flex-start;flex-direction:column}.taxonomy-view-heading>p{text-align:left}.draft-topic-selector>div{grid-template-columns:1fr}
   .pipeline-tools-disclosure>summary,.taxonomy-settings-disclosure>summary,.publication-settings-disclosure>summary,.source-add-disclosure>summary,.overview-activity>summary{align-items:flex-start}.pipeline-tools-disclosure>summary>span:last-child,.taxonomy-settings-disclosure>summary>span:last-child,.publication-settings-disclosure>summary>span:last-child,.source-add-disclosure>summary>span:last-child,.overview-activity>summary>span:last-child{flex:0 0 auto}
 }
+
+/* Shared admin surface and control treatment */
+.admin-page{
+  --admin-card-border:#c9c4bd;
+  --admin-card-shadow:3px 3px 0 rgba(23,35,28,.12);
+}
+.admin-page :is(
+  .admin-stats,
+  .candidate-summary,
+  .candidate-card,
+  .draft-list article,
+  .draft-status-card,
+  .draft-preview,
+  .draft-template-preview,
+  .publish-panel,
+  .source-add-card,
+  .source-list-section,
+  .source-suggestion-section,
+  .tag-review-count,
+  .tag-review-card,
+  .taxonomy-summary,
+  .topic-editor-card,
+  .daily-run-panel,
+  .publication-settings-panel
+){
+  border-color:var(--admin-card-border);
+  box-shadow:var(--admin-card-shadow);
+}
+.admin-page :is(select,.candidate-toolbar select,.tag-edit-grid select,.tag-merge-control select){
+  appearance:none;
+  padding-right:38px;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236a6865' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 13px center;
+}
+.admin-page :is(
+  .source-suggestion-labels span,
+  .candidate-rank span,
+  .candidate-labels span,
+  .assessment-status,
+  .tag-card-labels span,
+  .topic-editor-heading div>p:last-child,
+  .topic-editor-card label>span,
+  .topic-editor-card label>small,
+  .draft-topic-selector>legend,
+  .draft-topic-selector label>small,
+  .pipeline-tools-disclosure>summary small,
+  .taxonomy-settings-disclosure>summary small,
+  .publication-settings-disclosure>summary small,
+  .source-add-disclosure>summary small,
+  .overview-activity>summary small
+){font-size:9px}

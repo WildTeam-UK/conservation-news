@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type ArticleView = 'all' | 'drafts' | 'scheduled' | 'unscheduled' | 'held' | 'published';
+type ArticleView = 'all' | 'scheduled' | 'unscheduled' | 'held' | 'published';
 type QueueGroup = 'scheduled' | 'unscheduled' | 'held';
 
 const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
@@ -35,7 +35,7 @@ function queueLabel(status?: string) {
 
 export default async function DraftsPage({ searchParams }: { searchParams: Promise<{ view?: string; q?: string }> }) {
   const filters = await searchParams;
-  const view: ArticleView = ['all', 'drafts', 'scheduled', 'unscheduled', 'held', 'published'].includes(filters.view ?? '') ? filters.view as ArticleView : 'all';
+  const view: ArticleView = ['all', 'scheduled', 'unscheduled', 'held', 'published'].includes(filters.view ?? '') ? filters.view as ArticleView : 'all';
   const search = (filters.q ?? '').trim();
   const { supabase, admin } = await requireContentAdmin();
   const { data: stories, error } = await supabase.from('stories').select('id, cluster_id, headline, standfirst, status, updated_at, published_at, generation_metadata').in('status', ['draft', 'published']).order('updated_at', { ascending: false });
@@ -54,7 +54,6 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
   const queueByStory = new Map((queueRows ?? []).map((row) => [row.story_id, row]));
   const counts = {
     all: stories?.length ?? 0,
-    drafts: drafts.length,
     scheduled: drafts.filter((draft) => queueGroup(queueByStory.get(draft.id)?.status) === 'scheduled').length,
     unscheduled: drafts.filter((draft) => queueGroup(queueByStory.get(draft.id)?.status) === 'unscheduled').length,
     held: drafts.filter((draft) => queueGroup(queueByStory.get(draft.id)?.status) === 'held').length,
@@ -64,7 +63,6 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
   const visibleArticles = (stories ?? []).filter((article) => {
     const group = article.status === 'draft' ? queueGroup(queueByStory.get(article.id)?.status) : null;
     const matchesView = view === 'all'
-      || (view === 'drafts' && article.status === 'draft')
       || (view === 'published' && article.status === 'published')
       || (article.status === 'draft' && group === view);
     const matchesSearch = !searchLower || `${article.headline} ${article.standfirst}`.toLocaleLowerCase('en-GB').includes(searchLower);
@@ -77,7 +75,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
     <AdminNav active="drafts" />
     <div className="admin-shell admin-drafts-shell">
       <section className="admin-welcome candidates-heading"><div><p className="eyebrow">Editorial workspace</p><h1>Articles</h1><p>Search and manage every private, scheduled, held and published article in one place.</p></div><div className="candidate-summary"><FilePenLine /><strong>{stories?.length ?? 0}</strong><span>total articles</span></div></section>
-      {stories?.length ? <div className="draft-library-tools"><nav aria-label="Filter articles">{(['all', 'drafts', 'scheduled', 'unscheduled', 'held', 'published'] as ArticleView[]).map((option) => { const query = new URLSearchParams(); if (option !== 'all') query.set('view', option); if (search) query.set('q', search); return <a className={view === option ? 'active' : ''} href={`/admin/drafts${query.size ? `?${query}` : ''}`} key={option}>{option === 'unscheduled' ? 'Not scheduled' : option}<span>{counts[option]}</span></a>; })}</nav><form action="/admin/drafts"><input type="hidden" name="view" value={view === 'all' ? '' : view} /><label><Search /><input aria-label="Search articles" name="q" defaultValue={search} placeholder="Search article titles…" /></label><button type="submit">Search</button>{search ? <a href={`/admin/drafts${view === 'all' ? '' : `?view=${view}`}`}>Clear</a> : null}</form></div> : null}
+      {stories?.length ? <div className="draft-library-tools"><nav aria-label="Filter articles">{(['all', 'scheduled', 'unscheduled', 'held', 'published'] as ArticleView[]).map((option) => { const query = new URLSearchParams(); if (option !== 'all') query.set('view', option); if (search) query.set('q', search); return <a className={view === option ? 'active' : ''} href={`/admin/drafts${query.size ? `?${query}` : ''}`} key={option}>{option === 'unscheduled' ? 'Not scheduled' : option}<span>{counts[option]}</span></a>; })}</nav><form action="/admin/drafts"><input type="hidden" name="view" value={view === 'all' ? '' : view} /><label><Search /><input aria-label="Search articles" name="q" defaultValue={search} placeholder="Search article titles…" /></label><button type="submit">Search</button>{search ? <a href={`/admin/drafts${view === 'all' ? '' : `?view=${view}`}`}>Clear</a> : null}</form></div> : null}
       {!stories?.length ? <section className="source-empty candidate-empty"><FilePenLine /><h2>No articles yet</h2><p>Research a candidate, then choose Generate draft.</p></section> : visibleArticles.length ? <section className="draft-list">{visibleArticles.map((article) => {
         const metadata = article.generation_metadata as { topic_classification?: { primary_topic?: string }; model?: string };
         const updates = article.cluster_id ? updateCounts.get(article.cluster_id) ?? 0 : 0;
