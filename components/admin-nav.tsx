@@ -1,5 +1,5 @@
+/* oxlint-disable next/no-html-link-for-pages -- full page loads reliably refresh protected Supabase admin views in Vinext */
 import { Activity, CalendarClock, FilePenLine, LayoutDashboard, Rss, Tags } from 'lucide-react';
-import Link from 'next/link';
 
 type AdminNavProps = {
   active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'sources' | 'tags';
@@ -24,10 +24,10 @@ export function AdminNav({ active, subview }: AdminNavProps) {
       <span className="admin-nav-group">Library</span>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'sources' ? 'active' : ''} href="/admin/sources"><Rss /><span><strong>Sources</strong><small>Feeds and source health</small></span></a>
-      <div className="admin-nav-subitems" aria-label="Source views"><Link className={subview === 'monitored' ? 'active' : ''} href="/admin/sources?view=monitored">Monitored sources</Link><Link className={subview === 'recommendations' ? 'active' : ''} href="/admin/sources?view=recommendations">Recommendations</Link></div>
+      <div className="admin-nav-subitems" aria-label="Source views"><a className={subview === 'monitored' ? 'active' : ''} href="/admin/sources?view=monitored">Monitored sources</a><a className={subview === 'recommendations' ? 'active' : ''} href="/admin/sources?view=recommendations">Recommendations</a></div>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'tags' ? 'active' : ''} href="/admin/tags"><Tags /><span><strong>Taxonomy</strong><small>Topics and tags</small></span></a>
-      <div className="admin-nav-subitems" aria-label="Taxonomy views"><Link className={subview === 'topics' ? 'active' : ''} href="/admin/tags?view=topics">Topics</Link><Link className={subview === 'tags' ? 'active' : ''} href="/admin/tags?view=tags">Tags</Link></div>
+      <div className="admin-nav-subitems" aria-label="Taxonomy views"><a className={subview === 'topics' ? 'active' : ''} href="/admin/tags?view=topics">Topics</a><a className={subview === 'tags' ? 'active' : ''} href="/admin/tags?view=tags">Tags</a></div>
     </nav>
     </>
   );
