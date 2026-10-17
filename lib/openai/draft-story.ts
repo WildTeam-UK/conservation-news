@@ -132,7 +132,7 @@ export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<
   const cleaned: StoryDraftContent = {
     template_version: 2,
     topics: [...new Set((value.topics ?? []).map((topic) => cleanText(topic, 80)).filter(Boolean))].slice(0, 4),
-    headline: cleanText(value.headline, 180),
+    headline: stripSourceMarkers(cleanText(value.headline, 180)),
     standfirst: stripSourceMarkers(cleanText(value.standfirst, 400)),
     story_at_a_glance: sourcedList(value.story_at_a_glance, 3),
     key_takeaways: sourcedList(value.key_takeaways, 5),
@@ -147,7 +147,7 @@ export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<
     image_search_fallbacks: imageSearchFallbacks,
     image_credit: cleanImageCredit(value.image_credit),
     byline: cleanText(value.byline, 120) || 'WildNews editorial team',
-    seo_title: cleanText(value.seo_title, 180),
+    seo_title: stripSourceMarkers(cleanText(value.seo_title, 180)),
     seo_description: cleanText(value.seo_description, 320),
   };
   if (!cleaned.topics.length || !cleaned.headline || !cleaned.standfirst || cleaned.story_at_a_glance.length < 2 || cleaned.key_takeaways.length !== 5 || !cleaned.why_it_matters.text || !cleaned.why_it_matters.source_ids.length || !cleaned.what_happens_next.text || !cleaned.what_happens_next.source_ids.length || !cleaned.what_we_know.length || !cleaned.what_we_dont_know.length) {
@@ -162,11 +162,13 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
     const content = record as StoryDraftContent;
     return {
       ...content,
+      headline: stripSourceMarkers(cleanText(content.headline, 180)),
       standfirst: stripSourceMarkers(cleanText(content.standfirst, 400)),
       coverage_analysis: normalizedCoverage(content.coverage_analysis),
-      image_search_query: cleanText(content.image_search_query, 120) || cleanText(content.headline, 120),
+      image_search_query: cleanText(content.image_search_query, 120) || stripSourceMarkers(cleanText(content.headline, 120)),
       image_search_fallbacks: Array.isArray(content.image_search_fallbacks) ? content.image_search_fallbacks.map((query) => cleanText(query, 120)).filter(Boolean).slice(0, 2) : [],
       image_credit: cleanImageCredit(content.image_credit),
+      seo_title: stripSourceMarkers(cleanText(content.seo_title, 180)),
     };
   }
   const bodySections = Array.isArray(record.body_sections) ? record.body_sections as { heading?: string; paragraphs?: SourcedDraftText[] }[] : [];
@@ -183,7 +185,7 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
   return {
     template_version: 2,
     topics: fallback.topics?.length ? fallback.topics : ['Solutions'],
-    headline: cleanText(record.headline, 180),
+    headline: stripSourceMarkers(cleanText(record.headline, 180)),
     standfirst: stripSourceMarkers(cleanText(record.standfirst, 400)),
     story_at_a_glance: overview.length >= 2 ? overview.slice(0, 3) : [fallbackSourced, ...overview].slice(0, 2),
     key_takeaways: [...takeaways, ...allBody].slice(0, 5),
@@ -198,7 +200,7 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
     image_search_fallbacks: [],
     image_credit: null,
     byline: cleanText(fallback.byline, 120) || 'WildNews editorial team',
-    seo_title: cleanText(record.seo_title, 180),
+    seo_title: stripSourceMarkers(cleanText(record.seo_title, 180)),
     seo_description: cleanText(record.seo_description, 320),
   };
 }

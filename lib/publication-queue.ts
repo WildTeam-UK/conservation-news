@@ -1,4 +1,5 @@
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
+import { stripSourceMarkers } from '@/lib/article-text';
 import { publicationChecks } from '@/lib/publishing';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
@@ -99,11 +100,12 @@ export async function rebalancePublicationQueue() {
   const protectedUntil = new Date(now.getTime() + 5 * 60_000).toISOString();
   const { data: movable, error: movableError } = await supabase
     .from('publication_queue')
-    .select('id')
-    .eq('status', 'scheduled')
-    .gt('scheduled_for', protectedUntil);
+    .select('id, scheduled_for')
+    .eq('status', 'scheduled');
   if (movableError) throw movableError;
-  const movableIds = (movable ?? []).map((row) => row.id);
+  const movableIds = (movable ?? [])
+    .filter((row) => !row.scheduled_for || row.scheduled_for < now.toISOString() || row.scheduled_for > protectedUntil)
+    .map((row) => row.id);
   if (movableIds.length) {
     const { error } = await supabase.from('publication_queue').update({ status: 'queued', scheduled_for: null }).in('id', movableIds);
     if (error) throw error;
@@ -199,8 +201,19 @@ export async function queueReadyDrafts(sourceRunId: string | null = null) {
 
   for (const story of stories) {
     const existingStatus = existingByStory.get(story.id);
-    if (existingStatus && existingStatus !== 'held') continue;
-    const content = (story.generation_metadata as { article_content?: StoryDraftContent } | null)?.article_content;
+    if (existingStatus && ['publishing', 'published', 'cancelled'].includes(existingStatus)) continue;
+    const metadata = (story.generation_metadata ?? {}) as Record<string, unknown> & { article_content?: StoryDraftContent };
+    let content = metadata.article_content;
+    if (content) {
+      const headline = stripSourceMarkers(content.headline);
+      const standfirst = stripSourceMarkers(content.standfirst);
+      const seoTitle = stripSourceMarkers(content.seo_title);
+      if (headline !== content.headline || standfirst !== content.standfirst || seoTitle !== content.seo_title) {
+        content = { ...content, headline, standfirst, seo_title: seoTitle };
+        const { error: cleanError } = await supabase.from('stories').update({ headline, standfirst, generation_metadata: { ...metadata, article_content: content } }).eq('id', story.id).eq('status', 'draft');
+        if (cleanError) throw cleanError;
+      }
+    }
     const sourceCount = sourceCounts.get(story.id) ?? 0;
     const cluster = story.cluster_id ? scores.get(story.cluster_id) : null;
     const reasons: string[] = [];
@@ -210,8 +223,9 @@ export async function queueReadyDrafts(sourceRunId: string | null = null) {
     if (!cluster || Number(cluster.overall_score ?? 0) < settings.min_auto_publish_overall_score) reasons.push(`Overall score is below ${settings.min_auto_publish_overall_score}.`);
     if (!cluster || Number(cluster.evidence_score ?? 0) < settings.min_auto_publish_evidence_score) reasons.push(`Evidence score is below ${settings.min_auto_publish_evidence_score}.`);
 
-    const status = reasons.length ? 'held' : 'queued';
+    const status = reasons.length ? 'held' : existingStatus === 'scheduled' ? 'scheduled' : 'queued';
     const priorityRank = runRanks.get(story.id) ?? (cluster ? 1000 - Number(cluster.overall_score ?? 0) : 2000);
+    if (existingStatus === 'scheduled' && status === 'scheduled') continue;
     const { error } = await supabase.from('publication_queue').upsert({
       story_id: story.id,
       source_run_id: runRanks.has(story.id) ? sourceRunId : null,
