@@ -31,6 +31,8 @@ export type SuggestedSource = {
   last_reason: string | null;
   last_seen_at: string;
   mentionCount: number;
+  evidenceTitle: string | null;
+  evidenceUrl: string | null;
 };
 
 export function SourceManager({ sources, suggestions }: { sources: EditorialSource[]; suggestions: SuggestedSource[] }) {
@@ -135,8 +137,8 @@ export function SourceManager({ sources, suggestions }: { sources: EditorialSour
         {suggestionMessage ? <output className={suggestionMessage.includes('could not') ? 'source-message' : 'source-message success'}>{suggestionMessage}</output> : null}
         {suggestions.length ? <div className="source-suggestion-list">{suggestions.map((suggestion) => (
           <article className="source-suggestion-card" key={suggestion.id}>
-            <div className="source-suggestion-score"><strong>{suggestion.recommendation_score}</strong><span>score</span></div>
-            <div className="source-suggestion-copy"><div className="source-suggestion-labels"><span>{suggestion.source_type}</span><span>{suggestion.mentionCount} {suggestion.mentionCount === 1 ? 'story' : 'stories'}</span><span>{suggestion.feed_status === 'found' ? 'RSS found' : suggestion.feed_status.replace('_', ' ')}</span></div><h3>{suggestion.name}</h3><a href={suggestion.homepage_url} target="_blank" rel="noreferrer">{suggestion.domain} <ExternalLink /></a>{suggestion.last_reason ? <p>{suggestion.last_reason}</p> : null}<small>Quality {suggestion.quality_score} · Originality {suggestion.originality_score}</small>{suggestion.feed_url ? <a className="source-found-feed" href={suggestion.feed_url} target="_blank" rel="noreferrer">Validated feed: {suggestion.feed_url}</a> : null}</div>
+            <div className="source-suggestion-score"><strong>{suggestion.recommendation_score}</strong></div>
+            <div className="source-suggestion-copy"><div className="source-suggestion-labels"><span>{suggestion.source_type}</span><span>{suggestion.mentionCount} {suggestion.mentionCount === 1 ? 'story' : 'stories'}</span><span>{suggestion.feed_status === 'found' ? 'RSS found' : suggestion.feed_status.replace('_', ' ')}</span></div><h3>{suggestion.name}</h3><a href={suggestion.homepage_url} target="_blank" rel="noreferrer">{suggestion.domain} <ExternalLink /></a>{suggestion.evidenceTitle && suggestion.evidenceUrl ? <p className="source-suggestion-evidence">WildNews cited <a href={suggestion.evidenceUrl} target="_blank" rel="noreferrer">“{suggestion.evidenceTitle}”</a> while researching a story.</p> : <p className="source-suggestion-evidence">WildNews used this publisher while researching a recent story.</p>}<small>Quality {suggestion.quality_score} · Originality {suggestion.originality_score}</small>{suggestion.feed_url ? <a className="source-found-feed" href={suggestion.feed_url} target="_blank" rel="noreferrer">Validated feed: {suggestion.feed_url}</a> : null}</div>
             <div className="source-suggestion-actions">{suggestion.feed_status === 'found' ? <button className="source-suggestion-add" type="button" disabled={updatingId === suggestion.id} onClick={() => runSuggestionAction(suggestion, 'add')}>{updatingId === suggestion.id ? <LoaderCircle className="admin-spinner" /> : <Check />} Add feed</button> : <button type="button" disabled={updatingId === suggestion.id} onClick={() => runSuggestionAction(suggestion, 'find_feed')}>{updatingId === suggestion.id ? <LoaderCircle className="admin-spinner" /> : <Search />} {suggestion.feed_status === 'not_found' ? 'Check again' : 'Find RSS feed'}</button>}<button className="source-suggestion-dismiss" type="button" disabled={updatingId === suggestion.id} onClick={() => runSuggestionAction(suggestion, 'dismiss')}><X /> Dismiss</button></div>
           </article>
         ))}</div> : <div className="source-empty"><Radar /><h3>No recommendations yet</h3><p>Refresh recommendations to analyse completed research packs. Future research will update this list automatically.</p></div>}

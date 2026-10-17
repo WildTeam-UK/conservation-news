@@ -16,7 +16,7 @@ export default async function SourcesPage() {
   const { supabase, admin } = await requireContentAdmin();
   const [{ data, error }, { data: suggestionData, error: suggestionError }] = await Promise.all([
     supabase.from('sources').select('id, name, homepage_url, feed_url, source_kind, trust_status, enabled, last_success_at, last_error').order('name'),
-    supabase.from('source_suggestions').select('id, domain, name, homepage_url, feed_url, feed_status, source_type, quality_score, originality_score, recommendation_score, last_reason, last_seen_at, source_suggestion_mentions(id)').eq('status', 'suggested').order('recommendation_score', { ascending: false }).order('last_seen_at', { ascending: false }).limit(30),
+    supabase.from('source_suggestions').select('id, domain, name, homepage_url, feed_url, feed_status, source_type, quality_score, originality_score, recommendation_score, last_reason, last_seen_at, source_suggestion_mentions(id, source_title, source_url)').eq('status', 'suggested').neq('feed_status', 'not_found').order('recommendation_score', { ascending: false }).order('last_seen_at', { ascending: false }).limit(30),
   ]);
 
   if (error || suggestionError) throw new Error('Unable to load editorial sources.');
@@ -36,7 +36,12 @@ export default async function SourcesPage() {
           <h1 id="sources-heading">Sources</h1>
           <p>Add the feeds and websites WildNews should check. You can pause any source without removing it.</p>
         </section>
-        <SourceManager sources={(data ?? []) as EditorialSource[]} suggestions={(suggestionData ?? []).map((suggestion) => ({ ...suggestion, mentionCount: suggestion.source_suggestion_mentions?.length ?? 0 })) as SuggestedSource[]} />
+        <SourceManager sources={(data ?? []) as EditorialSource[]} suggestions={(suggestionData ?? []).map((suggestion) => ({
+          ...suggestion,
+          mentionCount: suggestion.source_suggestion_mentions?.length ?? 0,
+          evidenceTitle: suggestion.source_suggestion_mentions?.[0]?.source_title ?? null,
+          evidenceUrl: suggestion.source_suggestion_mentions?.[0]?.source_url ?? null,
+        })) as SuggestedSource[]} />
       </div>
     </main>
   );
