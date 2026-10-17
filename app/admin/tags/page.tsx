@@ -29,7 +29,7 @@ export default async function TaxonomyPage({ searchParams }: TaxonomyPageProps) 
     supabase.from('story_cluster_tags').select('tag_id, confidence, rationale, story_clusters(id, working_title, status)').order('confidence', { ascending: false }),
     supabase.from('stories').select('id').eq('status', 'published').not('published_at', 'is', null),
     supabase.from('story_topics').select('story_id, topic_id'),
-    supabase.from('story_tags').select('story_id, tag_id'),
+    supabase.from('story_tags').select('story_id, tag_id, confidence, rationale, stories(id, slug, headline, status, published_at)'),
     supabase.from('taxonomy_settings').select('automation_enabled, min_published_stories, last_governance_run_at, last_governance_error, last_estimated_cost_usd').eq('id', true).single(),
   ]);
   if (topicsResult.error || tagsResult.error || aliasesResult.error || usagesResult.error || publishedStoriesResult.error || storyTopicsResult.error || storyTagsResult.error || settingsResult.error) throw new Error('Unable to load editorial taxonomy. Run the taxonomy migration if this is the first deployment.');
@@ -39,6 +39,13 @@ export default async function TaxonomyPage({ searchParams }: TaxonomyPageProps) 
   for (const link of storyTopicsResult.data ?? []) if (publishedIds.has(link.story_id)) topicCounts.set(link.topic_id, (topicCounts.get(link.topic_id) ?? 0) + 1);
   const tagCounts = new Map<string, number>();
   for (const link of storyTagsResult.data ?? []) if (publishedIds.has(link.story_id)) tagCounts.set(link.tag_id, (tagCounts.get(link.tag_id) ?? 0) + 1);
+  const publishedUsagesByTag = new Map<string, TagUsage[]>();
+  for (const link of storyTagsResult.data ?? []) {
+    if (!publishedIds.has(link.story_id)) continue;
+    const story = Array.isArray(link.stories) ? link.stories[0] : link.stories;
+    if (!story) continue;
+    publishedUsagesByTag.set(link.tag_id, [...(publishedUsagesByTag.get(link.tag_id) ?? []), { id: story.id, title: story.headline, slug: story.slug, status: story.status, confidence: link.confidence, rationale: link.rationale }]);
+  }
 
   const aliasesByTag = new Map<string, string[]>();
   for (const alias of aliasesResult.data ?? []) aliasesByTag.set(alias.tag_id, [...(aliasesByTag.get(alias.tag_id) ?? []), alias.alias]);
@@ -48,7 +55,7 @@ export default async function TaxonomyPage({ searchParams }: TaxonomyPageProps) 
     if (!cluster) continue;
     usagesByTag.set(usage.tag_id, [...(usagesByTag.get(usage.tag_id) ?? []), { id: cluster.id, title: cluster.working_title, status: cluster.status, confidence: usage.confidence, rationale: usage.rationale }]);
   }
-  const editorialTags = (tagsResult.data ?? []).map((tag) => ({ ...tag, aliases: aliasesByTag.get(tag.id) ?? [], usages: usagesByTag.get(tag.id) ?? [], publishedCount: tagCounts.get(tag.id) ?? 0 })) as EditorialTag[];
+  const editorialTags = (tagsResult.data ?? []).map((tag) => ({ ...tag, aliases: aliasesByTag.get(tag.id) ?? [], usages: tag.status === 'approved' ? publishedUsagesByTag.get(tag.id) ?? [] : usagesByTag.get(tag.id) ?? [], publishedCount: tagCounts.get(tag.id) ?? 0 })) as EditorialTag[];
   const editorialTopics = (topicsResult.data ?? []).map((topic) => ({ ...topic, storyCount: topicCounts.get(topic.id) ?? 0 })) as EditorialTopic[];
   const populatedTopicCount = editorialTopics.filter((topic) => topic.storyCount > 0).length;
   const settings = settingsResult.data;
