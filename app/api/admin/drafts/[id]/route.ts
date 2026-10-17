@@ -1,6 +1,7 @@
 import { cleanDraftContent, type StoryDraftContent } from '@/lib/openai/draft-story';
 import { recordUnsplashSelection } from '@/lib/images/unsplash';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { queueReadyDrafts } from '@/lib/publication-queue';
 
 export const dynamic = 'force-dynamic';
 
@@ -55,7 +56,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     }
     await supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'edited', notes: 'Draft edited and saved in the editorial workspace.' });
-    return Response.json({ saved: true });
+    try {
+      const queue = await queueReadyDrafts(null, id, false);
+      return Response.json({ saved: true, queue });
+    } catch (queueError) {
+      const queueWarning = queueError instanceof Error ? queueError.message : 'The publishing queue could not be refreshed.';
+      return Response.json({ saved: true, queueWarning });
+    }
   } catch (error) {
     console.error('Draft save failed', error);
     return Response.json({ error: error instanceof Error ? error.message : 'The draft could not be saved.' }, { status: 500 });

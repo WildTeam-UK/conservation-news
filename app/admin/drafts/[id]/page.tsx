@@ -1,6 +1,8 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, BellRing, ExternalLink, FilePenLine } from 'lucide-react';
+import { ArrowLeft, BellRing, CalendarClock, CircleAlert, ExternalLink, FilePenLine } from 'lucide-react';
+import { AddToQueueButton } from '@/components/add-to-queue-button';
 import { AdminNav } from '@/components/admin-nav';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { Brand } from '@/components/brand';
@@ -40,8 +42,15 @@ export default async function DraftPage({ params }: { params: Promise<{ id: stri
   if (!metadata.article_content) notFound();
   const topics = [metadata.topic_classification?.primary_topic, ...(metadata.topic_classification?.secondary_topics ?? [])].filter((topic): topic is string => Boolean(topic));
   const articleContent = migrateDraftContent(metadata.article_content, { topics, coverage_analysis: metadata.coverage_analysis, image_url: story.image_url, image_alt: story.image_alt, byline: story.byline });
-  const { data: coverageUpdateRows } = story.cluster_id ? await supabase.from('story_cluster_updates').select('id, relationship, rationale, created_at, source_items(title, url, sources(name))').eq('cluster_id', story.cluster_id).eq('status', 'pending_review').order('created_at', { ascending: false }) : { data: [] };
+  const [{ data: coverageUpdateRows }, { data: queueItem, error: queueError }] = await Promise.all([
+    story.cluster_id ? supabase.from('story_cluster_updates').select('id, relationship, rationale, created_at, source_items(title, url, sources(name))').eq('cluster_id', story.cluster_id).eq('status', 'pending_review').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
+    supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason').eq('story_id', story.id).maybeSingle(),
+  ]);
+  if (queueError) throw new Error('Unable to load this article’s publishing status.');
   const coverageUpdates = (coverageUpdateRows ?? []) as CoverageUpdate[];
+  const queueStatus = queueItem?.status;
+  const isQueued = queueStatus && ['queued', 'scheduled', 'publishing'].includes(queueStatus);
+  const isHeld = queueStatus === 'held';
   const name = admin.display_name || admin.email;
 
   return <main className="admin-page">
@@ -51,6 +60,7 @@ export default async function DraftPage({ params }: { params: Promise<{ id: stri
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className="admin-back-link" href="/admin/drafts"><ArrowLeft /> All drafts</a>
       <section className="admin-welcome draft-page-heading"><div><p className="eyebrow">{story.status === 'published' ? 'Published article' : 'Human review required'}</p><h1><FilePenLine /> {story.status === 'published' ? 'Article controls' : 'Edit draft'}</h1><p>{story.status === 'published' ? 'This article is live and locked. Unpublish it before making corrections.' : 'This article is private. Saving changes will not publish it.'}</p></div><div className="draft-status-card"><span>Status</span><strong>{story.status}</strong><small>Last saved {new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(story.updated_at))}</small></div></section>
+      {story.status === 'draft' ? <section className={`draft-queue-panel ${isHeld ? 'held' : isQueued ? 'scheduled' : 'unscheduled'}`}><span>{isHeld ? <CircleAlert /> : <CalendarClock />}</span><div><p className="eyebrow">Publishing queue</p><h2>{isHeld ? 'Held for review' : isQueued ? queueStatus === 'queued' ? 'Waiting for a slot' : 'Scheduled' : 'Not scheduled'}</h2><p>{isHeld ? queueItem?.hold_reason || 'This article needs attention before it can be scheduled.' : isQueued ? queueItem?.scheduled_for ? `Due to publish ${new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(queueItem.scheduled_for))}.` : 'It will receive a publishing time when the schedule is next balanced.' : 'This private draft will not publish automatically unless you add it to the queue.'}</p></div><div className="draft-queue-panel-actions">{!isQueued && !isHeld ? <AddToQueueButton storyId={story.id} /> : null}<Link href="/admin/queue">View queue</Link></div></section> : null}
       {coverageUpdates?.length ? <section className="new-coverage-panel"><div><BellRing /><span><strong>New coverage available</strong><small>These sources were matched to this story after the article was drafted. Review them before deciding whether the article needs updating.</small></span></div>{coverageUpdates.map((update) => { const item = Array.isArray(update.source_items) ? update.source_items[0] : update.source_items; const publisher = item && (Array.isArray(item.sources) ? item.sources[0]?.name : item.sources?.name); return item ? <a href={item.url} target="_blank" rel="noreferrer" key={update.id}><span><strong>{item.title}</strong><small>{publisher ?? 'Source'} · {update.relationship.replace('_', ' ')}</small>{update.rationale ? <em>{update.rationale}</em> : null}</span><ExternalLink /></a> : null; })}</section> : null}
       <PublishControls storyId={story.id} slug={story.slug} status={story.status} publishedAt={story.published_at} content={articleContent} sourceCount={metadata.source_ids?.length ?? 0} />
       <DraftEditor storyId={story.id} initialContent={articleContent} sourceList={metadata.source_ids ?? []} updatedAt={story.updated_at} readOnly={story.status === 'published'} />

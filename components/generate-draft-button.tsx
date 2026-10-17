@@ -7,6 +7,8 @@ import { FilePenLine, LoaderCircle } from 'lucide-react';
 type DraftResponse = {
   storyId?: string;
   estimatedCostUsd?: number;
+  queue?: { queued?: number; held?: number; scheduled?: number };
+  queueWarning?: string;
   error?: string;
 };
 
@@ -32,7 +34,12 @@ export function GenerateDraftButton({ clusterId }: { clusterId: string }) {
         setMessage(result.error ?? 'Draft generation failed.');
         return;
       }
-      setMessage(`Draft created. Estimated model cost: $${(result.estimatedCostUsd ?? 0).toFixed(4)}.`);
+      const queueMessage = result.queueWarning
+        ? ` The publishing queue could not be updated: ${result.queueWarning}`
+        : result.queue?.held
+          ? ' It is held privately for review because it did not pass every automatic publishing check.'
+          : ' It has been added to the automatic publishing schedule.';
+      setMessage(`Draft created. Estimated model cost: $${(result.estimatedCostUsd ?? 0).toFixed(4)}.${queueMessage}`);
       router.push(`/admin/drafts/${result.storyId}`);
     } catch {
       setFailed(true);

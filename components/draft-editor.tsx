@@ -46,12 +46,12 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, re
     setFailed(false);
     try {
       const response = await fetch(`/api/admin/drafts/${storyId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
-      const result = await response.json() as { saved?: boolean; error?: string };
+      const result = await response.json() as { saved?: boolean; queueWarning?: string; error?: string };
       if (!response.ok || !result.saved) {
         setFailed(true);
         setMessage(result.error ?? 'The draft could not be saved.');
       } else {
-        setMessage('Draft saved. It remains private and unpublished.');
+        setMessage(result.queueWarning ? `Draft saved, but ${result.queueWarning}` : 'Draft saved. Its automatic publishing slot has been checked.');
         router.refresh();
       }
     } catch {

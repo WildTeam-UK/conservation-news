@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { BrainCircuit, ExternalLink, FileSearch, Newspaper, ShieldCheck } from 'lucide-react';
+import { BrainCircuit, ClockAlert, ExternalLink, FileSearch, Newspaper, ShieldCheck } from 'lucide-react';
 import { AdminNav } from '@/components/admin-nav';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { Brand } from '@/components/brand';
@@ -48,6 +48,8 @@ type CandidateSource = {
   id: string;
   title: string;
   url: string;
+  published_at: string | null;
+  discovered_at: string;
   sources: { name: string } | { name: string }[] | null;
 };
 
@@ -146,7 +148,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
     if (sourceItemIds.length) {
       const { data: sourceItems, error: sourceError } = await supabase
         .from('source_items')
-        .select('id, title, url, sources(name)')
+        .select('id, title, url, published_at, discovered_at, sources(name)')
         .in('id', sourceItemIds);
       if (sourceError) throw new Error('Unable to load candidate sources.');
 
@@ -202,11 +204,12 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
               const sources = sourceMap.get(candidate.id) ?? [];
               const research = researchMap.get(candidate.id);
               const draftId = draftMap.get(candidate.id);
+              const latestSourceAt = Math.max(...sources.map((source) => Date.parse(source.published_at ?? source.discovered_at)).filter(Number.isFinite), 0);
               return (
                 <article className="candidate-card" key={candidate.id}>
                   <div className="candidate-rank"><span>Position</span><strong>{index + 1}</strong></div>
                   <div className="candidate-main">
-                    <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span></div>
+                    <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span>{!draftId && latestSourceAt > 0 ? <span className="candidate-stale-label"><ClockAlert /> Source dated {new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeZone: 'Europe/London' }).format(new Date(latestSourceAt))} · automation uses 7 days</span> : null}</div>
                     <h2>{candidate.working_title}</h2>
                     {assessment.rationale ? <p>{assessment.rationale}</p> : null}
                     <div className="candidate-sources">
