@@ -1,4 +1,5 @@
 import { generateStoryDraft } from '@/lib/openai/draft-story';
+import { queueReadyDrafts } from '@/lib/publication-queue';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export const dynamic = 'force-dynamic';
@@ -18,7 +19,14 @@ export async function POST(request: Request) {
   if (!body?.clusterId || !uuidPattern.test(body.clusterId)) return Response.json({ error: 'A valid candidate is required.' }, { status: 400 });
 
   try {
-    return Response.json(await generateStoryDraft(body.clusterId, user.id));
+    const result = await generateStoryDraft(body.clusterId, user.id);
+    try {
+      const queue = await queueReadyDrafts(null, result.storyId, true);
+      return Response.json({ ...result, queue });
+    } catch (queueError) {
+      const queueWarning = queueError instanceof Error ? queueError.message : 'The draft could not be added to the publishing queue.';
+      return Response.json({ ...result, queueWarning });
+    }
   } catch (error) {
     console.error('Story drafting failed', error);
     return Response.json({ error: error instanceof Error ? error.message : 'The article draft could not be created.' }, { status: 500 });

@@ -165,16 +165,18 @@ export async function rebalancePublicationQueue() {
   return { scheduled: cursor };
 }
 
-export async function queueReadyDrafts(sourceRunId: string | null = null) {
+export async function queueReadyDrafts(sourceRunId: string | null = null, onlyStoryId: string | null = null, forceRebalance = true) {
   const supabase = getSupabaseAdminClient();
   const settings = await getSettings();
   if (!settings.auto_publish_enabled) return { queued: 0, held: 0, scheduled: 0 };
 
-  const { data: stories, error: storiesError } = await supabase
+  let storyQuery = supabase
     .from('stories')
     .select('id, cluster_id, generation_metadata, created_at')
     .eq('status', 'draft')
     .order('created_at');
+  if (onlyStoryId) storyQuery = storyQuery.eq('id', onlyStoryId);
+  const { data: stories, error: storiesError } = await storyQuery;
   if (storiesError) throw storiesError;
   if (!stories?.length) return { queued: 0, held: 0, scheduled: 0 };
 
@@ -198,6 +200,7 @@ export async function queueReadyDrafts(sourceRunId: string | null = null) {
   const runRanks = new Map((runItems ?? []).flatMap((item) => item.story_id ? [[item.story_id, item.rank] as const] : []));
   let queued = 0;
   let held = 0;
+  let membershipChanged = false;
 
   for (const story of stories) {
     const existingStatus = existingByStory.get(story.id);
@@ -224,7 +227,9 @@ export async function queueReadyDrafts(sourceRunId: string | null = null) {
     if (!cluster || Number(cluster.evidence_score ?? 0) < settings.min_auto_publish_evidence_score) reasons.push(`Evidence score is below ${settings.min_auto_publish_evidence_score}.`);
 
     const status = reasons.length ? 'held' : existingStatus === 'scheduled' ? 'scheduled' : 'queued';
-    const priorityRank = runRanks.get(story.id) ?? (cluster ? 1000 - Number(cluster.overall_score ?? 0) : 2000);
+    const priorityRank = existingStatus === 'held' && status === 'queued'
+      ? 1_000_000
+      : runRanks.get(story.id) ?? (cluster ? 1000 - Number(cluster.overall_score ?? 0) : 2000);
     if (existingStatus === 'scheduled' && status === 'scheduled') continue;
     const { error } = await supabase.from('publication_queue').upsert({
       story_id: story.id,
@@ -236,12 +241,28 @@ export async function queueReadyDrafts(sourceRunId: string | null = null) {
       last_error: null,
     }, { onConflict: 'story_id' });
     if (error) throw error;
+    membershipChanged = membershipChanged || existingStatus !== status || status === 'queued';
     if (status === 'queued') queued += 1;
     else held += 1;
   }
 
-  const scheduled = await rebalancePublicationQueue();
+  const scheduled = forceRebalance || membershipChanged ? await rebalancePublicationQueue() : { scheduled: 0 };
   return { queued, held, scheduled: scheduled.scheduled };
+}
+
+export async function cancelQueuedPublication(queueId: string) {
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase
+    .from('publication_queue')
+    .update({ status: 'cancelled', scheduled_for: null, claimed_at: null, hold_reason: 'Removed from the automatic publishing queue by an editor.' })
+    .eq('id', queueId)
+    .in('status', ['queued', 'scheduled', 'held'])
+    .select('id, story_id')
+    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error('This article is no longer removable from the queue.');
+  const result = await rebalancePublicationQueue();
+  return { removed: true, storyId: data.story_id, rescheduled: result.scheduled };
 }
 
 export async function publishClaimedQueueItem(queueId: string) {

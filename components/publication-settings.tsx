@@ -69,7 +69,7 @@ export function PublicationSettings({ enabled, windowStart, windowEnd, dailyMaxi
       <div className="publication-settings-controls">
         <label><span>Publishing starts</span><input type="time" value={start} disabled={saving} onChange={(event) => setStart(event.target.value)} /></label>
         <label><span>Publishing ends</span><input type="time" value={end} disabled={saving} onChange={(event) => setEnd(event.target.value)} /></label>
-        <label><span>Maximum per day</span><input type="number" min="1" max="200" step="1" value={maximum} disabled={saving} onChange={(event) => setMaximum(Number(event.target.value))} /></label>
+        <label><span>Maximum per day</span><input type="number" min="1" max="200" step="1" value={maximum} disabled={saving} onChange={(event) => setMaximum(Number(event.target.value))} /><small>Saving a new limit reschedules unpublished articles across the available days.</small></label>
         <label><span>Minimum overall score</span><input type="number" min="0" max="100" step="1" value={overall} disabled={saving} onChange={(event) => setOverall(Number(event.target.value))} /></label>
         <label><span>Minimum evidence score</span><input type="number" min="0" max="100" step="1" value={evidence} disabled={saving} onChange={(event) => setEvidence(Number(event.target.value))} /></label>
         <label className="automation-toggle"><span>Automatic publishing</span><span className="automation-toggle-control"><input type="checkbox" checked={autoPublishEnabled} disabled={saving} onChange={(event) => setAutoPublishEnabled(event.target.checked)} /> <strong>{autoPublishEnabled ? 'Enabled' : 'Paused'}</strong></span></label>

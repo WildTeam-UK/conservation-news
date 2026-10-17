@@ -4,6 +4,7 @@ import { AdminNav } from '@/components/admin-nav';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { Brand } from '@/components/brand';
 import { PublicationSettings } from '@/components/publication-settings';
+import { QueueItemActions } from '@/components/queue-item-actions';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
 export const dynamic = 'force-dynamic';
@@ -64,12 +65,12 @@ export default async function PublicationQueuePage() {
 
         <section className="queue-section">
           <div className="source-list-heading"><div><p className="eyebrow">Coming up</p><h2>{upcoming.length} scheduled {upcoming.length === 1 ? 'article' : 'articles'}</h2></div><p>Times are varied within your publishing window. Newly queued work may rebalance future slots, but anything due within five minutes stays fixed.</p></div>
-          {upcoming.length ? <div className="queue-list">{upcoming.map((item) => { const story = storyFor(item); return story ? <article key={item.id}><span className={`run-status ${item.status}`}>{item.status}</span><div><strong>{story.headline}</strong><small>{item.scheduled_for ? dateTime.format(new Date(item.scheduled_for)) : 'Waiting for a publishing slot'}</small></div><a href={`/admin/drafts/${story.id}`}>Open article</a></article> : null; })}</div> : <div className="queue-empty"><CalendarClock /><h3>No articles are waiting</h3><p>Complete drafts will appear here automatically when publishing is enabled.</p></div>}
+          {upcoming.length ? <div className="queue-list">{upcoming.map((item) => { const story = storyFor(item); return story ? <article key={item.id}><span className={`run-status ${item.status}`}>{item.status}</span><div><strong>{story.headline}</strong><small>{item.scheduled_for ? dateTime.format(new Date(item.scheduled_for)) : 'Waiting for a publishing slot'}</small></div><QueueItemActions queueId={item.id} storyId={story.id} /></article> : null; })}</div> : <div className="queue-empty"><CalendarClock /><h3>No articles are waiting</h3><p>Complete drafts will appear here automatically when publishing is enabled.</p></div>}
         </section>
 
         <section className="queue-section">
           <div className="source-list-heading"><div><p className="eyebrow">Needs attention</p><h2>{held.length} held {held.length === 1 ? 'article' : 'articles'}</h2></div><p>Held articles stay private. Their reason is recorded so they can be corrected without interrupting the rest of the queue.</p></div>
-          {held.length ? <div className="queue-list held">{held.map((item) => { const story = storyFor(item); return story ? <article key={item.id}><span className="queue-alert"><CircleAlert /></span><div><strong>{story.headline}</strong><small>{item.hold_reason || item.last_error || 'Held for editorial review.'}</small></div><a href={`/admin/drafts/${story.id}`}>Review draft</a></article> : null; })}</div> : <div className="queue-empty compact"><PauseCircle /><p>Nothing is being held back.</p></div>}
+          {held.length ? <div className="queue-list held">{held.map((item) => { const story = storyFor(item); return story ? <article key={item.id}><span className="queue-alert"><CircleAlert /></span><div><strong>{story.headline}</strong><small>{item.hold_reason || item.last_error || 'Held for editorial review.'}</small></div><QueueItemActions queueId={item.id} storyId={story.id} held /></article> : null; })}</div> : <div className="queue-empty compact"><PauseCircle /><p>Nothing is being held back.</p></div>}
         </section>
 
         {recent.length ? <section className="queue-section"><div className="source-list-heading"><div><p className="eyebrow">Recently automated</p><h2>Published from the queue</h2></div></div><div className="queue-list recent">{recent.map((item) => { const story = storyFor(item); return story ? <article key={item.id}><span className="run-status published">published</span><div><strong>{story.headline}</strong><small>{item.published_at ? dateTime.format(new Date(item.published_at)) : ''}</small></div><a href={`/stories/${story.slug}`} target="_blank" rel="noreferrer">View live</a></article> : null; })}</div></section> : null}
