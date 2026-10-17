@@ -20,6 +20,7 @@
 .overview-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:42px}
 .overview-heading>div:first-child{max-width:790px}
 .overview-heading h1{max-width:780px;margin:8px 0 0;font-size:clamp(43px,5.5vw,70px);font-weight:900;line-height:.96;letter-spacing:-.05em}
+.overview-heading h1 .overview-greeting{color:var(--lime)}
 .overview-heading>div:first-child>p:last-child{max-width:670px;margin:20px 0 0;color:var(--muted);font-size:15px;line-height:1.6}
 .overview-health-pill{display:flex;align-items:center;gap:11px;flex:0 0 auto;min-width:200px;padding:13px 15px;border:1px solid #e4c191;border-radius:14px;background:#fff8e8;color:#8a520d}
 .overview-health-pill.healthy{border-color:#b9d8bf;background:#edf8ef;color:#17602d}

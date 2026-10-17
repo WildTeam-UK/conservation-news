@@ -30,6 +30,28 @@ function queueStory(item: QueueOverviewItem) {
 
 const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
 const timeOnly = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+const greetings = [
+  { text: 'Hey', language: 'English', lang: 'en' },
+  { text: 'Bonjour', language: 'French', lang: 'fr' },
+  { text: 'Hola', language: 'Spanish', lang: 'es' },
+  { text: 'Ciao', language: 'Italian', lang: 'it' },
+  { text: 'Olá', language: 'Portuguese', lang: 'pt' },
+  { text: 'Hallo', language: 'German', lang: 'de' },
+  { text: 'Hoi', language: 'Dutch', lang: 'nl' },
+  { text: 'Hej', language: 'Swedish', lang: 'sv' },
+  { text: 'Ahoj', language: 'Czech', lang: 'cs' },
+  { text: 'Cześć', language: 'Polish', lang: 'pl' },
+  { text: 'Merhaba', language: 'Turkish', lang: 'tr' },
+  { text: 'Habari', language: 'Swahili', lang: 'sw' },
+  { text: 'Kia ora', language: 'Māori', lang: 'mi' },
+  { text: 'Sawubona', language: 'Zulu', lang: 'zu' },
+  { text: 'नमस्ते', language: 'Hindi', lang: 'hi' },
+  { text: 'こんにちは', language: 'Japanese', lang: 'ja' },
+  { text: '안녕하세요', language: 'Korean', lang: 'ko' },
+  { text: '你好', language: 'Mandarin Chinese', lang: 'zh' },
+  { text: 'Γεια', language: 'Greek', lang: 'el' },
+  { text: 'Привіт', language: 'Ukrainian', lang: 'uk' },
+] as const;
 
 export default async function AdminDashboard() {
   const { supabase, admin } = await requireContentAdmin();
@@ -59,6 +81,9 @@ export default async function AdminDashboard() {
   const attentionCount = held.length + sourceErrors.length + (settings?.last_automation_error ? 1 : 0);
   const automationHealthy = Boolean(settings?.automation_enabled && settings?.auto_publish_enabled && !settings?.last_automation_error);
   const name = admin.display_name || admin.email;
+  // This is a dynamic server-rendered page, so a fresh greeting is intentionally chosen per request.
+  // oxlint-disable-next-line react/react-compiler
+  const greeting = greetings[Math.floor(Math.random() * greetings.length)];
 
   return (
     <main className="admin-page">
@@ -67,7 +92,7 @@ export default async function AdminDashboard() {
 
       <div className="admin-shell admin-overview-shell">
         <section className="overview-heading" aria-labelledby="admin-heading">
-          <div><p className="eyebrow">Editorial overview</p><h1 id="admin-heading">Everything at a glance.</h1><p>The routine work is automated. This page shows what is moving, what publishes next and where you may need to step in.</p></div>
+          <div><p className="eyebrow">Editorial overview</p><h1 id="admin-heading"><span className="overview-greeting" lang={greeting.lang} title={`${greeting.language} greeting`}>{greeting.text}</span> {name}, here&apos;s everything at a glance.</h1><p>The routine work is automated. This page shows what is moving, what publishes next and where you may need to step in.</p></div>
           <div className={`overview-health-pill ${automationHealthy ? 'healthy' : 'attention'}`}>{automationHealthy ? <CheckCircle2 /> : <AlertTriangle />}<span><strong>{automationHealthy ? 'System healthy' : 'Check system'}</strong><small>{attentionCount ? `${attentionCount} item${attentionCount === 1 ? '' : 's'} need attention` : 'No action needed'}</small></span></div>
         </section>
 
