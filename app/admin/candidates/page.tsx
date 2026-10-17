@@ -179,7 +179,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
         <Brand />
         <div className="admin-account"><span>{name}</span><AdminSignOutButton /></div>
       </header>
-      <AdminNav active="candidates" />
+      <AdminNav active="pipeline" />
 
       <div className="admin-shell admin-candidates-shell">
         <section className="admin-welcome candidates-heading" aria-labelledby="candidates-heading">
@@ -206,7 +206,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
               const draftId = draftMap.get(candidate.id);
               const latestSourceAt = Math.max(...sources.map((source) => Date.parse(source.published_at ?? source.discovered_at)).filter(Number.isFinite), 0);
               return (
-                <article className="candidate-card" key={candidate.id}>
+                <article className="candidate-card" id={`candidate-${candidate.id}`} key={candidate.id}>
                   <div className="candidate-rank"><span>Position</span><strong>{index + 1}</strong></div>
                   <div className="candidate-main">
                     <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span>{!draftId && latestSourceAt > 0 ? <span className="candidate-stale-label"><ClockAlert /> Source dated {new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeZone: 'Europe/London' }).format(new Date(latestSourceAt))} · automation uses 7 days</span> : null}</div>
