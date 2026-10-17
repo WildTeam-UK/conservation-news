@@ -2,6 +2,7 @@ import { getOpenAIClient } from './client';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { estimateLunaTokenCost } from './pricing';
 import { PRIMARY_TOPICS, SECONDARY_TOPICS, TAXONOMY_REVIEW_TOPIC } from '@/lib/taxonomy';
+import { recordResearchSourceSuggestions } from '@/lib/source-discovery';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'research-v2-calibrated-coverage';
@@ -395,6 +396,13 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
     };
 
     await saveCandidateTags(clusterId, content.tags);
+    try {
+      await recordResearchSourceSuggestions(clusterId, content.sources);
+    } catch (sourceDiscoveryError) {
+      // Source recommendations are useful enrichment, but must never make an
+      // otherwise successful research pack fail or interrupt drafting.
+      console.error('Could not update source recommendations', sourceDiscoveryError);
+    }
 
     const inputTokens = response.usage?.input_tokens ?? 0;
     const outputTokens = response.usage?.output_tokens ?? 0;
