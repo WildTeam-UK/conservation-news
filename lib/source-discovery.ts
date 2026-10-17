@@ -17,10 +17,22 @@ const sourceTypeScores: Record<SourceType, { quality: number; originality: numbe
 
 const commonSecondLevelSuffixes = new Set([
   'ac.uk', 'co.uk', 'gov.uk', 'org.uk',
+  'com.im',
   'asn.au', 'com.au', 'edu.au', 'gov.au', 'net.au', 'org.au',
   'ac.nz', 'co.nz', 'govt.nz', 'org.nz',
   'co.za', 'gov.za', 'org.za',
 ]);
+
+const canonicalSiteAliases = new Map([
+  ['bbc.co.uk', 'bbc'],
+  ['bbc.com', 'bbc'],
+  ['bbc.com.im', 'bbc'],
+  ['bbci.co.uk', 'bbc'],
+]);
+
+function isSyndicatedPublisher(name: string) {
+  return /\b(republished|carried|syndicated)\s+by\b/i.test(name);
+}
 
 function safeWebUrl(value: string) {
   try {
@@ -37,9 +49,10 @@ function safeWebUrl(value: string) {
 
 function siteDomain(hostname: string) {
   const parts = hostname.toLowerCase().replace(/^www\./, '').split('.').filter(Boolean);
-  if (parts.length <= 2) return parts.join('.');
+  if (parts.length <= 2) return canonicalSiteAliases.get(parts.join('.')) ?? parts.join('.');
   const lastTwo = parts.slice(-2).join('.');
-  return commonSecondLevelSuffixes.has(lastTwo) ? parts.slice(-3).join('.') : lastTwo;
+  const siteKey = commonSecondLevelSuffixes.has(lastTwo) ? parts.slice(-3).join('.') : lastTwo;
+  return canonicalSiteAliases.get(siteKey) ?? siteKey;
 }
 
 function sourceSite(value: string) {
@@ -80,7 +93,7 @@ async function registerInputs(inputs: DiscoveryInput[]) {
     const seenInStory = new Set<string>();
     for (const source of input.sources) {
       const site = sourceSite(source.url);
-      if (!site || monitoredDomains.has(site.siteKey) || seenInStory.has(site.domain)) continue;
+      if (!site || isSyndicatedPublisher(source.publisher) || monitoredDomains.has(site.siteKey) || seenInStory.has(site.domain)) continue;
       seenInStory.add(site.domain);
       const scores = sourceTypeScores[source.source_type];
       const current = bestByDomain.get(site.domain);
@@ -127,6 +140,19 @@ async function registerInputs(inputs: DiscoveryInput[]) {
     const score = scoreFor(suggestion.source_type as SourceType, count);
     return supabase.from('source_suggestions').update({ quality_score: score.quality, originality_score: score.originality, recommendation_score: score.recommendation }).eq('id', suggestion.id);
   }));
+  const { data: staleSuggestions, error: staleError } = await supabase
+    .from('source_suggestions')
+    .select('id, homepage_url, name')
+    .eq('status', 'suggested');
+  if (staleError) throw staleError;
+  const staleIds = (staleSuggestions ?? []).flatMap((suggestion) => {
+    const site = sourceSite(suggestion.homepage_url);
+    return !site || monitoredDomains.has(site.siteKey) || isSyndicatedPublisher(suggestion.name) ? [suggestion.id] : [];
+  });
+  if (staleIds.length) {
+    const { error: pruneError } = await supabase.from('source_suggestions').delete().in('id', staleIds);
+    if (pruneError) throw pruneError;
+  }
   return { suggestions: suggestions.length, mentions: mentionRows.length };
 }
 

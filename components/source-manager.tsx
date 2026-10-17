@@ -98,7 +98,7 @@ export function SourceManager({ sources, suggestions }: { sources: EditorialSour
     if (!response.ok) setSuggestionMessage(result.error ?? 'Source recommendations could not be refreshed.');
     else setSuggestionMessage(`Reviewed the research library and checked ${result.checked ?? 0} promising sites. ${result.found ?? 0} new RSS ${result.found === 1 ? 'feed was' : 'feeds were'} found.`);
     setRefreshingSuggestions(false);
-    router.refresh();
+    if (response.ok) window.location.reload();
   }
 
   async function runSuggestionAction(suggestion: SuggestedSource, action: 'find_feed' | 'add' | 'dismiss') {
@@ -111,7 +111,7 @@ export function SourceManager({ sources, suggestions }: { sources: EditorialSour
     else if (action === 'add') setSuggestionMessage(`${suggestion.name} was added as an active provisional source.`);
     else setSuggestionMessage(`${suggestion.name} was removed from recommendations.`);
     setUpdatingId(null);
-    router.refresh();
+    if (response.ok) window.location.reload();
   }
 
   return (
