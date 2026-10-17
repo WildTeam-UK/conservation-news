@@ -1,5 +1,6 @@
+/* oxlint-disable next/no-html-link-for-pages -- full page loads reliably refresh the protected Supabase session in Vinext */
 import type { Metadata } from 'next';
-import { BookOpenText, Newspaper, Rss, SearchCheck } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, CircleDollarSign, FileText, Newspaper, Radio, Rss } from 'lucide-react';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { AdminNav } from '@/components/admin-nav';
 import { Brand } from '@/components/brand';
@@ -10,66 +11,120 @@ import { requireContentAdmin } from '@/lib/supabase/require-admin';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Editorial dashboard | WILDNEWS',
+  title: 'Overview | WILDNEWS editorial',
   robots: { index: false, follow: false },
 };
 
+type QueueStory = { id: string; headline: string };
+type QueueOverviewItem = {
+  id: string;
+  status: string;
+  scheduled_for: string | null;
+  hold_reason: string | null;
+  stories: QueueStory | QueueStory[] | null;
+};
+
+function queueStory(item: QueueOverviewItem) {
+  return Array.isArray(item.stories) ? item.stories[0] : item.stories;
+}
+
+const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
+const timeOnly = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
+
 export default async function AdminDashboard() {
   const { supabase, admin } = await requireContentAdmin();
-  const [draftsResult, publishedResult, sourcesResult, itemsResult, runsResult, settingsResult, editorialRunsResult, activeRunResult] = await Promise.all([
+  const [draftsResult, publishedResult, sourcesResult, itemsResult, candidatesResult, queueResult, heldResult, sourceErrorsResult, settingsResult, editorialRunsResult, activeRunResult, ingestionRunsResult] = await Promise.all([
     supabase.from('stories').select('*', { count: 'exact', head: true }).eq('status', 'draft'),
     supabase.from('stories').select('*', { count: 'exact', head: true }).eq('status', 'published'),
     supabase.from('sources').select('*', { count: 'exact', head: true }).eq('enabled', true),
     supabase.from('source_items').select('*', { count: 'exact', head: true }),
-    supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, error_summary, created_at').order('created_at', { ascending: false }).limit(5),
-    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error').eq('id', true).maybeSingle(),
+    supabase.from('story_clusters').select('*', { count: 'exact', head: true }).eq('status', 'selected'),
+    supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').in('status', ['queued', 'scheduled', 'publishing']).order('scheduled_for', { ascending: true, nullsFirst: false }),
+    supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').eq('status', 'held').order('updated_at', { ascending: false }),
+    supabase.from('sources').select('id, name, last_error').eq('enabled', true).not('last_error', 'is', null),
+    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, max_auto_publishes_per_day').eq('id', true).maybeSingle(),
     supabase.from('editorial_runs').select('id, trigger_type, status, max_new_drafts, estimated_cost_usd, drafts_created, candidates_selected, failures, created_at, completed_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('editorial_runs').select('id').eq('status', 'running').maybeSingle(),
+    supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, error_summary, created_at').order('created_at', { ascending: false }).limit(1),
   ]);
 
+  const settings = settingsResult.data;
+  const upcoming = (queueResult.data ?? []) as QueueOverviewItem[];
+  const held = (heldResult.data ?? []) as QueueOverviewItem[];
+  const sourceErrors = sourceErrorsResult.data ?? [];
+  const latestEditorialRun = editorialRunsResult.data?.[0];
+  const latestIngestionRun = ingestionRunsResult.data?.[0];
+  const nextItem = upcoming.find((item) => item.scheduled_for);
+  const nextStory = nextItem ? queueStory(nextItem) : null;
+  const attentionCount = held.length + sourceErrors.length + (settings?.last_automation_error ? 1 : 0);
+  const automationHealthy = Boolean(settings?.automation_enabled && settings?.auto_publish_enabled && !settings?.last_automation_error);
   const name = admin.display_name || admin.email;
 
   return (
     <main className="admin-page">
-      <header className="admin-header">
-        <Brand />
-        <div className="admin-account"><span>{name}</span><AdminSignOutButton /></div>
-      </header>
-
+      <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
       <AdminNav active="dashboard" />
 
-      <div className="admin-shell">
-        <section className="admin-welcome" aria-labelledby="admin-heading">
-          <p className="eyebrow">Editorial dashboard</p>
-          <h1 id="admin-heading">Good to see you.</h1>
-          <p>This is where the daily recommendations will arrive for review before anything is published.</p>
+      <div className="admin-shell admin-overview-shell">
+        <section className="overview-heading" aria-labelledby="admin-heading">
+          <div><p className="eyebrow">Editorial overview</p><h1 id="admin-heading">Everything at a glance.</h1><p>The routine work is automated. This page shows what is moving, what publishes next and where you may need to step in.</p></div>
+          <div className={`overview-health-pill ${automationHealthy ? 'healthy' : 'attention'}`}>{automationHealthy ? <CheckCircle2 /> : <AlertTriangle />}<span><strong>{automationHealthy ? 'System healthy' : 'Check system'}</strong><small>{attentionCount ? `${attentionCount} item${attentionCount === 1 ? '' : 's'} need attention` : 'No action needed'}</small></span></div>
         </section>
 
-        <section className="admin-stats" aria-label="Content overview">
-          <article><span><BookOpenText /></span><strong>{draftsResult.count ?? 0}</strong><p>Drafts awaiting review</p></article>
-          <article><span><Newspaper /></span><strong>{publishedResult.count ?? 0}</strong><p>Published stories</p></article>
-          <article><span><Rss /></span><strong>{sourcesResult.count ?? 0}</strong><p>Active sources</p></article>
-          <article><span><SearchCheck /></span><strong>{itemsResult.count ?? 0}</strong><p>Collected source items</p></article>
+        <section className="overview-system-grid" aria-label="Automation health">
+          <article><span className={`overview-card-icon ${settings?.automation_enabled ? 'healthy' : ''}`}><Bot /></span><div><p className="eyebrow">Daily workflow</p><h2>{settings?.automation_enabled ? 'Running automatically' : 'Paused'}</h2><p>Next scheduled run at {String(settings?.daily_run_time ?? '10:00').slice(0, 5)} UK time.</p></div><strong>{latestEditorialRun?.drafts_created ?? 0}<small>drafts last run</small></strong></article>
+          <article><span className={`overview-card-icon ${settings?.auto_publish_enabled ? 'healthy' : ''}`}><CalendarClock /></span><div><p className="eyebrow">Publishing</p><h2>{settings?.auto_publish_enabled ? 'Publishing automatically' : 'Paused'}</h2><p>{String(settings?.publish_window_start ?? '08:00').slice(0, 5)}–{String(settings?.publish_window_end ?? '20:00').slice(0, 5)} · up to {settings?.max_auto_publishes_per_day ?? 10} per day.</p></div><strong>{upcoming.length}<small>coming up</small></strong></article>
+          <article><span className={`overview-card-icon ${sourceErrors.length ? 'warning' : 'healthy'}`}><Rss /></span><div><p className="eyebrow">Source network</p><h2>{sourceErrors.length ? `${sourceErrors.length} source warning${sourceErrors.length === 1 ? '' : 's'}` : 'All sources responding'}</h2><p>{sourcesResult.count ?? 0} active sources · last check found {latestIngestionRun?.items_new ?? 0} new items.</p></div><strong>{latestIngestionRun?.sources_checked ?? 0}<small>checked last run</small></strong></article>
         </section>
 
-        <DailyEditorialRun
-          defaultMaxDrafts={settingsResult.data?.max_new_drafts ?? 10}
-          defaultMaxCostUsd={Number(settingsResult.data?.max_estimated_cost_usd ?? 1)}
-          defaultAutomationEnabled={settingsResult.data?.automation_enabled ?? false}
-          defaultDailyRunTime={settingsResult.data?.daily_run_time ?? '10:00'}
-          lastAutomationTickAt={settingsResult.data?.last_automation_tick_at ?? null}
-          lastAutomationError={settingsResult.data?.last_automation_error ?? null}
-          hasActiveRun={Boolean(activeRunResult.data)}
-        />
-
-        {(editorialRunsResult.data?.length ?? 0) > 0 ? <section className="editorial-run-history"><div className="collection-history-heading"><p className="eyebrow">Audit trail</p><h2>Daily runs</h2></div><div className="collection-runs">{editorialRunsResult.data?.map((run) => <article key={run.id}><span className={`run-status ${run.status}`}>{run.status.replace('_', ' ')}</span><div><strong>{run.drafts_created} private {run.drafts_created === 1 ? 'draft' : 'drafts'}</strong><p>{run.trigger_type === 'scheduled' ? 'Scheduled' : 'Manual'} · {run.candidates_selected} selected · ${Number(run.estimated_cost_usd).toFixed(4)} estimated{run.failures ? ` · ${run.failures} failed` : ''}</p></div><time dateTime={run.created_at}>{new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(run.created_at))}</time></article>)}</div></section> : null}
-
-        <section className="collection-panel">
-          <div className="collection-panel-copy"><p className="eyebrow">Manual test</p><h2>Collect the latest stories</h2><p>Check every active RSS source and save any items that have not been seen before. Nothing will be drafted or published yet.</p></div>
-          <div className="collection-panel-actions"><RunCollectionButton />{/* oxlint-disable-next-line next/no-html-link-for-pages */}<a href="/admin/collected">View collected items</a></div>
+        <section className="overview-flow" aria-labelledby="flow-heading">
+          <div className="overview-section-heading"><div><p className="eyebrow">Content flow</p><h2 id="flow-heading">From source to publication</h2></div><p>Live totals show where content currently sits in the system.</p></div>
+          <div className="overview-flow-track">
+            <a href="/admin/collected"><span><Radio /></span><strong>{itemsResult.count ?? 0}</strong><small>Collected</small></a><ArrowRight />
+            <a href="/admin/candidates"><span><Activity /></span><strong>{candidatesResult.count ?? 0}</strong><small>Candidates</small></a><ArrowRight />
+            <a href="/admin/drafts?view=drafts"><span><FileText /></span><strong>{draftsResult.count ?? 0}</strong><small>Drafts</small></a><ArrowRight />
+            <a href="/admin/queue"><span><CalendarClock /></span><strong>{upcoming.length}</strong><small>Scheduled</small></a><ArrowRight />
+            <a href="/admin/drafts?view=published"><span><Newspaper /></span><strong>{publishedResult.count ?? 0}</strong><small>Published</small></a>
+          </div>
         </section>
 
-        {(runsResult.data?.length ?? 0) > 0 ? <section className="collection-history"><div className="collection-history-heading"><p className="eyebrow">Recent activity</p><h2>Collection runs</h2></div><div className="collection-runs">{runsResult.data?.map((run) => <article key={run.id}><span className={`run-status ${run.status}`}>{run.status}</span><div><strong>{run.items_new} new items</strong><p>{run.items_found} found across {run.sources_checked} {run.sources_checked === 1 ? 'source' : 'sources'}</p>{run.error_summary ? <p className="collection-run-error">{run.error_summary}</p> : null}</div><time dateTime={run.created_at}>{new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(run.created_at))}</time></article>)}</div></section> : null}
+        <div className="overview-columns">
+          <section className="overview-panel overview-next">
+            <div className="overview-section-heading"><div><p className="eyebrow">Publishing next</p><h2>{nextItem?.scheduled_for ? `Next at ${timeOnly.format(new Date(nextItem.scheduled_for))}` : 'No article scheduled'}</h2></div><a href="/admin/queue">View schedule <ArrowRight /></a></div>
+            {upcoming.length ? <div className="overview-next-list">{upcoming.slice(0, 5).map((item) => { const story = queueStory(item); return story ? <article key={item.id}><time>{item.scheduled_for ? dateTime.format(new Date(item.scheduled_for)) : 'Waiting for a slot'}</time><strong>{story.headline}</strong><span className={`run-status ${item.status}`}>{item.status}</span></article> : null; })}</div> : <div className="overview-calm-state"><CalendarClock /><p>There is nothing waiting in the publishing queue.</p></div>}
+            {nextStory ? <p className="overview-next-note">Next article: <strong>{nextStory.headline}</strong></p> : null}
+          </section>
+
+          <section className="overview-panel overview-attention">
+            <div className="overview-section-heading"><div><p className="eyebrow">Needs attention</p><h2>{attentionCount ? `${attentionCount} item${attentionCount === 1 ? '' : 's'} to review` : 'Everything looks good'}</h2></div></div>
+            {attentionCount ? <div className="overview-alert-list">
+              {settings?.last_automation_error ? <article><AlertTriangle /><div><strong>Automation warning</strong><p>{settings.last_automation_error}</p></div></article> : null}
+              {held.slice(0, 4).map((item) => { const story = queueStory(item); return <article key={item.id}><CalendarClock /><div><strong>{story?.headline ?? 'Held article'}</strong><p>{item.hold_reason ?? 'Held for editorial review.'}</p></div></article>; })}
+              {sourceErrors.slice(0, 4).map((source) => <article key={source.id}><Rss /><div><strong>{source.name}</strong><p>{source.last_error}</p></div></article>)}
+            </div> : <div className="overview-calm-state"><CheckCircle2 /><p>No held articles, source errors or automation warnings.</p></div>}
+          </section>
+        </div>
+
+        <section className="overview-activity">
+          <div className="overview-section-heading"><div><p className="eyebrow">Recent activity</p><h2>Latest editorial runs</h2></div><span><CircleDollarSign /> ${Number(latestEditorialRun?.estimated_cost_usd ?? 0).toFixed(4)} last run</span></div>
+          <div className="collection-runs">{editorialRunsResult.data?.map((run) => <article key={run.id}><span className={`run-status ${run.status}`}>{run.status.replace('_', ' ')}</span><div><strong>{run.drafts_created} private {run.drafts_created === 1 ? 'draft' : 'drafts'}</strong><p>{run.trigger_type === 'scheduled' ? 'Scheduled' : 'Manual'} · {run.candidates_selected} selected · ${Number(run.estimated_cost_usd).toFixed(4)} estimated{run.failures ? ` · ${run.failures} failed` : ''}</p></div><time dateTime={run.created_at}>{dateTime.format(new Date(run.created_at))}</time></article>)}</div>
+        </section>
+
+        <details className="overview-manual-controls">
+          <summary><span><strong>Manual controls</strong><small>Run or test individual workflow stages when needed.</small></span><ArrowRight /></summary>
+          <div>
+            <DailyEditorialRun
+              defaultMaxDrafts={settings?.max_new_drafts ?? 10}
+              defaultMaxCostUsd={Number(settings?.max_estimated_cost_usd ?? 1)}
+              defaultAutomationEnabled={settings?.automation_enabled ?? false}
+              defaultDailyRunTime={settings?.daily_run_time ?? '10:00'}
+              lastAutomationTickAt={settings?.last_automation_tick_at ?? null}
+              lastAutomationError={settings?.last_automation_error ?? null}
+              hasActiveRun={Boolean(activeRunResult.data)}
+            />
+            <section className="collection-panel"><div className="collection-panel-copy"><p className="eyebrow">Manual collection</p><h2>Check every source now</h2><p>Fetch active RSS feeds and save any unseen items without drafting or publishing them.</p></div><div className="collection-panel-actions"><RunCollectionButton /><a href="/admin/collected">View collected items</a></div></section>
+          </div>
+        </details>
       </div>
     </main>
   );
