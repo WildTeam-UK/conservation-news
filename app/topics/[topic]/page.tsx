@@ -1,6 +1,6 @@
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic archive routes */
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
@@ -31,11 +31,11 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
   if (legacyDestination) redirect(`/topics/${legacyDestination}`);
   const [publishedRecords, archive] = await Promise.all([getPublishedStories(200), getPublicTopic(slug)]);
   const topic = archive?.name ?? [...new Set(publishedRecords.flatMap(publishedTopics))].find((name) => topicSlug(name) === slug) ?? getTopic(slug);
-  if (!topic || !archive) return <main className="missing shell"><h1>Topic not found</h1><Link href="/">Back to WildNews</Link></main>;
+  if (!topic || !archive) return <main className="missing shell"><h1>Topic not found</h1><a href="/">Back to WildNews</a></main>;
 
   const published = publishedRecords.map(publishedStoryToListing);
   const topicStories = published.filter((story) => story.topic === topic || story.topics.includes(topic));
-  if (!topicStories.length) return <main className="missing shell"><h1>Topic not found</h1><Link href="/">Back to WildNews</Link></main>;
+  if (!topicStories.length) return <main className="missing shell"><h1>Topic not found</h1><a href="/">Back to WildNews</a></main>;
 
   return <main className="archive-page">
     <InteriorHeader />
@@ -47,8 +47,8 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
     </section>
     <section className="topic-page-grid shell">
       {topicStories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}>
-        <Link className="topic-story-image" href={`/stories/${story.slug}`} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" /></Link>
-        <div><TopicTag topic={story.topic} /><h2><Link href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</Link></h2><p>{cleanCopy(story.summary)}</p><Link className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></Link></div>
+        <a className="topic-story-image" href={`/stories/${story.slug}`} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" /></a>
+        <div><TopicTag topic={story.topic} /><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
       </article>)}
     </section>
     <SiteFooter />

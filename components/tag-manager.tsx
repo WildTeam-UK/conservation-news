@@ -1,7 +1,7 @@
 'use client';
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic archive routes */
 
 import { type SyntheticEvent, useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, ChevronDown, ExternalLink, LoaderCircle, Merge, Pencil, RotateCcw, Tag, X } from 'lucide-react';
 
@@ -63,13 +63,13 @@ function TagCard({ tag, mergeTargets, minimum, onChanged }: { tag: EditorialTag;
   return <article className={`tag-review-card tag-status-${tag.status}`}>
     <div className="tag-card-main">
       <div className="tag-card-icon"><Tag /></div>
-      <div><div className="tag-card-labels"><span>{tag.tag_type}</span><span>{tag.status === 'proposed' ? 'growing' : tag.status}</span><span>{tag.publishedCount}/{minimum} published</span></div><h2>{tag.status === 'approved' ? <Link href={`/tags/${tag.slug}`}>{tag.name}<ExternalLink /></Link> : tag.name}</h2>{tag.aliases.length ? <p>Also recognised as: {tag.aliases.join(', ')}</p> : null}{tag.status === 'proposed' ? <p className="tag-growth-note">This archive will go live automatically after {Math.max(0, minimum - tag.publishedCount)} more qualifying {minimum - tag.publishedCount === 1 ? 'article' : 'articles'}.</p> : tag.description ? <p className="tag-growth-note">{tag.description}</p> : null}</div>
+      <div><div className="tag-card-labels"><span>{tag.tag_type}</span><span>{tag.status === 'proposed' ? 'growing' : tag.status}</span><span>{tag.publishedCount}/{minimum} published</span></div><h2>{tag.status === 'approved' ? <a href={`/tags/${tag.slug}`}>{tag.name}<ExternalLink /></a> : tag.name}</h2>{tag.aliases.length ? <p>Also recognised as: {tag.aliases.join(', ')}</p> : null}{tag.status === 'proposed' ? <p className="tag-growth-note">This archive will go live automatically after {Math.max(0, minimum - tag.publishedCount)} more qualifying {minimum - tag.publishedCount === 1 ? 'article' : 'articles'}.</p> : tag.description ? <p className="tag-growth-note">{tag.description}</p> : null}</div>
     </div>
     <div className="tag-card-actions">
       {tag.status !== 'approved' && tag.publishedCount >= minimum ? <button className="tag-approve" type="button" disabled={Boolean(working)} onClick={() => runAction('approve')}>{working === 'approve' ? <LoaderCircle className="admin-spinner" /> : <Check />} Approve</button> : null}
       {tag.status === 'retired' ? <button type="button" disabled={Boolean(working)} onClick={() => runAction('restore')}>{working === 'restore' ? <LoaderCircle className="admin-spinner" /> : <RotateCcw />} Restore</button> : <button className="tag-retire" type="button" disabled={Boolean(working)} onClick={() => runAction('retire')}>{working === 'retire' ? <LoaderCircle className="admin-spinner" /> : <X />} Retire</button>}
     </div>
-    {visibleUsages.length ? <div className={`tag-usage-list${tag.status === 'approved' ? ' tag-published-usage-list' : ''}`}><strong>{tag.status === 'approved' ? `Published articles (${tag.publishedCount})` : 'Suggested article matches'}</strong>{visibleUsages.map((usage) => <div key={usage.id}><span>{tag.status === 'approved' ? 'Live' : `${usage.confidence ?? '—'}%`}</span><p>{tag.status === 'approved' && usage.slug ? <Link href={`/stories/${usage.slug}`}>{usage.title}</Link> : usage.title}{tag.status !== 'approved' && usage.rationale ? <small>{usage.rationale}</small> : null}</p></div>)}{tag.status === 'approved' && tag.publishedCount > visibleUsages.length ? <Link className="tag-view-all" href={`/tags/${tag.slug}`}>View all {tag.publishedCount} articles <ExternalLink /></Link> : null}</div> : null}
+    {visibleUsages.length ? <div className={`tag-usage-list${tag.status === 'approved' ? ' tag-published-usage-list' : ''}`}><strong>{tag.status === 'approved' ? `Published articles (${tag.publishedCount})` : 'Suggested article matches'}</strong>{visibleUsages.map((usage) => <div key={usage.id}><span>{tag.status === 'approved' ? 'Live' : `${usage.confidence ?? '—'}%`}</span><p>{tag.status === 'approved' && usage.slug ? <a href={`/stories/${usage.slug}`}>{usage.title}</a> : usage.title}{tag.status !== 'approved' && usage.rationale ? <small>{usage.rationale}</small> : null}</p></div>)}{tag.status === 'approved' && tag.publishedCount > visibleUsages.length ? <a className="tag-view-all" href={`/tags/${tag.slug}`}>View all {tag.publishedCount} articles <ExternalLink /></a> : null}</div> : null}
     <details className="tag-edit-panel"><summary><Pencil /> Edit, add aliases or merge <ChevronDown /></summary>
       <div className="tag-edit-grid">
         <form onSubmit={saveDetails}>
