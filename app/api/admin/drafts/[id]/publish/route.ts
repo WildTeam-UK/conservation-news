@@ -34,7 +34,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   const publishedAt = new Date().toISOString();
   const { error: updateError } = await supabase.from('stories').update({ status: 'published', published_at: publishedAt, reviewer_id: user.id }).eq('id', id).eq('status', 'draft');
   if (updateError) return Response.json({ error: 'The article could not be published.' }, { status: 500 });
-  await supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'published', notes: 'Article passed the publication checklist and was published.' });
+  await Promise.all([
+    supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'published', notes: 'Article passed the publication checklist and was published.' }),
+    supabase.from('publication_queue').update({ status: 'published', published_at: publishedAt, scheduled_for: publishedAt, claimed_at: null, hold_reason: null }).eq('story_id', id).in('status', ['queued', 'scheduled', 'publishing', 'held']),
+  ]);
   return Response.json({ saved: true, publishedAt });
 }
 
@@ -46,6 +49,9 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   const supabase = getSupabaseAdminClient();
   const { error } = await supabase.from('stories').update({ status: 'draft', published_at: null, reviewer_id: user.id }).eq('id', id).eq('status', 'published');
   if (error) return Response.json({ error: 'The article could not be unpublished.' }, { status: 500 });
-  await supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'edited', notes: 'Article unpublished and returned to the private editorial workspace.' });
+  await Promise.all([
+    supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'edited', notes: 'Article unpublished and returned to the private editorial workspace.' }),
+    supabase.from('publication_queue').update({ status: 'cancelled', scheduled_for: null, claimed_at: null, hold_reason: 'Article was manually unpublished.' }).eq('story_id', id),
+  ]);
   return Response.json({ saved: true });
 }

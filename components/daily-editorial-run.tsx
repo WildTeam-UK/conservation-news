@@ -136,8 +136,8 @@ export function DailyEditorialRun({
       <div className="daily-run-intro">
         <p className="eyebrow">Daily editorial workflow</p>
         <h2 id="daily-run-heading">Create today&apos;s private drafts</h2>
-        <p>Collect and assess the latest items, rank them alongside recent undrafted candidates, then research and draft the strongest stories. Every article stays private until you review and publish it.</p>
-        <div className="daily-run-safeguards"><span><ShieldCheck /> No automatic publishing</span><span><SearchCheck /> Seven-day candidate pool</span><span><CircleDollarSign /> Stops before a projected overspend</span><span><RotateCcw /> Safe to resume</span></div>
+        <p>Collect and assess the latest items, rank them alongside recent undrafted candidates, then research and draft the strongest stories. Complete drafts can enter the controlled publishing queue automatically.</p>
+        <div className="daily-run-safeguards"><span><ShieldCheck /> Publication checklist</span><span><SearchCheck /> Seven-day candidate pool</span><span><CircleDollarSign /> Stops before a projected overspend</span><span><RotateCcw /> Safe to resume</span></div>
         <div className={`automation-status ${automationEnabled ? 'enabled' : ''}`}>
           <Clock3 />
           <div><strong>{automationEnabled ? `Scheduled daily at ${dailyRunTime}` : 'Automation switched off'}</strong><small>UK time · feeds are also checked every two hours{lastTick ? ` · last heartbeat ${lastTick}` : ''}</small>{lastAutomationError ? <em>{lastAutomationError}</em> : null}</div>
@@ -153,7 +153,7 @@ export function DailyEditorialRun({
         <button className="admin-primary-button daily-run-button" type="button" onClick={run} disabled={running || saving || maxDrafts < 1 || maxCost < 0.05}>
           {running ? <><LoaderCircle className="admin-spinner" /> {snapshot?.message || 'Starting run'}</> : hasActiveRun || runState?.status === 'running' || runState?.status === 'budget_stopped' ? <><RotateCcw /> Resume run now</> : <><Play /> Run manually now</>}
         </button>
-        <small>The draft and cost limits are shared by manual and scheduled runs. Scheduled articles always remain private.</small>
+        <small>The draft and cost limits are shared by manual and scheduled runs. Automatic publishing is controlled separately from the Queue page.</small>
         {scheduleMessage ? <output className="schedule-message">{scheduleMessage}</output> : null}
       </div>
 

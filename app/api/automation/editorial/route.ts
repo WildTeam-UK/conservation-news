@@ -1,6 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { advanceEditorialRun } from '@/lib/editorial-runner';
 import { collectEnabledSources } from '@/lib/ingestion/rss';
+import { publishClaimedQueueItem } from '@/lib/publication-queue';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
 export const dynamic = 'force-dynamic';
@@ -37,6 +38,10 @@ export async function POST(request: Request) {
 
   const supabase = getSupabaseAdminClient();
   try {
+    const { data: duePublication, error: publicationClaimError } = await supabase.rpc('claim_due_publication');
+    if (publicationClaimError) throw publicationClaimError;
+    const publication = duePublication ? await publishClaimedQueueItem(duePublication) : null;
+
     const { data, error } = await supabase.rpc('claim_due_editorial_run');
     if (error) throw error;
     const claim = Array.isArray(data) ? data[0] : null;
@@ -53,7 +58,7 @@ export async function POST(request: Request) {
       }
       const snapshot = await advanceEditorialRun(claim.claimed_run_id, null);
       await recordHeartbeatSuccess();
-      return Response.json({ action: claim.newly_started ? 'started' : 'advanced', snapshot });
+      return Response.json({ action: claim.newly_started ? 'started' : 'advanced', publication, snapshot });
     }
 
     const { data: collect, error: collectClaimError } = await supabase.rpc('claim_periodic_collection', { interval_hours: 2 });
@@ -61,11 +66,11 @@ export async function POST(request: Request) {
     if (collect) {
       const result = await collectEnabledSources('scheduled');
       await recordHeartbeatSuccess();
-      return Response.json({ action: 'collected', result });
+      return Response.json({ action: 'collected', publication, result });
     }
 
     await recordHeartbeatSuccess();
-    return Response.json({ action: 'idle' });
+    return Response.json({ action: publication ? 'published' : 'idle', publication });
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'Unknown automation error.';
     await recordHeartbeatFailure(detail);

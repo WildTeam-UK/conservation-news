@@ -3,6 +3,7 @@ import { assessUnprocessedItems } from '@/lib/openai/assess-news';
 import { generateStoryDraft } from '@/lib/openai/draft-story';
 import { estimateWebSearchCost } from '@/lib/openai/pricing';
 import { researchCandidate } from '@/lib/openai/research-story';
+import { queueReadyDrafts } from '@/lib/publication-queue';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
 const ASSESSMENT_RESERVE_USD = 0.03;
@@ -251,6 +252,21 @@ async function finishRun(run: EditorialRun) {
     completed_at: new Date().toISOString(),
   }).eq('id', run.id);
   await addEvent(run.id, 'run', status === 'completed' ? 'Daily editorial run completed.' : 'Run completed with one or more failed stories.', { level: status === 'partial' ? 'warning' : 'info' });
+  try {
+    const queued = await queueReadyDrafts(run.id);
+    if (queued.queued || queued.held) {
+      await addEvent(run.id, 'publishing', `${queued.queued} drafts entered the automatic publishing queue; ${queued.held} were held for review.`, {
+        level: queued.held ? 'warning' : 'info',
+        details: queued,
+      });
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : 'Unknown publication queue error.';
+    await addEvent(run.id, 'publishing', 'Drafting completed, but the automatic publishing queue could not be updated.', {
+      level: 'error',
+      details: { error: detail },
+    });
+  }
 }
 
 async function recoverStaleItems(runId: string) {
