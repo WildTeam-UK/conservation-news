@@ -31,7 +31,13 @@ const canonicalSiteAliases = new Map([
 ]);
 
 function isSyndicatedPublisher(name: string) {
-  return /\b(republished|carried|syndicated)\s+by\b/i.test(name);
+  return /\b(republished|carried|syndicated)\s+by\b/i.test(name) || /\((?:afp|ap|reuters)\)/i.test(name);
+}
+
+function isEditorialFeedUrl(value: string) {
+  const url = safeWebUrl(value);
+  if (!url) return false;
+  return !/(^|\/)(comments?|responses?)(\/|$)/i.test(url.pathname) && !/comments?/i.test(url.search);
 }
 
 function safeWebUrl(value: string) {
@@ -212,6 +218,7 @@ function looksLikeFeed(xml: string) {
 }
 
 async function validFeed(url: string) {
+  if (!isEditorialFeedUrl(url)) return false;
   try {
     const response = await fetchPublic(url, 'application/rss+xml, application/atom+xml, application/xml, text/xml;q=0.9, */*;q=0.2');
     if (!response.ok) return false;
@@ -243,7 +250,9 @@ export async function discoverSuggestionFeed(id: string) {
     }
     const home = new URL(suggestion.homepage_url);
     const conventional = ['/feed', '/feed.xml', '/rss', '/rss.xml', '/atom.xml'].map((path) => new URL(path, home).toString());
-    const candidates = [...new Set([suggestion.feed_url, ...discovered, ...conventional].filter(Boolean) as string[])].slice(0, 10);
+    const candidates = [...new Set([suggestion.feed_url, ...discovered, ...conventional].filter(Boolean) as string[])]
+      .filter(isEditorialFeedUrl)
+      .slice(0, 10);
     const results = await Promise.all(candidates.map(async (url) => ({ url, valid: await validFeed(url) })));
     const found = results.find((result) => result.valid)?.url ?? null;
     await supabase.from('source_suggestions').update({ feed_url: found, feed_status: found ? 'found' : 'not_found', last_feed_check_at: new Date().toISOString() }).eq('id', id);
