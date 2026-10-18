@@ -83,3 +83,15 @@ export async function getPublishedWeeklyDigests(limit = 52) {
   return (data ?? []) as DigestStoryRecord[];
 }
 
+export async function getPublishedDailyDigests(limit = 12) {
+  const { data, error } = await publicClient().from('stories')
+    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, digest_period_start, digest_period_end, generation_metadata')
+    .eq('content_type', 'daily_digest')
+    .eq('status', 'published')
+    .lte('published_at', new Date().toISOString())
+    .order('published_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as DigestStoryRecord[];
+}
+

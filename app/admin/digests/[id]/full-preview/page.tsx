@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation';
 import { DigestTemplate } from '@/components/digest-template';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
-import type { DigestContent, DigestSourceStory } from '@/lib/digests';
+import { getPublishedDailyDigests, type DigestContent, type DigestSourceStory } from '@/lib/digests';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
 export const dynamic = 'force-dynamic';
@@ -26,10 +26,11 @@ export default async function FullDigestPreviewPage({ params }: { params: Promis
 
   const metadata = story.generation_metadata as DigestMetadata;
   if (!metadata.digest_content) notFound();
+  const moreDigests = metadata.digest_content.digest_type === 'daily' ? await getPublishedDailyDigests(4) : [];
 
   return <main>
     <InteriorHeader />
-    <DigestTemplate content={metadata.digest_content} stories={metadata.digest_source_stories ?? []} periodEnd={story.digest_period_end} imageUrl={story.image_url} imageAlt={story.image_alt} />
+    <DigestTemplate content={metadata.digest_content} stories={metadata.digest_source_stories ?? []} periodEnd={story.digest_period_end} imageUrl={story.image_url} imageAlt={story.image_alt} moreDigests={moreDigests} />
     <SiteFooter />
   </main>;
 }

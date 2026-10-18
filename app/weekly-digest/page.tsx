@@ -1,6 +1,6 @@
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic archive routes */
 import type { Metadata } from 'next';
-import Link from 'next/link';
-import { ArrowRight, CalendarDays } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { digestPath, getPublishedWeeklyDigests } from '@/lib/digests';
@@ -10,5 +10,24 @@ export const metadata: Metadata = { title: 'Weekly conservation news digest | WI
 
 export default async function WeeklyDigestArchive() {
   const digests = await getPublishedWeeklyDigests();
-  return <main className="weekly-digest-archive"><InteriorHeader /><header className="topic-page-hero shell"><div className="digest-edition-label"><CalendarDays /> Weekly digest</div><h1>The week in conservation</h1><p>A connected Friday briefing that draws together the most important conservation reporting, evidence and developments from the week.</p></header><section className="shell weekly-digest-list">{digests.length ? digests.map((digest) => { const date = digest.slug.replace('weekly-digest-', ''); return <article key={digest.id}>{digest.image_url ? <Link className="weekly-digest-image" href={digestPath('weekly', date)}>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></Link> : null}<div><time>{new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(new Date(digest.digest_period_end))}</time><h2><Link href={digestPath('weekly', date)}>{digest.headline}</Link></h2><p>{digest.standfirst}</p><Link className="read-more-button" href={digestPath('weekly', date)}>Read this edition <ArrowRight /></Link></div></article>; }) : <div className="digest-archive-empty"><CalendarDays /><h2>The first weekly edition is being prepared</h2><p>Friday&apos;s digest will appear here once it has been reviewed and published.</p></div>}</section><SiteFooter /></main>;
+  return <main className="archive-page weekly-digest-archive">
+    <InteriorHeader />
+    <section className="topic-page-hero shell">
+      <div className="archive-tag-pill">Weekly digest</div>
+      <h1>The week in conservation</h1>
+      <p>A connected Friday briefing that draws together the most important conservation reporting, evidence and developments from the week.</p>
+      <span>{digests.length} {digests.length === 1 ? 'edition' : 'editions'}</span>
+    </section>
+    {digests.length ? <section className="topic-page-grid shell">
+      {digests.map((digest, index) => {
+        const date = digest.slug.replace('weekly-digest-', '');
+        const path = digestPath('weekly', date);
+        return <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={digest.id}>
+          <a className="topic-story-image" href={path} aria-label={`Read: ${digest.headline}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
+          <div><span className="archive-tag-pill">Weekly digest</span><h2><a href={path}>{digest.headline}</a></h2><p>{digest.standfirst}</p><a className="text-link" href={path}>Read this edition <ArrowRight /></a></div>
+        </article>;
+      })}
+    </section> : <section className="digest-archive-empty shell"><h2>The first weekly edition is being prepared</h2><p>Friday&apos;s digest will appear here once it has been reviewed and published.</p></section>}
+    <SiteFooter />
+  </main>;
 }
