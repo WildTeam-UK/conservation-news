@@ -1,8 +1,8 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads reliably refresh protected Supabase admin views in Vinext */
-import { Activity, CalendarClock, FilePenLine, LayoutDashboard, Rss, Tags } from 'lucide-react';
+import { Activity, CalendarClock, CalendarDays, FilePenLine, LayoutDashboard, Rss, Tags } from 'lucide-react';
 
 type AdminNavProps = {
-  active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'sources' | 'tags';
+  active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'digests' | 'sources' | 'tags';
   subview?: 'pipeline-status' | 'collected' | 'candidates' | 'monitored' | 'recommendations' | 'topics' | 'tags';
 };
 
@@ -22,6 +22,8 @@ export function AdminNav({ active, subview }: AdminNavProps) {
       <a className={active === 'drafts' ? 'active' : ''} href="/admin/drafts"><FilePenLine /><span><strong>Articles</strong><small>Every article status</small></span></a>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'queue' ? 'active' : ''} href="/admin/queue"><CalendarClock /><span><strong>Schedule</strong><small>Publishing queue</small></span></a>
+      {/* oxlint-disable-next-line next/no-html-link-for-pages */}
+      <a className={active === 'digests' ? 'active' : ''} href="/admin/digests"><CalendarDays /><span><strong>Digests</strong><small>Daily and weekly editions</small></span></a>
       <span className="admin-nav-group">Library</span>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'sources' ? 'active' : ''} href="/admin/sources"><Rss /><span><strong>Sources</strong><small>Feeds and source health</small></span></a>
