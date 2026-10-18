@@ -76,7 +76,7 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
       return <article key={digest.id}>
         <Link className="digest-more-image" href={`/daily-digest/${date}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</Link>
         <time dateTime={digest.digest_period_end}>{longDate(digest.digest_period_end)}</time>
-        <h3><Link href={`/daily-digest/${date}`}>{digest.headline}</Link></h3>
+        <h3><Link href={`/daily-digest/${date}`}>{cleanDigestText(digest.headline)}</Link></h3>
       </article>;
     })}</div>
   </section>;
@@ -97,8 +97,8 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
     <header className="digest-public-hero">
       <div className="digest-hero-copy">
         <time dateTime={periodEnd}>{longDate(periodEnd)}</time>
-        <h1>{content.headline}</h1>
-        <p>{content.standfirst}</p>
+        <h1>{cleanDigestText(content.headline)}</h1>
+        <p>{cleanDigestText(content.standfirst)}</p>
         <Link className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></Link>
       </div>
       {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={resolvedImageUrl} alt={resolvedImageAlt} /><ImageCredit credit={heroStory?.image_credit} /></figure> : null}
@@ -113,14 +113,14 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           const sectionImage = referenced.find((story) => story.image_url && !usedImages.has(story.image_url));
           if (sectionImage?.image_url) usedImages.add(sectionImage.image_url);
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
-            <h2>{section.heading}</h2>
+            <h2>{cleanDigestText(section.heading)}</h2>
             {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><ImageCredit credit={sectionImage.image_credit} /></figure> : null}
             {section.paragraphs.map((paragraph, paragraphIndex) => <LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} key={paragraphIndex} />)}
           </section>;
         })}
       </div>
 
-      <section className="digest-watch-list"><p className="eyebrow">What to watch</p><h2>The next developments</h2><ol>{content.what_to_watch.map((item, index) => <li key={index}>{item}</li>)}</ol></section>
+      <section className="digest-watch-list"><p className="eyebrow">What to watch</p><h2>The next developments</h2><ol>{content.what_to_watch.map((item, index) => <li key={index}>{cleanDigestText(item)}</li>)}</ol></section>
       <section className="digest-newsletter-cta">
         <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
         <form><label htmlFor="digest-email">Your email address</label><div><input id="digest-email" type="email" placeholder="you@example.com" required /><button type="submit">Sign me up <ArrowRight /></button></div></form>

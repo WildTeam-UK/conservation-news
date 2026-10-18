@@ -4,7 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
-import { digestPath, getPublishedDailyDigests, getPublishedWeeklyDigests, type DigestStoryRecord, type DigestType } from '@/lib/digests';
+import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedWeeklyDigests, type DigestStoryRecord, type DigestType } from '@/lib/digests';
 import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 
 export const dynamic = 'force-dynamic';
@@ -23,8 +23,8 @@ function DigestArchiveSection({ title, description, type, digests }: { title: st
         const date = digest.slug.replace(`${type}-digest-`, '');
         const path = digestPath(type, date);
         return <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={digest.id}>
-          <a className="topic-story-image" href={path} aria-label={`Read: ${digest.headline}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
-          <div><span className="archive-tag-pill">{type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</span><time dateTime={digest.digest_period_end}>{digestDate.format(new Date(digest.digest_period_end))}</time><h2><a href={path}>{digest.headline}</a></h2><p>{digest.standfirst}</p><a className="text-link" href={path}>Read this edition <ArrowRight /></a></div>
+          <a className="topic-story-image" href={path} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
+          <div><span className="archive-tag-pill">{type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</span><time dateTime={digest.digest_period_end}>{digestDate.format(new Date(digest.digest_period_end))}</time><h2><a href={path}>{cleanDigestText(digest.headline)}</a></h2><p>{cleanDigestText(digest.standfirst)}</p><a className="text-link" href={path}>Read this edition <ArrowRight /></a></div>
         </article>;
       })}
     </div> : <div className="digest-archive-empty"><h3>No {type} editions yet</h3><p>The first published {type} digest will appear here.</p></div>}
@@ -40,7 +40,7 @@ export default async function DigestArchive() {
     <section className="topic-page-hero shell">
       <div className="archive-tag-pill">Daily + weekly</div>
       <h1>WildNews digests</h1>
-      <p>Connected editorial briefings that make a large and fragmented field easier to follow—daily context, plus a deeper Friday view of the week.</p>
+      <p>Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week.</p>
       <span>{daily.length + weekly.length} {daily.length + weekly.length === 1 ? 'edition' : 'editions'}</span>
       <nav className="digest-archive-jump" aria-label="Digest archive sections"><a href="#daily">Daily digests</a><a href="#weekly">Weekly digests</a></nav>
     </section>
