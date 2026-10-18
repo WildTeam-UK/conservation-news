@@ -7,6 +7,7 @@ import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { Brand } from '@/components/brand';
 import { DigestTemplate } from '@/components/digest-template';
 import { InteriorHeader } from '@/components/interior-header';
+import { PublishDigestButton } from '@/components/publish-digest-button';
 import { SiteFooter } from '@/components/site-footer';
 import type { DigestContent, DigestSourceStory } from '@/lib/digests';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
@@ -33,8 +34,8 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
     <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
     <AdminNav active="digests" />
     <div className="admin-shell digest-preview-shell">
-      <Link className="admin-back-link" href="/admin/digests"><ArrowLeft /> All digests</Link>
-      <section className={`digest-preview-status ${story.status === 'published' ? 'published' : ''}`}><span>{story.status === 'published' ? <Globe2 /> : <LockKeyhole />}</span><div><p className="eyebrow">Editorial preview</p><h1>{story.status === 'published' ? 'Published edition' : 'Private digest draft'}</h1><p>{story.status === 'published' ? 'This edition is live on the public site.' : 'Only signed-in editors can see this page. Social and email distribution are disabled.'}</p></div>{story.status === 'published' ? <a href={publicPath} target="_blank" rel="noreferrer"><Eye /> View public edition</a> : null}</section>
+      <Link className="admin-back-link" href="/admin/digests" prefetch={false}><ArrowLeft /> All digests</Link>
+      <section className={`digest-preview-status ${story.status === 'published' ? 'published' : ''}`}><span>{story.status === 'published' ? <Globe2 /> : <LockKeyhole />}</span><div><p className="eyebrow">Editorial preview</p><h1>{story.status === 'published' ? 'Published edition' : 'Private digest draft'}</h1><p>{story.status === 'published' ? 'This edition is live on the public site.' : 'Only signed-in editors can see this page. Social and email distribution are disabled.'}</p></div><div className="digest-preview-actions">{story.status === 'published' ? <a href={publicPath} target="_blank" rel="noreferrer"><Eye /> View public edition</a> : <PublishDigestButton storyId={story.id} />}</div></section>
       <div className="digest-preview-canvas"><InteriorHeader /><DigestTemplate content={content} stories={sourceStories} periodEnd={story.digest_period_end} imageUrl={story.image_url} imageAlt={story.image_alt} /><SiteFooter /></div>
     </div>
   </main>;
