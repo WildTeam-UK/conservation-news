@@ -3,9 +3,10 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { InteriorHeader } from '@/components/interior-header';
+import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
-import { getPublishedStories, getPublicTopic, publishedStoryToListing, publishedTopics } from '@/lib/published-stories';
+import { getPublishedStories, getPublicTopic, publishedStoryToListing, publishedTopics, relatedPublishedStories } from '@/lib/published-stories';
 import { allTopics, cleanCopy, getTopic, storyImage, topicSlug } from '@/lib/stories';
 import { legacyTopicRedirect } from '@/lib/taxonomy';
 
@@ -33,9 +34,10 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
   const topic = archive?.name ?? [...new Set(publishedRecords.flatMap(publishedTopics))].find((name) => topicSlug(name) === slug) ?? getTopic(slug);
   if (!topic || !archive) return <main className="missing shell"><h1>Topic not found</h1><a href="/">Back to WildNews</a></main>;
 
-  const published = publishedRecords.map(publishedStoryToListing);
-  const topicStories = published.filter((story) => story.topic === topic || story.topics.includes(topic));
+  const topicRecords = publishedRecords.filter((story) => publishedTopics(story).some((storyTopic) => storyTopic === topic));
+  const topicStories = topicRecords.map(publishedStoryToListing);
   if (!topicStories.length) return <main className="missing shell"><h1>Topic not found</h1><a href="/">Back to WildNews</a></main>;
+  const related = relatedPublishedStories(topicRecords, publishedRecords).map(publishedStoryToListing);
 
   return <main className="archive-page">
     <InteriorHeader />
@@ -51,6 +53,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
         <div><TopicTag topic={story.topic} /><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
       </article>)}
     </section>
+    <SimilarStories stories={related} />
     <SiteFooter />
   </main>;
 }

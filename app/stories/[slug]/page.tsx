@@ -3,10 +3,9 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArticleTemplate } from '@/components/article-template';
 import { InteriorHeader } from '@/components/interior-header';
+import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
-import { TopicTag } from '@/components/topic-tag';
-import { getPublishedStories, getPublishedStory, publishedStoryToArticle, publishedStoryToListing } from '@/lib/published-stories';
-import { cleanCopy, storyImage } from '@/lib/stories';
+import { getPublishedStories, getPublishedStory, publishedStoryToArticle, publishedStoryToListing, relatedPublishedStories } from '@/lib/published-stories';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,19 +27,12 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   if (!published) return <main className="missing shell"><h1>Story not found</h1><Link href="/">Back to WildNews</Link></main>;
 
   const allPublished = await getPublishedStories(20);
-  const publishedListing = publishedStoryToListing(published);
-  const related = allPublished
-    .filter((item) => item.id !== published.id)
-    .map(publishedStoryToListing)
-    .map((item, index) => ({ item, index, sharedTopics: item.topics.filter((topic) => publishedListing.topics.includes(topic)).length }))
-    .sort((a, b) => b.sharedTopics - a.sharedTopics || a.index - b.index)
-    .slice(0, 6)
-    .map(({ item }) => item);
+  const related = relatedPublishedStories([published], allPublished).map(publishedStoryToListing);
 
   return <main>
     <InteriorHeader actionHref="#sources" actionLabel="View sources" />
     <ArticleTemplate article={publishedStoryToArticle(published)} />
-    {related.length ? <section className="related shell"><div className="section-heading"><h2>Similar stories</h2><p>Keep exploring this topic.</p></div><div className="related-grid">{related.map((item) => <article key={item.slug}><a href={`/stories/${item.slug}`} className="related-image" aria-label={cleanCopy(item.title)}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(item)} alt="" /></a><TopicTag topic={item.topic} /><h3><a href={`/stories/${item.slug}`}>{cleanCopy(item.title)}</a></h3></article>)}</div></section> : null}
+    <SimilarStories stories={related} description="Keep exploring this topic." />
     <SiteFooter />
   </main>;
 }
