@@ -76,6 +76,23 @@ export async function getPublishedStories(limit = 100): Promise<PublishedStory[]
   return (data ?? []) as unknown as PublishedStory[];
 }
 
+export function relatedPublishedStories(referenceStories: PublishedStory[], candidates: PublishedStory[], limit = 6) {
+  const excludedIds = new Set(referenceStories.map((story) => story.id));
+  const referenceTopics = new Set(referenceStories.flatMap(publishedTopics));
+  const referenceTags = new Set(referenceStories.flatMap((story) => publishedTags(story).map((tag) => tag.slug)));
+
+  return candidates
+    .filter((story) => !excludedIds.has(story.id))
+    .map((story, index) => {
+      const sharedTopics = publishedTopics(story).filter((topic) => referenceTopics.has(topic)).length;
+      const sharedTags = publishedTags(story).filter((tag) => referenceTags.has(tag.slug)).length;
+      return { story, index, score: (sharedTopics * 3) + (sharedTags * 2) };
+    })
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+    .slice(0, limit)
+    .map(({ story }) => story);
+}
+
 export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateData {
   const content = story.generation_metadata.article_content as StoryDraftContent;
   const sources = [...story.story_sources].sort((a, b) => a.display_order - b.display_order);
