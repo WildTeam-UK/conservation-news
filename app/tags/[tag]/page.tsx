@@ -26,7 +26,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
   const related = relatedPublishedStories(tagStories, published).map(publishedStoryToListing);
   return <main className="archive-page">
     <InteriorHeader />
-    <section className="topic-page-hero shell tag-page-hero"><p className="eyebrow">Discovery tag</p><h1>{tag.name}</h1><p>{tag.description ?? `Source-led conservation briefings connected to ${tag.name}.`}</p><span>{stories.length} {stories.length === 1 ? 'story' : 'stories'}</span></section>
+    <section className="topic-page-hero shell tag-page-hero"><a className="archive-tag-pill" href={`/tags/${tag.slug}`}>{tag.name}</a><h1>{tag.name}</h1><p>{tag.description ?? `Source-led conservation briefings connected to ${tag.name}.`}</p><span>{stories.length} {stories.length === 1 ? 'story' : 'stories'}</span></section>
     <section className="topic-page-grid shell">{stories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}><a className="topic-story-image" href={`/stories/${story.slug}`} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" /></a><div><TopicTag topic={story.topic} /><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div></article>)}</section>
     <SimilarStories stories={related} />
     <SiteFooter />
