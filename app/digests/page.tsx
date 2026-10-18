@@ -39,7 +39,12 @@ export default async function DigestArchive() {
         const path = digestPath(type, date);
         return <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={digest.id}>
           <a className="topic-story-image" href={path} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
-          <div><span className="archive-tag-pill">{type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</span><time dateTime={digest.digest_period_end}>{digestDate.format(new Date(digest.digest_period_end))}</time><h2><a href={path}>{cleanDigestText(digest.headline)}</a></h2><p>{cleanDigestText(digest.standfirst)}</p><a className="text-link" href={path}>Read this edition <ArrowRight /></a></div>
+          <div>
+            <div className="digest-archive-meta"><span className="archive-tag-pill">{type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</span><time dateTime={digest.digest_period_end}>{digestDate.format(new Date(digest.digest_period_end))}</time></div>
+            <h2><a href={path}>{cleanDigestText(digest.headline)}</a></h2>
+            {index === 0 ? <p>{cleanDigestText(digest.standfirst)}</p> : null}
+            <a className="text-link" href={path}>Read this edition <ArrowRight /></a>
+          </div>
         </article>;
       })}
     </section> : <div className="digest-archive-empty shell"><h3>No digest editions yet</h3><p>The first published digest will appear here.</p></div>}

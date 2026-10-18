@@ -448,5 +448,6 @@ img{border-radius:18px}
 @media(max-width:600px){.digest-hero-copy{padding:38px 15px}.digest-lead-image{height:330px;margin-top:0}.digest-watch-list h2,.digest-newsletter-cta h2{font-size:34px}.digest-ai-disclosure{margin-top:42px;padding:20px}}
 
 /* Combined digest archive */
-.digest-archive-page .topic-story time{display:block;margin:11px 0 10px;color:var(--muted);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.digest-archive-page .topic-story .archive-tag-pill{display:inline-flex}.digest-archive-page .related{padding-top:72px}.digest-archive-page .wildteam-footer{margin-top:10px}
+.digest-archive-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px}.digest-archive-page .topic-story time{color:var(--muted);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.digest-archive-page .topic-story .archive-tag-pill{display:inline-flex}.digest-archive-page .related{padding-top:72px}.digest-archive-page .wildteam-footer{margin-top:10px}
+@media(min-width:821px){.digest-archive-page .topic-story-featured .topic-story-image{height:auto;align-self:stretch}}
 @media(max-width:600px){.digest-archive-page .related{padding-top:52px}}
