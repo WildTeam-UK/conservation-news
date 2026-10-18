@@ -91,7 +91,7 @@ export default async function DigestsPage() {
           return <article key={run.id}>
             <span className={`run-status ${run.status}`}>{run.status.replace('_', ' ')}</span>
             <div><strong>{run.story_id ? <a href={`/admin/digests/${run.story_id}`}>{run.digest_type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</a> : run.digest_type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</strong><p>{run.source_story_count} stories · ${Number(run.estimated_cost_usd).toFixed(4)} estimated · social {run.social_status} · email {run.email_status}</p>{run.error_summary ? <p className="collection-run-error">{run.error_summary}</p> : null}</div>
-            <time dateTime={run.created_at}>{dateTime.format(new Date(run.created_at))}</time>
+            <div className="digest-run-actions">{run.story_id ? <a href={`/admin/digests/${run.story_id}`}>View draft</a> : null}<time dateTime={run.created_at}>{dateTime.format(new Date(run.created_at))}</time></div>
           </article>;
         })}</div> : <div className="queue-empty"><CalendarDays /><h3>No digest runs yet</h3><p>The first manual test will be created after the public digest template is ready.</p></div>}
       </section>
