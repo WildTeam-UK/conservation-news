@@ -8,13 +8,17 @@ function longDate(value: string) {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(new Date(value));
 }
 
-function ImageCredit({ credit }: { credit?: EditorialImageCredit | null }) {
-  if (!credit) return null;
-  return <figcaption className="digest-image-credit">
+function ImageCreditText({ credit }: { credit: EditorialImageCredit }) {
+  return <>
     Illustrative image by {credit.creator_url ? <a href={credit.creator_url} target="_blank" rel="noreferrer">{credit.creator_name}</a> : credit.creator_name}
     {credit.source_name ? <> on {credit.source_url ? <a href={credit.source_url} target="_blank" rel="noreferrer">{credit.source_name}</a> : credit.source_name}</> : null}
     {credit.licence_name ? <> | {credit.licence_url ? <a href={credit.licence_url} target="_blank" rel="noreferrer">{credit.licence_name}</a> : credit.licence_name}</> : null}
-  </figcaption>;
+  </>;
+}
+
+function ImageCredit({ credit }: { credit?: EditorialImageCredit | null }) {
+  if (!credit) return null;
+  return <figcaption className="digest-image-credit"><ImageCreditText credit={credit} /></figcaption>;
 }
 
 const linkStopWords = new Set(['about', 'after', 'again', 'against', 'could', 'finds', 'first', 'further', 'into', 'over', 'report', 'reports', 'study', 'their', 'these', 'this', 'with']);
@@ -89,7 +93,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   const usedImages = new Set(resolvedImageUrl ? [resolvedImageUrl] : []);
 
   return <article className={`digest-article digest-${content.digest_type}`}>
-    <header className="digest-public-hero shell">
+    <header className="digest-public-hero">
       <div className="digest-hero-copy">
         {displayTopics.length ? <div className="digest-topic-pills">{displayTopics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div> : null}
         <div className="digest-edition-label"><CalendarDays /> {content.edition_label}</div>
@@ -97,8 +101,9 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
         <p>{content.standfirst}</p>
         <time dateTime={periodEnd}>{longDate(periodEnd)}</time>
       </div>
-      {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={resolvedImageUrl} alt={resolvedImageAlt} /><ImageCredit credit={heroStory?.image_credit} /></figure> : null}
+      {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={resolvedImageUrl} alt={resolvedImageAlt} /></figure> : null}
     </header>
+    {resolvedImageUrl && heroStory?.image_credit ? <div className="digest-hero-credit shell"><ImageCreditText credit={heroStory.image_credit} /></div> : null}
 
     <div className="digest-article-body shell">
       <div className="digest-reading-column">
