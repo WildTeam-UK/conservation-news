@@ -340,6 +340,7 @@ img{border-radius:18px}
 .author-page-hero>p{margin-top:28px}
 .author-page-hero>span:last-child{margin-top:36px}
 .archive-page .topic-page-hero{padding-bottom:56px}
+.archive-page .topic-page-hero h1,.archive-page .topic-page-hero>p{width:100%;max-width:none}
 .archive-page .topic-page-grid{padding-top:18px}
 .archive-page .topic-story-featured{padding-top:24px}
 .archive-page .topic-story h2{margin-bottom:16px}
