@@ -21,9 +21,9 @@ export default async function Home() {
   return <main>
     <header className="site-header">
       <SiteNavigation />
-      <AllTopicsNav />
-      <div className="ai-disclosure shell"><p><strong>How we use AI:</strong> WildNews uses AI to find, group and summarise conservation coverage. These briefings are not original reporting and can miss context, so we always link to the source material. <a href="/how-we-use-ai">Read our full approach <ArrowRight /></a></p></div>
     </header>
+    <AllTopicsNav />
+    <div className="ai-disclosure shell"><p><strong>How we use AI:</strong> WildNews uses AI to find, group and summarise conservation coverage. These briefings are not original reporting and can miss context, so we always link to the source material. <a href="/how-we-use-ai">Read our full approach <ArrowRight /></a></p></div>
 
     <section className="hero shell" aria-labelledby="lead-story">
       <div className="hero-grid">
