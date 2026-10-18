@@ -65,13 +65,13 @@ export async function getPublicTag(slug: string): Promise<PublicTaxonomyArchive 
 }
 
 export async function getPublishedStory(slug: string): Promise<PublishedStory | null> {
-  const { data, error } = await publicClient().from('stories').select(storySelect).eq('slug', slug).eq('status', 'published').lte('published_at', new Date().toISOString()).maybeSingle();
+  const { data, error } = await publicClient().from('stories').select(storySelect).eq('slug', slug).eq('content_type', 'news').eq('status', 'published').lte('published_at', new Date().toISOString()).maybeSingle();
   if (error) throw error;
   return data as unknown as PublishedStory | null;
 }
 
 export async function getPublishedStories(limit = 100): Promise<PublishedStory[]> {
-  const { data, error } = await publicClient().from('stories').select(storySelect).eq('status', 'published').lte('published_at', new Date().toISOString()).order('published_at', { ascending: false }).limit(limit);
+  const { data, error } = await publicClient().from('stories').select(storySelect).eq('content_type', 'news').eq('status', 'published').lte('published_at', new Date().toISOString()).order('published_at', { ascending: false }).limit(limit);
   if (error) throw error;
   return (data ?? []) as unknown as PublishedStory[];
 }
