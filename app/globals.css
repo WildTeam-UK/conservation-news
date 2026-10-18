@@ -112,6 +112,8 @@ p{margin-top:0;margin-bottom:1.25em}p:last-child{margin-bottom:0}.byline{margin-
 .author-profile-heading h1{margin:0}
 .carousel-card{display:flex;flex-direction:column;height:100%}
 .carousel-card .text-link{margin-top:auto;align-self:flex-start}
+.topic-shelves .carousel-card>.topic-tag{background:#fff}
+.topic-shelves .carousel-card>.topic-tag:hover{background:var(--lime);color:#fff}
 .article-lead-placeholder{display:grid;place-items:center;background:linear-gradient(135deg,var(--cream),#f4dbe9);color:var(--forest);font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.08em}
 .article-lead-image{position:relative;margin:0;overflow:hidden}.article-lead-image figcaption{position:absolute;right:18px;bottom:18px;display:flex;align-items:center;gap:9px;max-width:min(680px,calc(100% - 36px));padding:10px 13px;border-radius:9px;background:rgba(8,8,8,.86);color:#fff;font-size:10px;line-height:1.35}.article-lead-image figcaption>span:first-child{padding:4px 7px;border-radius:999px;background:var(--lime);font-size:8px;font-weight:900;text-transform:uppercase;white-space:nowrap}.article-lead-image figcaption a{text-decoration:underline;text-underline-offset:2px}.article-lead-image figcaption>a:last-child{color:#eee;font-size:8px;white-space:nowrap}
 img{border-radius:18px}
