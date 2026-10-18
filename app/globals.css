@@ -186,13 +186,13 @@ img{border-radius:18px}
 @media(max-width:560px){.coverage-card{padding:26px}.coverage-dimension h2{font-size:17px}.coverage-signal-labels{font-size:9px}.coverage-card .analysis-tooltip{width:min(250px,calc(100vw - 72px))}.methodology-dimensions h2{font-size:28px}}
 
 /* Homepage and archive corrections */
-.ai-disclosure{margin-top:9px;margin-bottom:0;padding-block:12px}.hero{padding-top:9px;padding-bottom:32px}
+.ai-disclosure{margin-top:18px;margin-bottom:0}.hero{padding-top:9px}
 .story-image{overflow:hidden;border-radius:18px;background:transparent}
 .latest .section-heading h2{font-size:clamp(40px,5vw,62px);font-weight:900;line-height:.95;letter-spacing:-.045em}
 .methodology-content ol{margin:0;padding-left:25px;list-style:decimal}
 .methodology-content ol li{display:list-item;padding-left:5px}
 .methodology-content ol li::marker{color:var(--lime);font-weight:900}
-@media(max-width:560px){.ai-disclosure{padding-block:11px}.hero{padding-top:6px;padding-bottom:32px}}
+@media(max-width:560px){.hero{padding-top:6px}}
 
 /* Shared WildTeam footer */
 .wildteam-footer{padding:0 0 34px;border-top:5px solid var(--lime);background:#2a2f34;color:#fff}
