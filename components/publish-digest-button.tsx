@@ -4,17 +4,18 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Globe2, LoaderCircle } from 'lucide-react';
 
-export function PublishDigestButton({ storyId }: { storyId: string }) {
+export function PublishDigestButton({ storyId, publicationDate }: { storyId: string; publicationDate?: string }) {
   const router = useRouter();
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState('');
 
   async function publish() {
-    if (!window.confirm('Publish this digest now? It will become publicly accessible immediately. Social posting and email distribution will remain disabled.')) return;
+    const dateNote = publicationDate ? ` Its publication time will be recorded as 14:00 Europe/London on ${publicationDate}.` : '';
+    if (!window.confirm(`Publish this digest now? It will become publicly accessible immediately.${dateNote} Social posting and email distribution will remain disabled.`)) return;
     setWorking(true);
     setMessage('');
     try {
-      const response = await fetch(`/api/admin/digests/${storyId}/publish`, { method: 'POST' });
+      const response = await fetch(`/api/admin/digests/${storyId}/publish`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ publicationDate }) });
       const result = await response.json() as { saved?: boolean; error?: string };
       if (!response.ok || !result.saved) setMessage(result.error ?? 'The digest could not be published.');
       else {
