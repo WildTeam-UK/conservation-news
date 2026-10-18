@@ -30,7 +30,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   const related = relatedPublishedStories([published], allPublished).map(publishedStoryToListing);
 
   return <main>
-    <InteriorHeader actionHref="#sources" actionLabel="View sources" />
+    <InteriorHeader />
     <ArticleTemplate article={publishedStoryToArticle(published)} />
     <SimilarStories stories={related} description="Keep exploring this topic." />
     <SiteFooter />

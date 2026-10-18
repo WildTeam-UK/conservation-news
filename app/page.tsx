@@ -1,7 +1,7 @@
 import { ArrowRight } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
-import { Brand } from '@/components/brand';
 import { SiteFooter } from '@/components/site-footer';
+import { SiteNavigation } from '@/components/site-navigation';
 import { TopicTag } from '@/components/topic-tag';
 import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 import { cleanCopy, storyImage, topicSlug } from '@/lib/stories';
@@ -20,7 +20,7 @@ export default async function Home() {
 
   return <main>
     <header className="site-header">
-      <div className="masthead"><Brand /><nav className="primary-nav"><a href="/about">About</a><a href="https://training.wildteam.org.uk/courses" target="_blank" rel="noreferrer">Training</a><a href="https://training.wildteam.org.uk/job-board" target="_blank" rel="noreferrer">Careers</a><a href="#newsletter">Newsletter</a></nav><a href="#donate" className="donate-button">Donate <ArrowRight /></a></div>
+      <SiteNavigation />
       <AllTopicsNav />
       <div className="ai-disclosure shell"><p><strong>How we use AI:</strong> WildNews uses AI to find, group and summarise conservation coverage. These briefings are not original reporting and can miss context, so we always link to the source material. <a href="/how-we-use-ai">Read our full approach <ArrowRight /></a></p></div>
     </header>
