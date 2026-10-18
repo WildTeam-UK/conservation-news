@@ -4,7 +4,7 @@ import { SiteFooter } from '@/components/site-footer';
 
 export default function About() {
   return <main>
-    <InteriorHeader actionHref="#support" />
+    <InteriorHeader />
     <section className="about-hero shell">
       <p className="eyebrow">About WildNews</p>
       <h1>We tell the whole story of a changing natural world.</h1>
