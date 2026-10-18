@@ -2,6 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import type { ArticleTemplateData } from '@/components/article-template';
 import { stripSourceMarkers } from '@/lib/article-text';
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
+import { digestPath, type DigestContent, type DigestSourceStory } from '@/lib/digests';
 import type { Story } from '@/lib/stories';
 import { getPublicSupabaseConfig } from '@/lib/supabase/config';
 import { normalizeEditorialTopics } from '@/lib/taxonomy';
@@ -22,6 +23,8 @@ export type PublishedStory = {
   byline: string;
   published_at: string;
   updated_at: string;
+  content_type: 'news' | 'daily_digest' | 'weekly_digest';
+  digest_period_end: string | null;
   generation_metadata: Record<string, unknown>;
   story_sources: PublishedSource[];
   story_topics: PublishedTopicLink[];
@@ -33,16 +36,17 @@ function publicClient() {
   return createClient(url, publishableKey, { auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false } });
 }
 
-const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, byline, published_at, updated_at, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status))';
+const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, byline, published_at, updated_at, content_type, digest_period_end, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status))';
 
 function one<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? value[0] ?? null : value;
 }
 
 export function publishedTopics(story: PublishedStory) {
-  const content = (story.generation_metadata.article_content ?? {}) as Partial<StoryDraftContent>;
+  const article = (story.generation_metadata.article_content ?? {}) as Partial<StoryDraftContent>;
+  const digest = (story.generation_metadata.digest_content ?? {}) as Partial<DigestContent>;
   const linked = story.story_topics.flatMap((link) => one(link.topics)?.name ?? []);
-  return normalizeEditorialTopics([...(content.topics ?? []), ...linked].filter(Boolean));
+  return normalizeEditorialTopics([...(article.topics ?? []), ...(digest.topics ?? []), ...linked].filter(Boolean));
 }
 
 export function publishedTags(story: PublishedStory) {
@@ -65,7 +69,7 @@ export async function getPublicTag(slug: string): Promise<PublicTaxonomyArchive 
 }
 
 export async function getPublishedStory(slug: string): Promise<PublishedStory | null> {
-  const { data, error } = await publicClient().from('stories').select(storySelect).eq('slug', slug).eq('status', 'published').lte('published_at', new Date().toISOString()).maybeSingle();
+  const { data, error } = await publicClient().from('stories').select(storySelect).eq('slug', slug).eq('content_type', 'news').eq('status', 'published').lte('published_at', new Date().toISOString()).maybeSingle();
   if (error) throw error;
   return data as unknown as PublishedStory | null;
 }
@@ -116,10 +120,31 @@ export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateD
 }
 
 export function publishedStoryToListing(story: PublishedStory): Story {
-  const content = story.generation_metadata.article_content as StoryDraftContent;
   const topics = publishedTopics(story);
+  if (story.content_type !== 'news') {
+    const content = story.generation_metadata.digest_content as DigestContent;
+    const sourceStories = (story.generation_metadata.digest_source_stories ?? []) as DigestSourceStory[];
+    const type = story.content_type === 'weekly_digest' ? 'weekly' : 'daily';
+    const date = story.slug.replace(`${type}-digest-`, '');
+    return {
+      slug: story.slug,
+      href: digestPath(type, date),
+      topic: topics[0] ?? 'Conservation Practice',
+      topics,
+      title: story.headline,
+      summary: stripSourceMarkers(story.standfirst),
+      byline: '',
+      image: story.image_url ?? sourceStories.find((source) => source.image_url)?.image_url ?? '',
+      bullets: content?.what_to_watch ?? [],
+      leaning: 'Centre',
+      balance: [34, 52, 14],
+      sources: [],
+    };
+  }
+  const content = story.generation_metadata.article_content as StoryDraftContent;
   return {
     slug: story.slug,
+    href: `/stories/${story.slug}`,
     topic: topics[0] ?? 'Conservation Practice',
     topics,
     title: story.headline,

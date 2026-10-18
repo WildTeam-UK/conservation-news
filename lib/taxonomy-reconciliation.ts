@@ -53,7 +53,7 @@ export type TaxonomyReconciliationResult = {
 export async function reconcileExistingTaxonomy(): Promise<TaxonomyReconciliationResult> {
   const supabase = getSupabaseAdminClient();
   const [{ data: stories, error: storiesError }, { data: topics, error: topicsError }, { data: storedTagRows, error: tagsError }, { data: aliasRows, error: aliasesError }] = await Promise.all([
-    supabase.from('stories').select('id, status, headline, standfirst, generation_metadata').in('status', ['draft', 'published']).or(`taxonomy_version.is.null,taxonomy_version.neq.${TAXONOMY_VERSION}`).order('created_at').limit(BATCH_SIZE),
+    supabase.from('stories').select('id, status, headline, standfirst, generation_metadata').eq('content_type', 'news').in('status', ['draft', 'published']).or(`taxonomy_version.is.null,taxonomy_version.neq.${TAXONOMY_VERSION}`).order('created_at').limit(BATCH_SIZE),
     supabase.from('topics').select('id, name').eq('active', true),
     supabase.from('content_tags').select('id, name, slug, tag_type, status').order('name'),
     supabase.from('content_tag_aliases').select('tag_id, alias, normalized_alias').order('alias'),
@@ -253,7 +253,7 @@ Return every supplied story ID exactly once. Use neutral British English for rat
     }
   }
 
-  const { count: remaining, error: remainingError } = await supabase.from('stories').select('*', { count: 'exact', head: true }).in('status', ['draft', 'published']).or(`taxonomy_version.is.null,taxonomy_version.neq.${TAXONOMY_VERSION}`);
+  const { count: remaining, error: remainingError } = await supabase.from('stories').select('*', { count: 'exact', head: true }).eq('content_type', 'news').in('status', ['draft', 'published']).or(`taxonomy_version.is.null,taxonomy_version.neq.${TAXONOMY_VERSION}`);
   if (remainingError) throw remainingError;
   if (!remaining) {
     const governance = await runTaxonomyGovernance({ force: true, includeTopics: true, maxEntities: 40 });
