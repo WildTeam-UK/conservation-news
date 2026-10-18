@@ -52,6 +52,12 @@ export type DigestStoryRecord = {
   generation_metadata: { digest_content?: DigestContent; digest_source_stories?: DigestSourceStory[] };
 };
 
+export function cleanDigestText(value: string) {
+  return value
+    .replace(/\[([^\]]+)\]\(\s*\(wrong\)\s*\)/gi, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+}
+
 function publicClient() {
   const { url, publishableKey } = getPublicSupabaseConfig();
   return createClient(url, publishableKey, { auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false } });
