@@ -5,6 +5,21 @@ import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 
 export const dynamic = 'force-dynamic';
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const calendarDatePattern = /^\d{4}-\d{2}-\d{2}$/;
+const londonDateTime = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+const londonCalendarDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+function londonPublicationTime(date: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  const target = Date.UTC(year, month - 1, day, 14);
+  let guess = target;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const parts = Object.fromEntries(londonDateTime.formatToParts(new Date(guess)).map((part) => [part.type, part.value]));
+    const represented = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+    guess += target - represented;
+  }
+  return new Date(guess);
+}
 
 async function adminUser() {
   const supabase = await createSupabaseServerClient();
@@ -14,7 +29,7 @@ async function adminUser() {
   return admin ? user : null;
 }
 
-export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!uuidPattern.test(id)) return Response.json({ error: 'A valid digest is required.' }, { status: 400 });
   const user = await adminUser();
@@ -32,6 +47,12 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   const metadata = (story.generation_metadata ?? {}) as Record<string, unknown> & { digest_content?: DigestContent };
   const content = metadata.digest_content;
   if (!content) return Response.json({ error: 'The digest content could not be verified.' }, { status: 422 });
+  const body = await request.json().catch(() => ({})) as { publicationDate?: string };
+  const type = story.content_type === 'weekly_digest' ? 'weekly' : 'daily';
+  const editionDate = story.slug.replace(`${type}-digest-`, '');
+  if (body.publicationDate && (!calendarDatePattern.test(body.publicationDate) || body.publicationDate !== editionDate || body.publicationDate >= londonCalendarDate.format(new Date()))) {
+    return Response.json({ error: 'A historical digest can only use its own earlier edition date.' }, { status: 400 });
+  }
 
   const { data: run } = await supabase.from('digest_runs').select('id').eq('story_id', id).maybeSingle();
   let topicNames: string[] = normalizeEditorialTopics(content.topics ?? []).slice(0, 3);
@@ -63,7 +84,8 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   const { error: linkTopicsError } = await supabase.from('story_topics').insert(selectedTopics.map((topic) => ({ story_id: id, topic_id: topic.id })));
   if (linkTopicsError) return Response.json({ error: 'The digest topics could not be linked.' }, { status: 500 });
 
-  const publishedAt = new Date().toISOString();
+  const actionAt = new Date().toISOString();
+  const publishedAt = body.publicationDate ? londonPublicationTime(body.publicationDate).toISOString() : actionAt;
   const { data: updated, error: updateError } = await supabase.from('stories')
     .update({ status: 'published', published_at: publishedAt, reviewer_id: user.id, primary_topic_id: selectedTopics[0].id, image_url: leadImage?.image_url ?? null, image_alt: leadImage?.image_alt ?? null, generation_metadata: { ...metadata, digest_content: content, digest_source_stories: hydratedSources } })
     .eq('id', id)
@@ -75,12 +97,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   await supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'published', notes: 'Digest reviewed and published manually. Social and email distribution remained disabled.' });
   if (run) {
     await Promise.all([
-      supabase.from('digest_runs').update({ status: 'published', completed_at: publishedAt }).eq('id', run.id),
-      supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'publishing', message: 'Digest published manually. External distribution remained disabled.' }),
+      supabase.from('digest_runs').update({ status: 'published', completed_at: actionAt }).eq('id', run.id),
+      supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'publishing', message: body.publicationDate ? `Digest published manually with a historical publication time of 14:00 Europe/London on ${body.publicationDate}. External distribution remained disabled.` : 'Digest published manually. External distribution remained disabled.', details: { published_at: publishedAt } }),
     ]);
   }
 
-  const type = story.content_type === 'weekly_digest' ? 'weekly' : 'daily';
-  const date = story.slug.replace(`${type}-digest-`, '');
-  return Response.json({ saved: true, publishedAt, publicPath: `/${type}-digest/${date}` });
+  return Response.json({ saved: true, publishedAt, publicPath: `/${type}-digest/${editionDate}` });
 }

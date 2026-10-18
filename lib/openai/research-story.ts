@@ -3,6 +3,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { estimateLunaTokenCost } from './pricing';
 import { PRIMARY_TOPICS, SECONDARY_TOPICS, TAXONOMY_REVIEW_TOPIC } from '@/lib/taxonomy';
 import { recordResearchSourceSuggestions } from '@/lib/source-discovery';
+import { aiInstructions, parseAiJson } from './house-style';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'research-v2-calibrated-coverage';
@@ -225,7 +226,7 @@ export async function researchCandidate(clusterId: string): Promise<ResearchResu
       tools: [{ type: 'web_search', search_context_size: 'medium', external_web_access: true, user_location: { type: 'approximate', country: 'GB', timezone: 'Europe/London' } }],
       tool_choice: 'required',
       include: ['web_search_call.action.sources'],
-      instructions: `You are a meticulous research editor for WildNews, a conservation briefing for practitioners worldwide.
+      instructions: aiInstructions(`You are a meticulous research editor for WildNews, a conservation briefing for practitioners worldwide.
 
 Research the supplied candidate using live web search. Find 3-6 genuinely useful sources, prioritising the original study, official announcement, court decision, government document or dataset; then reputable independent reporting and relevant conservation organisations. Do not add sources merely to reach a number. Distinguish what sources establish from claims, interpretation and uncertainty.
 
@@ -237,7 +238,7 @@ Classify topics only from the allowed lists. Choose one primary topic and no mor
 
 Also suggest no more than six precise discovery tags across species, places, habitats and narrow themes. Tags must add information rather than repeat the primary or secondary topics. Reuse a suitable entry from existing_tag_vocabulary before proposing anything new: return its canonical name and type exactly as supplied. Create a new tag only when no existing tag or alias represents the same concept; do not create a spelling variant, singular/plural variant, synonym or unnecessarily narrower duplicate. Prefer stable, canonical plural names where appropriate: for example "Rhinoceroses" rather than "Rhino" and "Oceans" rather than "Sea". Include common spelling or singular aliases for genuinely new tags, but do not create aliases that change meaning. Do not tag something merely because it receives a passing mention. Tag confidence must be an integer percentage from 0 to 100, where 100 means extremely confident. Never use a 0-1 decimal scale.
 
-Use concise, neutral British English suitable for an editor's research pack. This is research, not the final article.`,
+Use concise, neutral British English suitable for an editor's research pack. This is research, not the final article.`),
       input: JSON.stringify({
         candidate: {
           working_title: cluster.working_title,
@@ -339,7 +340,7 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
     });
 
     if (!response.output_text) throw new Error('OpenAI returned no research output.');
-    const raw = JSON.parse(response.output_text) as ResearchContent;
+    const raw = parseAiJson<ResearchContent>(response.output_text);
     if (!Array.isArray(raw.sources) || !raw.coverage_analysis) throw new Error('OpenAI returned an invalid research pack.');
 
     const consultedUrls = new Set(originalSources.map((item) => comparableUrl(item.url)).filter(Boolean));

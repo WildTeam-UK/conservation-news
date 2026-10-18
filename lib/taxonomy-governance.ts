@@ -1,6 +1,7 @@
 import { getOpenAIClient } from '@/lib/openai/client';
 import { estimateLunaTokenCost } from '@/lib/openai/pricing';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { aiInstructions, parseAiJson } from '@/lib/openai/house-style';
 
 const MODEL = 'gpt-6-luna';
 
@@ -45,7 +46,7 @@ async function generateCopy(entities: TaxonomyEntity[]) {
     model: MODEL,
     store: false,
     reasoning: { effort: 'low' },
-    instructions: `You write durable archive-page copy for WILDNEWS, a source-led conservation news service for practitioners worldwide.
+    instructions: aiInstructions(`You write durable archive-page copy for WILDNEWS, a source-led conservation news service for practitioners worldwide.
 
 Define each archive by the established, general conservation meaning of its entity name and type. The copy must remain accurate as the archive grows and must not be narrowed to the small or potentially unrepresentative set of articles currently attached to it. Article headlines are coverage context and relevance signals, not the boundaries of the archive. For example, a Fisheries archive must describe fisheries and conservation broadly rather than focusing on tuna merely because its first articles concern tuna.
 
@@ -56,7 +57,7 @@ For every entity return:
 - seo_title: a natural search title no longer than 60 characters. Include WILDNEWS only if it fits naturally.
 - meta_description: an accurate search description, ideally 140-160 characters and never longer than 170.
 
-Topics are permanent broad sections. Tags are narrower species, place, habitat or theme archives, but their copy should still cover the full natural scope of that species, place, habitat or theme. Return every supplied ID exactly once.`,
+Topics are permanent broad sections. Tags are narrower species, place, habitat or theme archives, but their copy should still cover the full natural scope of that species, place, habitat or theme. Return every supplied ID exactly once.`),
     input: JSON.stringify({ entities }),
     text: { format: {
       type: 'json_schema',
@@ -86,7 +87,7 @@ Topics are permanent broad sections. Tags are narrower species, place, habitat o
     } },
   });
   if (!response.output_text) throw new Error('OpenAI returned no taxonomy copy.');
-  const parsed = JSON.parse(response.output_text) as { items?: GeneratedCopy[] };
+  const parsed = parseAiJson<{ items?: GeneratedCopy[] }>(response.output_text);
   const validIds = new Set(entities.map((entity) => entity.id));
   const copy = (parsed.items ?? []).filter((item) => validIds.has(item.id)).map((item) => ({
     id: item.id,

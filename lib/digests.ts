@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { getPublicSupabaseConfig } from '@/lib/supabase/config';
 import type { EditorialImageCredit } from '@/lib/images/types';
+import { cleanAiText } from '@/lib/openai/house-style';
 
 export type DigestType = 'daily' | 'weekly';
 
@@ -51,6 +52,12 @@ export type DigestStoryRecord = {
   digest_period_end: string;
   generation_metadata: { digest_content?: DigestContent; digest_source_stories?: DigestSourceStory[] };
 };
+
+export function cleanDigestText(value: string) {
+  return cleanAiText(value)
+    .replace(/\[([^\]]+)\]\(\s*\(wrong\)\s*\)/gi, '$1')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
+}
 
 function publicClient() {
   const { url, publishableKey } = getPublicSupabaseConfig();
