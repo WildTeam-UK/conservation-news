@@ -4,6 +4,7 @@ import { AdminNav } from '@/components/admin-nav';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 import { Brand } from '@/components/brand';
 import { DigestSettings } from '@/components/digest-settings';
+import { DigestRunControls } from '@/components/digest-run-controls';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,7 @@ type DigestRun = {
   social_status: string;
   email_status: string;
   error_summary: string | null;
+  story_id: string | null;
   created_at: string;
 };
 
@@ -45,7 +47,7 @@ export default async function DigestsPage() {
   const { supabase, admin } = await requireContentAdmin();
   const [{ data: settings, error: settingsError }, { data: runs, error: runsError }] = await Promise.all([
     supabase.from('digest_settings').select('*').eq('id', true).single(),
-    supabase.from('digest_runs').select('id, digest_type, trigger_type, status, period_start, period_end, source_story_count, estimated_cost_usd, social_status, email_status, error_summary, created_at').order('created_at', { ascending: false }).limit(20),
+    supabase.from('digest_runs').select('id, digest_type, trigger_type, status, period_start, period_end, source_story_count, estimated_cost_usd, social_status, email_status, error_summary, story_id, created_at').order('created_at', { ascending: false }).limit(20),
   ]);
 
   const digestRuns = (runs ?? []) as DigestRun[];
@@ -81,12 +83,14 @@ export default async function DigestsPage() {
         publishImmediately={digestSettings.publish_immediately}
       />
 
+      <DigestRunControls />
+
       <section className="digest-history">
         <div className="source-list-heading"><div><p className="eyebrow">Audit trail</p><h2>Digest history</h2></div><p>Generation, publication, social and email are tracked independently so a failed distribution can be retried safely.</p></div>
         {digestRuns.length ? <div className="collection-runs digest-run-list">{digestRuns.map((run) => {
           return <article key={run.id}>
             <span className={`run-status ${run.status}`}>{run.status.replace('_', ' ')}</span>
-            <div><strong>{run.digest_type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</strong><p>{run.source_story_count} stories · ${Number(run.estimated_cost_usd).toFixed(4)} estimated · social {run.social_status} · email {run.email_status}</p>{run.error_summary ? <p className="collection-run-error">{run.error_summary}</p> : null}</div>
+            <div><strong>{run.story_id ? <a href={`/admin/digests/${run.story_id}`}>{run.digest_type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</a> : run.digest_type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</strong><p>{run.source_story_count} stories · ${Number(run.estimated_cost_usd).toFixed(4)} estimated · social {run.social_status} · email {run.email_status}</p>{run.error_summary ? <p className="collection-run-error">{run.error_summary}</p> : null}</div>
             <time dateTime={run.created_at}>{dateTime.format(new Date(run.created_at))}</time>
           </article>;
         })}</div> : <div className="queue-empty"><CalendarDays /><h3>No digest runs yet</h3><p>The first manual test will be created after the public digest template is ready.</p></div>}
