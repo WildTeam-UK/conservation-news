@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { ArrowRight, CalendarDays } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import type { DigestContent, DigestSourceStory, DigestStoryRecord } from '@/lib/digests';
 import type { EditorialImageCredit } from '@/lib/images/types';
 import { TopicTag } from '@/components/topic-tag';
@@ -95,18 +95,17 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
       <div className="digest-hero-copy">
-        {displayTopics.length ? <div className="digest-topic-pills">{displayTopics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div> : null}
-        <div className="digest-edition-label"><CalendarDays /> {content.edition_label}</div>
+        <time dateTime={periodEnd}>{longDate(periodEnd)}</time>
         <h1>{content.headline}</h1>
         <p>{content.standfirst}</p>
-        <time dateTime={periodEnd}>{longDate(periodEnd)}</time>
+        <Link className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></Link>
       </div>
-      {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={resolvedImageUrl} alt={resolvedImageAlt} /></figure> : null}
+      {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={resolvedImageUrl} alt={resolvedImageAlt} /><ImageCredit credit={heroStory?.image_credit} /></figure> : null}
     </header>
-    {resolvedImageUrl && heroStory?.image_credit ? <div className="digest-hero-credit shell"><ImageCreditText credit={heroStory.image_credit} /></div> : null}
 
     <div className="digest-article-body shell">
       <div className="digest-reading-column">
+        {displayTopics.length ? <div className="digest-body-topics">{displayTopics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div> : null}
         <section className="digest-introduction">{content.introduction.map((paragraph, index) => <LinkedParagraph text={paragraph} stories={storyByReference} key={index} />)}</section>
         {content.sections.map((section, index) => {
           const referenced = section.story_ids.flatMap((id) => storyByReference.get(id) ?? []);
@@ -118,12 +117,11 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
             {section.paragraphs.map((paragraph, paragraphIndex) => <LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} key={paragraphIndex} />)}
           </section>;
         })}
-        <aside className="digest-ai-disclosure"><p><strong>How we use AI:</strong> WildNews uses AI to find, group and summarise conservation coverage, making a large and fragmented field easier to follow. These summaries are not original reporting, and AI can miss context, so we always link to the source material. <Link href="/how-we-use-ai">Read our full approach <ArrowRight /></Link></p></aside>
       </div>
 
       <section className="digest-watch-list"><p className="eyebrow">What to watch</p><h2>The next developments</h2><ol>{content.what_to_watch.map((item, index) => <li key={index}>{item}</li>)}</ol></section>
       <section className="digest-newsletter-cta">
-        <div><p className="eyebrow">The weekly WildNews</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
+        <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
         <form><label htmlFor="digest-email">Your email address</label><div><input id="digest-email" type="email" placeholder="you@example.com" required /><button type="submit">Sign me up <ArrowRight /></button></div></form>
       </section>
     </div>
