@@ -40,6 +40,42 @@ function londonDate(value: Date) {
   return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(value);
 }
 
+const londonDateTime = new Intl.DateTimeFormat('en-GB', {
+  timeZone: 'Europe/London',
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+  hour: '2-digit',
+  minute: '2-digit',
+  second: '2-digit',
+  hourCycle: 'h23',
+});
+
+function londonMidnight(date: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  const target = Date.UTC(year, month - 1, day);
+  let guess = target;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const parts = Object.fromEntries(londonDateTime.formatToParts(new Date(guess)).map((part) => [part.type, part.value]));
+    const represented = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
+    guess += target - represented;
+  }
+  return new Date(guess);
+}
+
+function addCalendarDay(date: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day + 1)).toISOString().slice(0, 10);
+}
+
+function historicalDailyPeriod(date: string) {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || londonDate(londonMidnight(date)) !== date) throw new Error('Choose a valid missed daily edition date.');
+  if (date >= londonDate(new Date())) throw new Error('Missed-date generation is only available for an earlier London calendar day.');
+  const start = londonMidnight(date);
+  const endExclusive = londonMidnight(addCalendarDay(date));
+  return { start, end: new Date(endExclusive.getTime() - 1), editionDate: date };
+}
+
 function editionLabel(type: DigestType, end: Date) {
   const date = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(end);
   return type === 'weekly' ? `The week in conservation · ${date}` : `Today in conservation · ${date}`;
@@ -60,14 +96,17 @@ function compactSource(story: DigestSourceStory & { generation_metadata: SourceM
   };
 }
 
-export async function generateDigest(type: DigestType, userId: string) {
+export async function generateDigest(type: DigestType, userId: string, targetDate?: string) {
   const supabase = getSupabaseAdminClient();
   const { data: settings, error: settingsError } = await supabase.from('digest_settings').select('*').eq('id', true).single();
   if (settingsError || !settings) throw settingsError ?? new Error('Digest settings were not found.');
   const config = settings as DigestSettings;
-  const end = new Date();
-  const start = new Date(end.getTime() - (type === 'weekly' ? 7 : 1) * 24 * 60 * 60 * 1000);
-  const slug = `${type}-digest-${londonDate(end)}`;
+  if (targetDate && type !== 'daily') throw new Error('Only missed daily editions can be generated for a specific date.');
+  const historicalPeriod = targetDate ? historicalDailyPeriod(targetDate) : null;
+  const end = historicalPeriod?.end ?? new Date();
+  const start = historicalPeriod?.start ?? new Date(end.getTime() - (type === 'weekly' ? 7 : 1) * 24 * 60 * 60 * 1000);
+  const editionDate = historicalPeriod?.editionDate ?? londonDate(end);
+  const slug = `${type}-digest-${editionDate}`;
 
   const { data: existing } = await supabase.from('stories').select('id, headline, status').eq('slug', slug).maybeSingle();
   if (existing) {
@@ -99,7 +138,7 @@ export async function generateDigest(type: DigestType, userId: string) {
     social_status: 'disabled',
     email_status: 'disabled',
     triggered_by: userId,
-    started_at: end.toISOString(),
+    started_at: new Date().toISOString(),
   }).select('id').single();
   if (runError || !run) throw runError ?? new Error('The digest run could not be started.');
   await supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'selection', message: `${sourceStories.length} published stories selected for the ${type} edition.` });

@@ -17,7 +17,7 @@ export async function generateMetadata({ params }: { params: Promise<{ date: str
 export default async function WeeklyDigestPage({ params }: { params: Promise<{ date: string }> }) {
   const digest = await getPublishedDigest('weekly', (await params).date);
   const content = digest?.generation_metadata.digest_content as DigestContent | undefined;
-  if (!digest || !content) return <main className="missing shell"><h1>Weekly digest not found</h1><Link href="/weekly-digest">Back to weekly digests</Link></main>;
+  if (!digest || !content) return <main className="missing shell"><h1>Weekly digest not found</h1><Link href="/digests#weekly">Back to weekly digests</Link></main>;
   return <main><InteriorHeader /><DigestTemplate content={content} stories={digest.generation_metadata.digest_source_stories ?? []} periodEnd={digest.digest_period_end} imageUrl={digest.image_url} imageAlt={digest.image_alt} /><SiteFooter /></main>;
 }
 

@@ -31,6 +31,12 @@ type DigestRun = {
 };
 
 const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
+const londonCalendarDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
+
+function previousCalendarDate(date: string) {
+  const [year, month, day] = date.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day - 1)).toISOString().slice(0, 10);
+}
 
 const defaultSettings = {
   run_time: '14:00',
@@ -83,7 +89,7 @@ export default async function DigestsPage() {
         publishImmediately={digestSettings.publish_immediately}
       />
 
-      <DigestRunControls />
+      <DigestRunControls latestMissedDate={previousCalendarDate(londonCalendarDate.format(new Date()))} />
 
       <section className="digest-history">
         <div className="source-list-heading"><div><p className="eyebrow">Audit trail</p><h2>Digest history</h2></div><p>Generation, publication, social and email are tracked independently so a failed distribution can be retried safely.</p></div>
