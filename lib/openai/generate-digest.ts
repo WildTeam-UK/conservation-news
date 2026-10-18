@@ -128,7 +128,7 @@ export async function generateDigest(type: DigestType, userId: string, targetDat
   const sourceStories = (rows ?? []) as Array<DigestSourceStory & { generation_metadata: SourceMetadata }>;
   if (sourceStories.length < minimum) throw new Error(`Only ${sourceStories.length} eligible ${sourceStories.length === 1 ? 'story was' : 'stories were'} published in this period. The ${type} digest needs at least ${minimum}.`);
 
-  const { data: run, error: runError } = await supabase.from('digest_runs').insert({
+  const runValues = {
     digest_type: type,
     trigger_type: 'manual',
     status: 'generating',
@@ -139,9 +139,22 @@ export async function generateDigest(type: DigestType, userId: string, targetDat
     email_status: 'disabled',
     triggered_by: userId,
     started_at: new Date().toISOString(),
-  }).select('id').single();
-  if (runError || !run) throw runError ?? new Error('The digest run could not be started.');
-  await supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'selection', message: `${sourceStories.length} published stories selected for the ${type} edition.` });
+  };
+  const { data: previousRun, error: previousRunError } = await supabase.from('digest_runs')
+    .select('id, status, story_id')
+    .eq('digest_type', type)
+    .eq('period_end', end.toISOString())
+    .maybeSingle();
+  if (previousRunError) throw previousRunError;
+  if (previousRun?.story_id) throw new Error('This digest period already has an edition.');
+  if (previousRun?.status === 'generating') throw new Error('This digest is already being generated.');
+
+  const runResult = previousRun
+    ? await supabase.from('digest_runs').update({ ...runValues, error_summary: null, completed_at: null, estimated_cost_usd: 0 }).eq('id', previousRun.id).select('id').single()
+    : await supabase.from('digest_runs').insert(runValues).select('id').single();
+  const run = runResult.data;
+  if (runResult.error || !run) throw runResult.error ?? new Error('The digest run could not be started.');
+  await supabase.from('digest_run_events').insert({ run_id: run.id, stage: previousRun ? 'retry' : 'selection', message: previousRun ? `Failed ${type} digest restarted with ${sourceStories.length} published stories.` : `${sourceStories.length} published stories selected for the ${type} edition.` });
 
   try {
     const inputStories = sourceStories.map(compactSource);
