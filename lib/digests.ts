@@ -16,10 +16,11 @@ export type DigestContent = {
   edition_label: string;
   headline: string;
   standfirst: string;
+  topics?: string[];
   introduction: string[];
   sections: DigestSection[];
   what_to_watch: string[];
-  closing_note: string;
+  closing_note?: string;
   seo_title: string;
   seo_description: string;
 };
@@ -32,6 +33,7 @@ export type DigestSourceStory = {
   image_url: string | null;
   image_alt: string | null;
   image_credit?: EditorialImageCredit | null;
+  topics?: string[];
   published_at: string;
 };
 
@@ -59,6 +61,33 @@ export function digestPath(type: DigestType, date: string) {
   return `/${type === 'weekly' ? 'weekly-digest' : 'daily-digest'}/${date}`;
 }
 
+type SourceImageMetadata = {
+  article_content?: { image_url?: string | null; image_alt?: string | null; image_credit?: EditorialImageCredit | null; topics?: string[] };
+};
+
+export async function hydrateDigestSourceStories(stories: DigestSourceStory[]) {
+  if (!stories.length) return stories;
+  const { data, error } = await publicClient().from('stories')
+    .select('id, image_url, image_alt, generation_metadata, story_topics(topics(name))')
+    .in('id', stories.map((story) => story.id));
+  if (error) throw error;
+  const byId = new Map((data ?? []).map((row) => [row.id, row]));
+  return stories.map((story) => {
+    const row = byId.get(story.id);
+    const metadata = (row?.generation_metadata ?? {}) as SourceImageMetadata;
+    const article = metadata.article_content ?? {};
+    const topicLinks = (row?.story_topics ?? []) as unknown as Array<{ topics: { name: string } | { name: string }[] | null }>;
+    const linkedTopics = topicLinks.flatMap((link) => Array.isArray(link.topics) ? link.topics.map((topic) => topic.name) : link.topics?.name ?? []);
+    return {
+      ...story,
+      image_url: story.image_url ?? row?.image_url ?? article.image_url ?? null,
+      image_alt: story.image_alt ?? row?.image_alt ?? article.image_alt ?? null,
+      image_credit: story.image_credit ?? article.image_credit ?? null,
+      topics: story.topics?.length ? story.topics : linkedTopics,
+    };
+  });
+}
+
 export async function getPublishedDigest(type: DigestType, date: string) {
   const { data, error } = await publicClient().from('stories')
     .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, digest_period_start, digest_period_end, generation_metadata')
@@ -68,7 +97,16 @@ export async function getPublishedDigest(type: DigestType, date: string) {
     .lte('published_at', new Date().toISOString())
     .maybeSingle();
   if (error) throw error;
-  return data as DigestStoryRecord | null;
+  if (!data) return null;
+  const record = data as DigestStoryRecord;
+  const sources = await hydrateDigestSourceStories(record.generation_metadata.digest_source_stories ?? []);
+  const fallbackImage = sources.find((story) => story.image_url);
+  return {
+    ...record,
+    image_url: record.image_url ?? fallbackImage?.image_url ?? null,
+    image_alt: record.image_alt ?? fallbackImage?.image_alt ?? null,
+    generation_metadata: { ...record.generation_metadata, digest_source_stories: sources },
+  };
 }
 
 export async function getPublishedWeeklyDigests(limit = 52) {

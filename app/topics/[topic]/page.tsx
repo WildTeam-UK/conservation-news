@@ -7,7 +7,7 @@ import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { getPublishedStories, getPublicTopic, publishedStoryToListing, publishedTopics, relatedPublishedStories } from '@/lib/published-stories';
-import { allTopics, cleanCopy, getTopic, storyImage, topicSlug } from '@/lib/stories';
+import { allTopics, cleanCopy, getTopic, storyHref, storyImage, topicSlug } from '@/lib/stories';
 import { legacyTopicRedirect } from '@/lib/taxonomy';
 
 export const dynamic = 'force-dynamic';
@@ -49,8 +49,8 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
     </section>
     <section className="topic-page-grid shell">
       {topicStories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}>
-        <a className="topic-story-image" href={`/stories/${story.slug}`} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" /></a>
-        <div><TopicTag topic={story.topic} /><h2><a href={`/stories/${story.slug}`}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={`/stories/${story.slug}`}>Read story <ArrowRight /></a></div>
+        <a className="topic-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" /></a>
+        <div><TopicTag topic={story.topic} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div>
       </article>)}
     </section>
     <SimilarStories stories={related} />

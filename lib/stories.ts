@@ -2,6 +2,7 @@ import { ALL_TOPICS } from '@/lib/taxonomy';
 
 export type Story = {
   slug: string;
+  href?: string;
   topic: string;
   topics: string[];
   title: string;
@@ -21,6 +22,8 @@ export const allTopics = [...ALL_TOPICS];
 export const cleanCopy = (text: string) => text.replace(/\s*—\s*/g, ', ');
 
 export const storyImage = (story: Story) => story.image;
+
+export const storyHref = (story: Story) => story.href ?? `/stories/${story.slug}`;
 
 export const slugify = (value: string) => value
   .normalize('NFD')
