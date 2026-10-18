@@ -167,7 +167,7 @@ This is a private editorial draft for review. Return only the requested structur
           properties: {
             headline: { type: 'string' },
             standfirst: { type: 'string' },
-            topics: { type: 'array', minItems: 1, maxItems: 3, uniqueItems: true, items: { type: 'string', enum: [...EDITORIAL_TOPICS] } },
+            topics: { type: 'array', minItems: 1, maxItems: 3, items: { type: 'string', enum: [...EDITORIAL_TOPICS] } },
             introduction: { type: 'array', minItems: 2, maxItems: 4, items: { type: 'string' } },
             sections: { type: 'array', minItems: 3, maxItems: 6, items: { type: 'object', properties: { heading: { type: 'string' }, paragraphs: { type: 'array', minItems: 2, maxItems: 4, items: { type: 'string' } }, story_ids: { type: 'array', minItems: 1, items: { type: 'string', pattern: '^story-[1-9][0-9]*$' } } }, required: ['heading', 'paragraphs', 'story_ids'], additionalProperties: false } },
             what_to_watch: { type: 'array', minItems: 3, maxItems: 5, items: { type: 'string' } },
