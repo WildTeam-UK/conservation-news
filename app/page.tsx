@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
-import { StreamlinedNewsletterCta } from '@/components/newsletter-cta';
+import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteNavigation } from '@/components/site-navigation';
 import { TopicTag } from '@/components/topic-tag';
@@ -66,6 +66,7 @@ export default async function Home() {
         </section>;
       })}
     </section>
+    <WeeklyDigestNewsletterCta id="homepage-footer-digest-email" className="homepage-newsletter-cta shell" />
     <SiteFooter />
   </main>;
 }
