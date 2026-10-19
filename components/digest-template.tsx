@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import type { EditorialImageCredit } from '@/lib/images/types';
+import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
 
 function longDate(value: string) {
@@ -82,7 +83,7 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
   </section>;
 }
 
-export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [] }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[] }) {
+export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
   const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
   const resolvedImageUrl = imageUrl ?? heroStory?.image_url ?? null;
@@ -127,6 +128,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
       </section>
     </div>
 
+    {sharePath ? <SocialShare path={sharePath} title={cleanDigestText(content.headline)} label="Share this digest" /> : null}
     <MoreDailyDigests digests={recentDailyDigests} />
   </article>;
 }

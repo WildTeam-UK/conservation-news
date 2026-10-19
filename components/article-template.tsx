@@ -1,5 +1,6 @@
 import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
 import { stripSourceMarkers } from '@/lib/article-text';
 import type { EditorialImageCredit } from '@/lib/images/types';
@@ -73,7 +74,7 @@ function ArticleTextContent({ value, sources }: { value: ArticleText; sources: M
   })}</span> : null}</>;
 }
 
-export function ArticleTemplate({ article }: { article: ArticleTemplateData }) {
+export function ArticleTemplate({ article, sharePath }: { article: ArticleTemplateData; sharePath?: string }) {
   const { coverage } = article;
   const sourcesById = new Map(article.sources.flatMap((source) => source.id ? [[source.id, source] as const] : []));
   return <article className="article-template">
@@ -113,5 +114,6 @@ export function ArticleTemplate({ article }: { article: ArticleTemplateData }) {
         <Link className="analysis-link" href="/how-leaning-works">How our coverage analysis works <ArrowRight /></Link>
       </aside>
     </div>
+    {sharePath ? <SocialShare path={sharePath} title={article.headline} /> : null}
   </article>;
 }

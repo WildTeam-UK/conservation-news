@@ -31,7 +31,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
 
   return <main>
     <InteriorHeader />
-    <ArticleTemplate article={publishedStoryToArticle(published)} />
+    <ArticleTemplate article={publishedStoryToArticle(published)} sharePath={`/stories/${published.slug}`} />
     <SimilarStories stories={related} description="Keep exploring this topic." />
     <SiteFooter />
   </main>;
