@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { BrainCircuit, ClockAlert, ExternalLink, FileSearch, Newspaper, ShieldCheck } from 'lucide-react';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { GenerateDraftButton } from '@/components/generate-draft-button';
 import { ResearchCandidateButton } from '@/components/research-candidate-button';
 import type { ResearchClaim, ResearchContent } from '@/lib/openai/research-story';
@@ -99,7 +98,7 @@ function ResearchPackView({ pack }: { pack: ResearchPack }) {
 }
 
 export default async function CandidatesPage({ searchParams }: CandidatesPageProps) {
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const params = searchParams ? await searchParams : undefined;
   const requestedSort = params?.sort;
   const sort: CandidateSort = requestedSort && requestedSort in candidateSorts
@@ -171,14 +170,10 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
     for (const draft of drafts ?? []) if (draft.cluster_id) draftMap.set(draft.cluster_id, draft.id);
   }
 
-  const name = admin.display_name || admin.email;
 
   return (
     <main className="admin-page">
-      <header className="admin-header">
-        <Brand />
-        <div className="admin-account"><span>{name}</span><AdminSignOutButton /></div>
-      </header>
+      <AdminHeader />
       <AdminNav active="pipeline" subview="candidates" />
 
       <div className="admin-shell admin-candidates-shell">

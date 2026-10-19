@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { ExternalLink, Inbox } from 'lucide-react';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { RunAssessmentButton } from '@/components/run-assessment-button';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
@@ -32,7 +31,7 @@ function sourceName(source: CollectedItem['sources']) {
 }
 
 export default async function CollectedItemsPage() {
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const { data, error, count } = await supabase
     .from('source_items')
     .select('id, title, url, summary, author, published_at, discovered_at, assessment_status, assessment_error, sources(name)', { count: 'exact' })
@@ -41,7 +40,6 @@ export default async function CollectedItemsPage() {
 
   if (error) throw new Error('Unable to load collected source items.');
 
-  const name = admin.display_name || admin.email;
   const items = (data ?? []) as CollectedItem[];
   const dateFormatter = new Intl.DateTimeFormat('en-GB', {
     dateStyle: 'medium',
@@ -51,10 +49,7 @@ export default async function CollectedItemsPage() {
 
   return (
     <main className="admin-page">
-      <header className="admin-header">
-        <Brand />
-        <div className="admin-account"><span>{name}</span><AdminSignOutButton /></div>
-      </header>
+      <AdminHeader />
       <AdminNav active="pipeline" subview="collected" />
 
       <div className="admin-shell admin-collected-shell">

@@ -1,9 +1,8 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads reliably refresh the protected Supabase session in Vinext */
 import type { Metadata } from 'next';
 import { Activity, AlertTriangle, ArrowRight, BrainCircuit, CheckCircle2, Clock3, ExternalLink, Inbox, Rss } from 'lucide-react';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { RunAssessmentButton } from '@/components/run-assessment-button';
 import { RunCollectionButton } from '@/components/run-collection-button';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
@@ -45,7 +44,7 @@ const dateTime = new Intl.DateTimeFormat('en-GB', {
 });
 
 export default async function PipelinePage() {
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const [itemsResult, pendingResult, processingResult, failedResult, selectedResult, rejectedResult, sourcesResult, recentItemsResult, candidatesResult, ingestionResult, editorialResult] = await Promise.all([
     supabase.from('source_items').select('*', { count: 'exact', head: true }),
     supabase.from('source_items').select('*', { count: 'exact', head: true }).eq('assessment_status', 'pending'),
@@ -70,11 +69,10 @@ export default async function PipelinePage() {
   const processing = processingResult.count ?? 0;
   const failed = failedResult.count ?? 0;
   const attentionCount = processing + failed;
-  const name = admin.display_name || admin.email;
 
   return (
     <main className="admin-page">
-      <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
+      <AdminHeader />
       <AdminNav active="pipeline" subview="pipeline-status" />
 
       <div className="admin-shell admin-pipeline-shell">

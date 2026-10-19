@@ -1,8 +1,9 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads reliably refresh protected Supabase admin views in Vinext */
 import { Activity, CalendarClock, CalendarDays, FilePenLine, LayoutDashboard, Rss, Tags } from 'lucide-react';
+import { AdminProfileMenu } from '@/components/admin-profile-menu';
 
 type AdminNavProps = {
-  active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'digests' | 'sources' | 'tags';
+  active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'digests' | 'sources' | 'tags' | 'settings';
   subview?: 'pipeline-status' | 'collected' | 'candidates' | 'monitored' | 'recommendations' | 'topics' | 'tags';
 };
 
@@ -31,6 +32,7 @@ export function AdminNav({ active, subview }: AdminNavProps) {
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'tags' ? 'active' : ''} href="/admin/tags"><Tags /><span><strong>Taxonomy</strong><small>Topics and tags</small></span></a>
       <div className="admin-nav-subitems" aria-label="Taxonomy views"><a className={subview === 'topics' ? 'active' : ''} href="/admin/tags?view=topics">Topics</a><a className={subview === 'tags' ? 'active' : ''} href="/admin/tags?view=tags">Tags</a></div>
+      <AdminProfileMenu active={active === 'settings'} />
     </nav>
     </>
   );

@@ -2,9 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Eye, Globe2, LockKeyhole } from 'lucide-react';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { DigestTemplate } from '@/components/digest-template';
 import { InteriorHeader } from '@/components/interior-header';
 import { PublishDigestButton } from '@/components/publish-digest-button';
@@ -20,7 +19,7 @@ const londonCalendarDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/
 
 export default async function DigestPreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const { data: story, error } = await supabase.from('stories').select('id, slug, status, headline, image_url, image_alt, digest_period_end, generation_metadata').eq('id', id).in('content_type', ['daily_digest', 'weekly_digest']).maybeSingle();
   if (error || !story) notFound();
   const { data: run } = await supabase.from('digest_runs').select('id').eq('story_id', story.id).maybeSingle();
@@ -30,13 +29,12 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   const content = (story.generation_metadata as { digest_content?: DigestContent }).digest_content;
   if (!content) notFound();
   const moreDigests = content.digest_type === 'daily' ? await getPublishedDailyDigests(4) : [];
-  const name = admin.display_name || admin.email;
   const editionDate = story.slug.replace(`${content.digest_type}-digest-`, '');
   const publicPath = `/${content.digest_type === 'weekly' ? 'weekly-digest' : 'daily-digest'}/${editionDate}`;
   const historicalPublicationDate = editionDate < londonCalendarDate.format(new Date()) ? editionDate : undefined;
 
   return <main className="admin-page digest-preview-page">
-    <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
+    <AdminHeader />
     <AdminNav active="digests" />
     <div className="admin-shell digest-preview-shell">
       <Link className="admin-back-link" href="/admin/digests" prefetch={false}><ArrowLeft /> All digests</Link>

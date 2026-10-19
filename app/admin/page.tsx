@@ -1,11 +1,11 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads reliably refresh the protected Supabase session in Vinext */
 import type { Metadata } from 'next';
 import { Activity, AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, FileText, Newspaper, Radio, Rss } from 'lucide-react';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { Brand } from '@/components/brand';
 import { DailyEditorialRun } from '@/components/daily-editorial-run';
 import { RunCollectionButton } from '@/components/run-collection-button';
+import { buildAdminProfile } from '@/lib/admin-profile';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
 export const dynamic = 'force-dynamic';
@@ -54,7 +54,7 @@ const greetings = [
 ] as const;
 
 export default async function AdminDashboard() {
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase, user, admin } = await requireContentAdmin();
   const [draftsResult, publishedResult, sourcesResult, itemsResult, candidatesResult, queueResult, heldResult, sourceErrorsResult, taxonomyReviewResult, settingsResult, editorialRunsResult, activeRunResult, ingestionRunsResult] = await Promise.all([
     supabase.from('stories').select('*', { count: 'exact', head: true }).eq('status', 'draft'),
     supabase.from('stories').select('*', { count: 'exact', head: true }).eq('status', 'published'),
@@ -82,19 +82,19 @@ export default async function AdminDashboard() {
   const nextStory = nextItem ? queueStory(nextItem) : null;
   const attentionCount = held.length + sourceErrors.length + (taxonomyReviewResult.count ?? 0) + (settings?.last_automation_error ? 1 : 0);
   const automationHealthy = Boolean(settings?.automation_enabled && settings?.auto_publish_enabled && !settings?.last_automation_error && !taxonomyReviewResult.count);
-  const name = admin.display_name || admin.email;
+  const profile = await buildAdminProfile(user, admin);
   // This is a dynamic server-rendered page, so a fresh greeting is intentionally chosen per request.
   // oxlint-disable-next-line react/react-compiler
   const greeting = greetings[Math.floor(Math.random() * greetings.length)];
 
   return (
     <main className="admin-page">
-      <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
+      <AdminHeader />
       <AdminNav active="dashboard" />
 
       <div className="admin-shell admin-overview-shell">
         <section className="overview-heading" aria-labelledby="admin-heading">
-          <div><p className="eyebrow">Editorial overview</p><h1 id="admin-heading"><span className="overview-greeting" lang={greeting.lang} title={`${greeting.language} greeting`}>{greeting.text}</span> {name}, here&apos;s everything at a glance.</h1><p>The routine work is automated. This page shows what is moving, what publishes next and where you may need to step in.</p></div>
+          <div><p className="eyebrow">Editorial overview</p><h1 id="admin-heading"><span className="overview-greeting" lang={greeting.lang} title={`${greeting.language} greeting`}>{greeting.text}</span> {profile.greetingName}, here&apos;s everything at a glance.</h1><p>The routine work is automated. This page shows what is moving, what publishes next and where you may need to step in.</p></div>
           <div className={`overview-health-pill ${automationHealthy ? 'healthy' : 'attention'}`}>{automationHealthy ? <CheckCircle2 /> : <AlertTriangle />}<span><strong>{automationHealthy ? 'System healthy' : 'Check system'}</strong><small>{attentionCount ? `${attentionCount} item${attentionCount === 1 ? '' : 's'} need attention` : 'No action needed'}</small></span></div>
         </section>
 

@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { SourceManager, type EditorialSource, type SuggestedSource } from '@/components/source-manager';
 import { sourceSiteKey } from '@/lib/source-discovery';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
@@ -16,7 +15,7 @@ export const metadata: Metadata = {
 type SourcesPageProps = { searchParams?: Promise<{ view?: string }> };
 
 export default async function SourcesPage({ searchParams }: SourcesPageProps) {
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const params = searchParams ? await searchParams : undefined;
   const view = params?.view === 'recommendations' ? 'recommendations' : 'monitored';
   const [{ data, error }, { data: suggestionData, error: suggestionError }, { data: citedSources, error: citedSourcesError }] = await Promise.all([
@@ -36,14 +35,10 @@ export default async function SourcesPage({ searchParams }: SourcesPageProps) {
     citedStoryIdsBySite.set(siteKey, storyIds);
   }
 
-  const name = admin.display_name || admin.email;
 
   return (
     <main className="admin-page">
-      <header className="admin-header">
-        <Brand />
-        <div className="admin-account"><span>{name}</span><AdminSignOutButton /></div>
-      </header>
+      <AdminHeader />
       <AdminNav active="sources" subview={view} />
       <div className="admin-shell admin-sources-shell">
         <section className="admin-welcome" aria-labelledby="sources-heading">
