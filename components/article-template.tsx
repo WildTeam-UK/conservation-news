@@ -1,9 +1,10 @@
 import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
 import { stripSourceMarkers } from '@/lib/article-text';
-import type { EditorialImageCredit } from '@/lib/images/types';
+import type { EditorialImageCredit as EditorialImageCreditData } from '@/lib/images/types';
 
 export type ArticleCoverage = {
   ecological: number;
@@ -22,7 +23,7 @@ export type ArticleTemplateData = {
   storyAtAGlance: ArticleText[];
   imageUrl?: string;
   imageAlt?: string;
-  imageCredit?: EditorialImageCredit | null;
+  imageCredit?: EditorialImageCreditData | null;
   updatedAt: string;
   keyTakeaways: ArticleText[];
   whyItMatters: ArticleText;
@@ -90,7 +91,7 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
         </div>
       </div>
     </header>
-    <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt ?? ''} />{article.imageCredit ? <figcaption>{article.imageCredit.illustrative ? <span className="image-credit-label">Illustrative image</span> : null}<span className="image-credit-byline">by {article.imageCredit.creator_url ? <a href={article.imageCredit.creator_url} target="_blank" rel="noreferrer">{article.imageCredit.creator_name}</a> : article.imageCredit.creator_name}{article.imageCredit.source_name ? <> on {article.imageCredit.source_url ? <a href={article.imageCredit.source_url} target="_blank" rel="noreferrer">{article.imageCredit.source_name}</a> : article.imageCredit.source_name}</> : null}</span>{article.imageCredit.licence_name ? <span className="image-credit-licence"><span aria-hidden="true">|</span>{article.imageCredit.licence_url ? <a href={article.imageCredit.licence_url} target="_blank" rel="noreferrer">{article.imageCredit.licence_name}</a> : article.imageCredit.licence_name}</span> : null}</figcaption> : null}</> : <span>Lead image to be selected</span>}</figure>
+    <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt ?? ''} /><EditorialImageCredit credit={article.imageCredit} /></> : <span>Lead image to be selected</span>}</figure>
     <section className="article-overview shell">
       <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}<p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
       <h2>The story at a glance</h2>
