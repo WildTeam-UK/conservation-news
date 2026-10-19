@@ -94,7 +94,10 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
     <section className="article-overview shell">
       <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}<p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
       <h2>The story at a glance</h2>
-      {article.storyAtAGlance.map((paragraph, index) => <p key={`overview-${index}`}><ArticleTextContent value={paragraph} sources={sourcesById} /></p>)}
+      <div className="article-overview-reading">
+        {sharePath ? <SocialShare path={sharePath} title={article.headline} /> : null}
+        <div className="article-overview-copy">{article.storyAtAGlance.map((paragraph, index) => <p key={`overview-${index}`}><ArticleTextContent value={paragraph} sources={sourcesById} /></p>)}</div>
+      </div>
     </section>
     <div className="article-layout shell">
       <div className="article-main">
@@ -114,6 +117,5 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
         <Link className="analysis-link" href="/how-leaning-works">How our coverage analysis works <ArrowRight /></Link>
       </aside>
     </div>
-    {sharePath ? <SocialShare path={sharePath} title={article.headline} /> : null}
   </article>;
 }

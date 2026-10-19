@@ -27,14 +27,11 @@ export function SocialShare({ path, title, label = 'Share this story' }: { path:
     window.setTimeout(() => setCopied(false), 2000);
   }
 
-  return <section className="social-share shell" aria-label={label}>
-    <div className="social-share-copy"><p className="eyebrow">Pass it on</p><h2>{label}</h2></div>
-    <div className="social-share-actions">
-      <button type="button" onClick={() => openShare('linkedin')}><span className="social-share-mark" aria-hidden="true">in</span><span>LinkedIn</span></button>
-      <button type="button" onClick={() => openShare('facebook')}><span className="social-share-mark" aria-hidden="true">f</span><span>Facebook</span></button>
-      <button type="button" onClick={() => openShare('x')}><span className="social-share-mark" aria-hidden="true">X</span><span>X</span></button>
-      <button type="button" onClick={copyLink}>{copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}<span>{copied ? 'Copied' : 'Copy link'}</span></button>
-    </div>
+  return <aside className="social-share" aria-label={label}>
+    <button type="button" onClick={() => openShare('linkedin')} title="Share on LinkedIn" aria-label="Share on LinkedIn"><span className="social-share-mark" aria-hidden="true">in</span></button>
+    <button type="button" onClick={() => openShare('facebook')} title="Share on Facebook" aria-label="Share on Facebook"><span className="social-share-mark" aria-hidden="true">f</span></button>
+    <button type="button" onClick={() => openShare('x')} title="Share on X" aria-label="Share on X"><span className="social-share-mark" aria-hidden="true">X</span></button>
+    <button type="button" onClick={copyLink} title="Copy link" aria-label={copied ? 'Link copied' : 'Copy link'}>{copied ? <Check aria-hidden="true" /> : <Copy aria-hidden="true" />}</button>
     <output className="social-share-status" aria-live="polite">{copied ? 'Link copied to clipboard.' : ''}</output>
-  </section>;
+  </aside>;
 }

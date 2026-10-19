@@ -58,6 +58,7 @@ function toCandidate(photo: UnsplashPhoto): UnsplashImageCandidate {
       licence_url: 'https://unsplash.com/license',
       download_location: photo.links.download_location,
       illustrative: true,
+      colour: photo.color ?? '#d4d7ce',
     },
   };
 }
@@ -90,4 +91,14 @@ export async function recordUnsplashSelection(downloadLocation: string) {
   if (url.origin !== API_URL) return;
   const response = await fetch(url, { headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' }, cache: 'no-store' });
   if (!response.ok) console.warn(`Unsplash selection tracking returned ${response.status}.`);
+}
+
+export async function getUnsplashImageColour(sourceId: string) {
+  const key = accessKey();
+  const id = sourceId.trim();
+  if (!key || !/^[a-zA-Z0-9_-]+$/.test(id)) return null;
+  const response = await fetch(`${API_URL}/photos/${id}`, { headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' }, cache: 'no-store' });
+  if (!response.ok) return null;
+  const photo = await response.json() as Pick<UnsplashPhoto, 'color'>;
+  return /^#[0-9a-f]{6}$/i.test(photo.color ?? '') ? photo.color : null;
 }

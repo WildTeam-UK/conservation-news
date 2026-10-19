@@ -1,7 +1,9 @@
-import Link from 'next/link';
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic public routes */
 import { ArrowRight } from 'lucide-react';
+import { Fragment } from 'react';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import type { EditorialImageCredit } from '@/lib/images/types';
+import { readableHeroColour } from '@/lib/images/colour';
 import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
 
@@ -53,14 +55,14 @@ function LinkedParagraph({ text, stories, referenced = [] }: { text: string; sto
   while ((match = marker.exec(cleanText)) !== null) {
     parts.push(cleanText.slice(cursor, match.index));
     const story = stories.get(match[1]);
-    parts.push(story ? <Link href={`/stories/${story.slug}`} key={`${match.index}-${match[1]}`}>{match[2]}</Link> : match[2]);
+    parts.push(story ? <a href={`/stories/${story.slug}`} key={`${match.index}-${match[1]}`}>{match[2]}</a> : match[2]);
     cursor = match.index + match[0].length;
   }
   if (cursor === 0) {
     const ranges = legacyLinkRanges(cleanText, referenced);
     for (const range of ranges) {
       parts.push(cleanText.slice(cursor, range.start));
-      parts.push(<Link href={`/stories/${range.story.slug}`} key={`${range.start}-${range.story.id}`}>{cleanText.slice(range.start, range.end)}</Link>);
+      parts.push(<a href={`/stories/${range.story.slug}`} key={`${range.start}-${range.story.id}`}>{cleanText.slice(range.start, range.end)}</a>);
       cursor = range.end;
     }
   }
@@ -75,12 +77,50 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
     <div className="digest-more-grid">{digests.map((digest) => {
       const date = digest.slug.replace('daily-digest-', '');
       return <article key={digest.id}>
-        <Link className="digest-more-image" href={`/daily-digest/${date}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</Link>
+        <a className="digest-more-image" href={`/daily-digest/${date}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
         <time dateTime={digest.digest_period_end}>{longDate(digest.digest_period_end)}</time>
-        <h3><Link href={`/daily-digest/${date}`}>{cleanDigestText(digest.headline)}</Link></h3>
+        <h3><a href={`/daily-digest/${date}`}>{cleanDigestText(digest.headline)}</a></h3>
       </article>;
     })}</div>
   </section>;
+}
+
+function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
+  const uniqueStories = [...new Map(stories.map((story) => [story.id, story])).values()];
+  if (!uniqueStories.length) return null;
+  return <section className="digest-source-list">
+    <p className="eyebrow">Source articles</p>
+    <h2>Stories used in this digest</h2>
+    <ul>{uniqueStories.map((story, index) => <li key={story.id}>
+      <span>{String(index + 1).padStart(2, '0')}</span>
+      <a href={`/stories/${story.slug}`}>{cleanDigestText(story.headline)} <ArrowRight /></a>
+    </li>)}</ul>
+  </section>;
+}
+
+function DigestSignupForm({ id }: { id: string }) {
+  return <form className="digest-signup-form">
+    <label htmlFor={id}>Your email address</label>
+    <div className="digest-signup-control"><input id={id} type="email" placeholder="Email address" required /><button type="submit">Sign me up <ArrowRight /></button></div>
+  </form>;
+}
+
+function InlineDigestNewsletter() {
+  return <aside className="digest-inline-newsletter">
+    <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h3>One clear conservation briefing, every Friday.</h3></div>
+    <DigestSignupForm id="digest-email-inline" />
+  </aside>;
+}
+
+function WildTeamTrainingBanner() {
+  return <aside className="digest-training-cta">
+    <div>
+      <p className="eyebrow">Turn knowledge into action</p>
+      <h2>Build the skills to make conservation happen.</h2>
+      <p>Practical, accessible training for people protecting nature around the world.</p>
+    </div>
+    <a href="https://training.wildteam.org.uk/">Explore WildTeam training <ArrowRight /></a>
+  </aside>;
 }
 
 export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
@@ -88,19 +128,21 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
   const resolvedImageUrl = imageUrl ?? heroStory?.image_url ?? null;
   const resolvedImageAlt = imageAlt ?? heroStory?.image_alt ?? '';
+  const heroColour = readableHeroColour(content.hero_colour ?? heroStory?.image_credit?.colour);
   const sourceTopics = stories.flatMap((story) => story.topics ?? []);
   const displayTopics = (content.topics?.length ? content.topics : [...new Set(sourceTopics)]).slice(0, 3);
   const currentDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(periodEnd));
   const recentDailyDigests = content.digest_type === 'daily' ? moreDigests.filter((digest) => digest.slug !== `daily-digest-${currentDate}`).slice(0, 3) : [];
+  const referencedStories = [...new Set(content.sections.flatMap((section) => section.story_ids ?? []))].flatMap((id) => storyByReference.get(id) ?? []);
   const usedImages = new Set(resolvedImageUrl ? [resolvedImageUrl] : []);
 
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
-      <div className="digest-hero-copy">
-        <time dateTime={periodEnd}>{longDate(periodEnd)}</time>
+      <div className="digest-hero-copy" style={{ backgroundColor: heroColour }}>
+        <div className="digest-hero-meta"><time dateTime={periodEnd}>{longDate(periodEnd)}</time><span aria-hidden="true">·</span><span>WILDNEWS {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span></div>
         <h1>{cleanDigestText(content.headline)}</h1>
         <p>{cleanDigestText(content.standfirst)}</p>
-        <Link className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></Link>
+        <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
       </div>
       {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={resolvedImageUrl} alt={resolvedImageAlt} /><ImageCredit credit={heroStory?.image_credit} /></figure> : null}
     </header>
@@ -108,7 +150,10 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
     <div className="digest-article-body shell">
       <div className="digest-reading-column">
         {displayTopics.length ? <div className="digest-body-topics">{displayTopics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div> : null}
-        <section className="digest-introduction">{content.introduction.map((paragraph, index) => <LinkedParagraph text={paragraph} stories={storyByReference} key={index} />)}</section>
+        <div className="digest-introduction-layout">
+          {sharePath ? <SocialShare path={sharePath} title={cleanDigestText(content.headline)} label="Share this digest" /> : null}
+          <section className="digest-introduction">{content.introduction.map((paragraph, index) => <LinkedParagraph text={paragraph} stories={storyByReference} key={index} />)}</section>
+        </div>
         {content.sections.map((section, index) => {
           const referenced = section.story_ids.flatMap((id) => storyByReference.get(id) ?? []);
           const sectionImage = referenced.find((story) => story.image_url && !usedImages.has(story.image_url));
@@ -116,19 +161,19 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
             {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><ImageCredit credit={sectionImage.image_credit} /></figure> : null}
-            {section.paragraphs.map((paragraph, paragraphIndex) => <LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} key={paragraphIndex} />)}
+            {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <InlineDigestNewsletter /> : null}</Fragment>)}
           </section>;
         })}
+        <DigestSources stories={referencedStories.length ? referencedStories : stories} />
       </div>
 
-      <section className="digest-watch-list"><p className="eyebrow">What to watch</p><h2>The next developments</h2><ol>{content.what_to_watch.map((item, index) => <li key={index}>{cleanDigestText(item)}</li>)}</ol></section>
+      <WildTeamTrainingBanner />
       <section className="digest-newsletter-cta">
         <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
-        <form><label htmlFor="digest-email">Your email address</label><div><input id="digest-email" type="email" placeholder="you@example.com" required /><button type="submit">Sign me up <ArrowRight /></button></div></form>
+        <DigestSignupForm id="digest-email" />
       </section>
     </div>
 
-    {sharePath ? <SocialShare path={sharePath} title={cleanDigestText(content.headline)} label="Share this digest" /> : null}
     <MoreDailyDigests digests={recentDailyDigests} />
   </article>;
 }

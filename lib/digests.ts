@@ -17,6 +17,7 @@ export type DigestContent = {
   edition_label: string;
   headline: string;
   standfirst: string;
+  hero_colour?: string;
   topics?: string[];
   introduction: string[];
   sections: DigestSection[];
