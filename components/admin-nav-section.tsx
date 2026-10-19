@@ -10,7 +10,7 @@ type NavItem = { label: string; href: string; active: boolean };
 const icons = { pipeline: Activity, sources: Rss, taxonomy: Tags, training: GraduationCap };
 
 export function AdminNavSection({ icon, label, description, active, items }: { icon: NavIcon; label: string; description: string; active: boolean; items: NavItem[] }) {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(active);
   const Icon = icons[icon];
   const submenuId = `admin-${icon}-submenu`;
 
