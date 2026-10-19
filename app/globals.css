@@ -480,16 +480,16 @@ img{border-radius:18px}
 .digest-inline-newsletter h3{margin:0;font-size:24px;font-weight:950;line-height:1.05;letter-spacing:-.015em;white-space:nowrap}
 @media(max-width:1000px){.digest-inline-newsletter{grid-template-columns:1fr;width:100%;margin:30px 0;padding:23px 20px;transform:none}.digest-inline-newsletter h3{font-size:22px;white-space:normal}}
 @media(max-width:480px){.digest-newsletter-cta .digest-signup-control,.digest-inline-newsletter .digest-signup-control{padding:3px}.digest-newsletter-cta .digest-signup-control input,.digest-inline-newsletter .digest-signup-control input{padding-inline:11px;font-size:12px}.digest-newsletter-cta .digest-signup-control button,.digest-inline-newsletter .digest-signup-control button{padding-inline:12px;font-size:9px}}
-.digest-training-cta{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:60px;align-items:center;margin-top:82px;padding:48px 50px;border-radius:22px;background:var(--ink);color:#fff}
-.digest-training-cta .eyebrow{margin-bottom:17px;color:var(--lime)}
-.digest-training-cta h2{max-width:760px;margin:0;color:#fff;font-size:43px;font-weight:950;line-height:1;letter-spacing:-.035em}
-.digest-training-cta div>p:last-child{max-width:680px;margin:18px 0 0;color:#d9d5d7;font-size:15px;line-height:1.55}
-.digest-training-cta>a{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 19px;border-radius:var(--public-button-radius);background:var(--lime);color:#fff;font-size:11px;font-weight:900;line-height:1;text-transform:uppercase;white-space:nowrap;transition:background .15s ease}
-.digest-training-cta>a:hover{background:var(--orange)}
-.digest-training-cta>a:focus-visible{outline:2px solid #fff;outline-offset:3px}
-.digest-training-cta>a svg{width:15px}
-@media(max-width:900px){.digest-training-cta{grid-template-columns:1fr;gap:28px}.digest-training-cta>a{justify-self:start}}
-@media(max-width:600px){.digest-training-cta{margin-top:58px;padding:30px 24px}.digest-training-cta h2{font-size:34px}.digest-training-cta>a{width:100%}}
+.training-banner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:60px;align-items:center;margin-top:82px;padding:48px 50px;border-radius:22px;background:var(--ink);color:#fff}
+.training-banner .eyebrow{margin-bottom:17px;color:var(--lime)}
+.training-banner h2{max-width:760px;margin:0;color:#fff;font-size:43px;font-weight:950;line-height:1;letter-spacing:-.035em}
+.training-banner div>p:last-child{max-width:680px;margin:18px 0 0;color:#d9d5d7;font-size:15px;line-height:1.55}
+.training-banner>a{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 19px;border-radius:var(--public-button-radius);background:var(--lime);color:#fff;font-size:11px;font-weight:900;line-height:1;text-transform:uppercase;white-space:nowrap;transition:background .15s ease}
+.training-banner>a:hover{background:var(--orange)}
+.training-banner>a:focus-visible{outline:2px solid #fff;outline-offset:3px}
+.training-banner>a svg{width:15px}
+@media(max-width:900px){.training-banner{grid-template-columns:1fr;gap:28px}.training-banner>a{justify-self:start}}
+@media(max-width:600px){.training-banner{margin-top:58px;padding:30px 24px}.training-banner h2{font-size:34px}.training-banner>a{width:100%}}
 .digest-watch-list{background:var(--cream)}
 .digest-watch-list h2,.digest-newsletter-cta h2{font-size:43px;font-weight:950;line-height:1;letter-spacing:-.035em}
 .digest-ai-disclosure{margin-top:52px;padding:23px 25px;border-radius:18px;background:var(--cream)}
@@ -516,7 +516,7 @@ img{border-radius:18px}
 .donate-panel button,
 .digest-newsletter-cta .digest-signup-control button,
 .digest-inline-newsletter .digest-signup-control button,
-.digest-training-cta>a{border-color:var(--lime);background:var(--lime);color:#fff}
+.training-banner>a{border-color:var(--lime);background:var(--lime);color:#fff}
 .site-navigation-button.primary:hover,
 .read-more-button:hover,
 .action-button:hover,
@@ -526,7 +526,7 @@ img{border-radius:18px}
 .donate-panel button:hover,
 .digest-newsletter-cta .digest-signup-control button:hover,
 .digest-inline-newsletter .digest-signup-control button:hover,
-.digest-training-cta>a:hover{border-color:var(--forest);background:var(--forest);color:#fff}
+.training-banner>a:hover{border-color:var(--forest);background:var(--forest);color:#fff}
 .site-navigation-button.secondary{border-color:var(--lime);background:transparent;color:var(--lime)}
 .site-navigation-button.secondary:hover{border-color:var(--forest);background:transparent;color:var(--forest)}
 .homepage-inline-newsletter{width:min(1240px,calc(100% - 48px));margin:0 auto 80px;transform:none}

@@ -8,6 +8,7 @@ import { FALLBACK_HERO_COLOUR } from '@/lib/images/colour';
 import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
+import { TrainingBanner } from '@/components/training-banner';
 
 function longDate(value: string) {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(new Date(value));
@@ -87,17 +88,6 @@ function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
   </section>;
 }
 
-function WildTeamTrainingBanner() {
-  return <aside className="digest-training-cta">
-    <div>
-      <p className="eyebrow">Turn knowledge into action</p>
-      <h2>Build the skills to make conservation happen.</h2>
-      <p>Practical, accessible training for people protecting nature around the world.</p>
-    </div>
-    <a href="https://training.wildteam.org.uk/">Explore WildTeam training <ArrowRight /></a>
-  </aside>;
-}
-
 export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
   const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
@@ -142,7 +132,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
         <DigestSources stories={referencedStories.length ? referencedStories : stories} />
       </div>
 
-      <WildTeamTrainingBanner />
+      <TrainingBanner />
       <WeeklyDigestNewsletterCta id="digest-email" />
     </div>
 
