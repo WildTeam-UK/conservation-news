@@ -3,9 +3,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, BellRing, CalendarClock, CircleAlert, ExternalLink, FilePenLine } from 'lucide-react';
 import { AddToQueueButton } from '@/components/add-to-queue-button';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { DraftEditor, type DraftSource } from '@/components/draft-editor';
 import { PublishControls } from '@/components/publish-controls';
 import { migrateDraftContent, type DraftCoverageAnalysis } from '@/lib/openai/draft-story';
@@ -35,7 +34,7 @@ type CoverageUpdate = {
 
 export default async function DraftPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const { data: story, error } = await supabase.from('stories').select('id, cluster_id, slug, headline, status, published_at, generation_metadata, updated_at, image_url, image_alt, byline, taxonomy_review_required, taxonomy_review_reason, taxonomy_confidence').eq('id', id).maybeSingle();
   if (error || !story) notFound();
   const metadata = story.generation_metadata as { article_content?: unknown; source_ids?: DraftSource[]; model?: string; estimated_cost_usd?: number | string; topic_classification?: { primary_topic?: string; secondary_topics?: string[] }; coverage_analysis?: Partial<DraftCoverageAnalysis> };
@@ -51,10 +50,9 @@ export default async function DraftPage({ params }: { params: Promise<{ id: stri
   const queueStatus = queueItem?.status;
   const isQueued = queueStatus && ['queued', 'scheduled', 'publishing'].includes(queueStatus);
   const isHeld = queueStatus === 'held';
-  const name = admin.display_name || admin.email;
 
   return <main className="admin-page">
-    <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
+    <AdminHeader />
     <AdminNav active="drafts" />
     <div className="admin-shell admin-draft-shell">
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}

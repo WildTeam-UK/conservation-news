@@ -1,9 +1,8 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads reliably refresh the protected Supabase session in Vinext */
 import type { Metadata } from 'next';
 import { BookOpen, Tags } from 'lucide-react';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { TagManager, type EditorialTag, type TagUsage } from '@/components/tag-manager';
 import { TaxonomyControls } from '@/components/taxonomy-controls';
 import { TopicManager, type EditorialTopic } from '@/components/topic-manager';
@@ -19,7 +18,7 @@ export const metadata: Metadata = {
 type TaxonomyPageProps = { searchParams?: Promise<{ view?: string }> };
 
 export default async function TaxonomyPage({ searchParams }: TaxonomyPageProps) {
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const params = searchParams ? await searchParams : undefined;
   const view = params?.view === 'tags' ? 'tags' : 'topics';
   const [topicsResult, tagsResult, aliasesResult, usagesResult, publishedStoriesResult, storyTopicsResult, storyTagsResult, settingsResult] = await Promise.all([
@@ -59,10 +58,9 @@ export default async function TaxonomyPage({ searchParams }: TaxonomyPageProps) 
   const editorialTopics = (topicsResult.data ?? []).map((topic) => ({ ...topic, storyCount: topicCounts.get(topic.id) ?? 0 })) as EditorialTopic[];
   const populatedTopicCount = editorialTopics.filter((topic) => topic.storyCount > 0).length;
   const settings = settingsResult.data;
-  const name = admin.display_name || admin.email;
 
   return <main className="admin-page">
-    <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
+    <AdminHeader />
     <AdminNav active="tags" subview={view} />
     <div className="admin-shell admin-taxonomy-shell">
       <section className="taxonomy-heading"><div><p className="eyebrow">{view === 'topics' ? 'Controlled editorial sections' : 'Discovery and SEO archives'}</p><h1>{view === 'topics' ? 'Topics' : 'Tags'}</h1><p>{view === 'topics' ? 'Nine broad sections organise every article. Edit their archive titles and descriptions here.' : `Specific species, places, habitats and themes are reused automatically. Tags become public archives after ${settings.min_published_stories} published articles.`}</p></div><div className="taxonomy-summary"><span>{view === 'topics' ? <BookOpen /> : <Tags />}</span><strong>{view === 'topics' ? populatedTopicCount : editorialTags.filter((tag) => tag.status === 'approved').length}</strong><small>{view === 'topics' ? 'populated topics' : 'live tags'}</small></div></section>

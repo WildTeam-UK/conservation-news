@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { CalendarDays, CheckCircle2, Clock3, FileText, PauseCircle } from 'lucide-react';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { DigestSettings } from '@/components/digest-settings';
 import { DigestRunControls } from '@/components/digest-run-controls';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
@@ -50,7 +49,7 @@ const defaultSettings = {
 };
 
 export default async function DigestsPage() {
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const [{ data: settings, error: settingsError }, { data: runs, error: runsError }] = await Promise.all([
     supabase.from('digest_settings').select('*').eq('id', true).single(),
     supabase.from('digest_runs').select('id, digest_type, trigger_type, status, period_start, period_end, source_story_count, estimated_cost_usd, social_status, email_status, error_summary, story_id, created_at').order('created_at', { ascending: false }).limit(20),
@@ -60,10 +59,9 @@ export default async function DigestsPage() {
   const latest = digestRuns[0];
   const digestSettings = settings ?? defaultSettings;
   const databaseWarning = settingsError || runsError ? 'The digest tables could not be read yet. Supabase may still be refreshing its schema cache; the rest of the editorial system is unaffected.' : null;
-  const name = admin.display_name || admin.email;
 
   return <main className="admin-page">
-    <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
+    <AdminHeader />
     <AdminNav active="digests" />
     <div className="admin-shell admin-digests-shell">
       <section className="admin-welcome candidates-heading">

@@ -1,9 +1,8 @@
 import type { Metadata } from 'next';
 import { ArrowRight, BellRing, FilePenLine, Search } from 'lucide-react';
 import { AddToQueueButton } from '@/components/add-to-queue-button';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { stripSourceMarkers } from '@/lib/article-text';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
@@ -37,7 +36,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
   const filters = await searchParams;
   const view: ArticleView = ['all', 'scheduled', 'unscheduled', 'held', 'published'].includes(filters.view ?? '') ? filters.view as ArticleView : 'all';
   const search = (filters.q ?? '').trim();
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const { data: stories, error } = await supabase.from('stories').select('id, cluster_id, headline, standfirst, status, updated_at, published_at, generation_metadata').eq('content_type', 'news').in('status', ['draft', 'published']).order('updated_at', { ascending: false });
   if (error) throw new Error('Unable to load article drafts.');
   const clusterIds = (stories ?? []).flatMap((story) => story.cluster_id ? [story.cluster_id] : []);
@@ -68,10 +67,9 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
     const matchesSearch = !searchLower || `${article.headline} ${article.standfirst}`.toLocaleLowerCase('en-GB').includes(searchLower);
     return matchesView && matchesSearch;
   });
-  const name = admin.display_name || admin.email;
 
   return <main className="admin-page">
-    <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
+    <AdminHeader />
     <AdminNav active="drafts" />
     <div className="admin-shell admin-drafts-shell">
       <section className="admin-welcome candidates-heading"><div><p className="eyebrow">Editorial workspace</p><h1>Articles</h1><p>Search and manage every private, scheduled, held and published article in one place.</p></div><div className="candidate-summary"><FilePenLine /><strong>{stories?.length ?? 0}</strong><span>total articles</span></div></section>

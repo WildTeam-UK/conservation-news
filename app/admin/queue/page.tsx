@@ -1,8 +1,7 @@
 import type { Metadata } from 'next';
 import { CalendarClock, CircleAlert, PauseCircle } from 'lucide-react';
+import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { AdminSignOutButton } from '@/components/admin-sign-out-button';
-import { Brand } from '@/components/brand';
 import { PublicationSettings } from '@/components/publication-settings';
 import { QueueItemActions } from '@/components/queue-item-actions';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
@@ -31,7 +30,7 @@ function storyFor(item: QueueItem) {
 const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
 
 export default async function PublicationQueuePage() {
-  const { supabase, admin } = await requireContentAdmin();
+  const { supabase } = await requireContentAdmin();
   const [{ data: settings, error: settingsError }, { data: queue, error: queueError }] = await Promise.all([
     supabase.from('editorial_run_settings').select('auto_publish_enabled, publish_window_start, publish_window_end, max_auto_publishes_per_day, min_auto_publish_overall_score, min_auto_publish_evidence_score').eq('id', true).single(),
     supabase.from('publication_queue').select('id, status, scheduled_for, published_at, hold_reason, last_error, stories(id, headline, slug, status)').in('status', ['queued', 'scheduled', 'publishing', 'held']).order('scheduled_for', { ascending: true, nullsFirst: false }).limit(250),
@@ -41,11 +40,10 @@ export default async function PublicationQueuePage() {
   const items = (queue ?? []) as QueueItem[];
   const upcoming = items.filter((item) => ['queued', 'scheduled', 'publishing'].includes(item.status));
   const held = items.filter((item) => item.status === 'held');
-  const name = admin.display_name || admin.email;
 
   return (
     <main className="admin-page">
-      <header className="admin-header"><Brand /><div className="admin-account"><span>{name}</span><AdminSignOutButton /></div></header>
+      <AdminHeader />
       <AdminNav active="queue" />
       <div className="admin-shell admin-queue-shell">
         <section className="admin-welcome candidates-heading">
