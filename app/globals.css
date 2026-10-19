@@ -460,6 +460,19 @@ img{border-radius:18px}
 .digest-source-list a{display:flex;align-items:flex-start;justify-content:space-between;gap:20px;color:var(--ink);font-size:15px;font-weight:900;line-height:1.35}
 .digest-source-list a:hover{text-decoration:underline;text-underline-offset:3px}
 .digest-source-list a svg{width:15px;flex:0 0 15px;color:var(--lime)}
+.digest-signup-form label{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.digest-newsletter-cta .digest-signup-control,.digest-inline-newsletter .digest-signup-control{display:flex;align-items:stretch;flex-direction:row;gap:0;padding:4px;border:0;border-radius:11px;background:#fff;box-shadow:0 4px 16px rgba(8,8,8,.12)}
+.digest-signup-control:focus-within{outline:2px solid #fff;outline-offset:3px}
+.digest-newsletter-cta .digest-signup-control input,.digest-inline-newsletter .digest-signup-control input{min-width:0;width:100%;padding:13px 15px;border:0;outline:0;background:transparent;color:var(--ink);font-size:14px}
+.digest-signup-control input::placeholder{color:#777378}
+.digest-newsletter-cta .digest-signup-control button,.digest-inline-newsletter .digest-signup-control button{display:flex;align-items:center;justify-content:center;gap:8px;flex:0 0 auto;padding:13px 17px;border:0;border-radius:7px;background:var(--lime);color:#fff;font-size:10px;font-weight:900;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:background .15s ease}
+.digest-signup-control button:hover{background:var(--orange)}
+.digest-signup-control button svg{width:14px}
+.digest-inline-newsletter{display:grid;grid-template-columns:minmax(0,1fr) minmax(300px,.9fr);gap:28px;align-items:center;width:min(920px,calc(100% + 160px));margin:34px 0 34px 50%;padding:25px 28px;border-radius:18px;background:var(--forest);color:#fff;transform:translateX(-50%)}
+.digest-inline-newsletter .eyebrow{margin-bottom:8px;color:#fff;font-size:8px}
+.digest-inline-newsletter h3{max-width:390px;margin:0;font-size:24px;font-weight:950;line-height:1.05;letter-spacing:-.015em}
+@media(max-width:700px){.digest-inline-newsletter{grid-template-columns:1fr;width:100%;margin:30px 0;padding:23px 20px;transform:none}.digest-inline-newsletter h3{font-size:22px}}
+@media(max-width:480px){.digest-newsletter-cta .digest-signup-control,.digest-inline-newsletter .digest-signup-control{padding:3px}.digest-newsletter-cta .digest-signup-control input,.digest-inline-newsletter .digest-signup-control input{padding-inline:11px;font-size:12px}.digest-newsletter-cta .digest-signup-control button,.digest-inline-newsletter .digest-signup-control button{padding-inline:12px;font-size:9px}}
 .digest-watch-list{background:var(--cream)}
 .digest-watch-list h2,.digest-newsletter-cta h2{font-size:43px;font-weight:950;line-height:1;letter-spacing:-.035em}
 .digest-ai-disclosure{margin-top:52px;padding:23px 25px;border-radius:18px;background:var(--cream)}

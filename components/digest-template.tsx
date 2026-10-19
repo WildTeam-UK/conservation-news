@@ -1,5 +1,6 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic public routes */
 import { ArrowRight } from 'lucide-react';
+import { Fragment } from 'react';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import type { EditorialImageCredit } from '@/lib/images/types';
 import { readableHeroColour } from '@/lib/images/colour';
@@ -97,6 +98,20 @@ function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
   </section>;
 }
 
+function DigestSignupForm({ id }: { id: string }) {
+  return <form className="digest-signup-form">
+    <label htmlFor={id}>Your email address</label>
+    <div className="digest-signup-control"><input id={id} type="email" placeholder="Email address" required /><button type="submit">Sign me up <ArrowRight /></button></div>
+  </form>;
+}
+
+function InlineDigestNewsletter() {
+  return <aside className="digest-inline-newsletter">
+    <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h3>One clear conservation briefing, every Friday.</h3></div>
+    <DigestSignupForm id="digest-email-inline" />
+  </aside>;
+}
+
 export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
   const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
@@ -135,7 +150,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
             {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><ImageCredit credit={sectionImage.image_credit} /></figure> : null}
-            {section.paragraphs.map((paragraph, paragraphIndex) => <LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} key={paragraphIndex} />)}
+            {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <InlineDigestNewsletter /> : null}</Fragment>)}
           </section>;
         })}
         <DigestSources stories={referencedStories.length ? referencedStories : stories} />
@@ -144,7 +159,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
       <section className="digest-watch-list"><p className="eyebrow">What to watch</p><h2>The next developments</h2><ol>{content.what_to_watch.map((item, index) => <li key={index}>{cleanDigestText(item)}</li>)}</ol></section>
       <section className="digest-newsletter-cta">
         <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
-        <form><label htmlFor="digest-email">Your email address</label><div><input id="digest-email" type="email" placeholder="you@example.com" required /><button type="submit">Sign me up <ArrowRight /></button></div></form>
+        <DigestSignupForm id="digest-email" />
       </section>
     </div>
 
