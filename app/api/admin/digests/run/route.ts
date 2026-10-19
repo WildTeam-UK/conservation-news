@@ -14,7 +14,7 @@ export async function POST(request: Request) {
   if (body?.digestType !== 'daily' && body?.digestType !== 'weekly') return Response.json({ error: 'Choose a daily or weekly digest.' }, { status: 400 });
   if (body.targetDate && !/^\d{4}-\d{2}-\d{2}$/.test(body.targetDate)) return Response.json({ error: 'Choose a valid missed daily edition date.' }, { status: 400 });
   try {
-    return Response.json(await generateDigest(body.digestType, user.id, body.targetDate));
+    return Response.json(await generateDigest(body.digestType, user.id, { targetDate: body.targetDate }));
   } catch (error) {
     console.error('Digest generation failed', error);
     return Response.json({ error: error instanceof Error ? error.message : 'The digest could not be generated.' }, { status: 500 });
