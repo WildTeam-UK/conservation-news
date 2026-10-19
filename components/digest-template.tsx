@@ -1,4 +1,4 @@
-import Link from 'next/link';
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic public routes */
 import { ArrowRight } from 'lucide-react';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import type { EditorialImageCredit } from '@/lib/images/types';
@@ -53,14 +53,14 @@ function LinkedParagraph({ text, stories, referenced = [] }: { text: string; sto
   while ((match = marker.exec(cleanText)) !== null) {
     parts.push(cleanText.slice(cursor, match.index));
     const story = stories.get(match[1]);
-    parts.push(story ? <Link href={`/stories/${story.slug}`} key={`${match.index}-${match[1]}`}>{match[2]}</Link> : match[2]);
+    parts.push(story ? <a href={`/stories/${story.slug}`} key={`${match.index}-${match[1]}`}>{match[2]}</a> : match[2]);
     cursor = match.index + match[0].length;
   }
   if (cursor === 0) {
     const ranges = legacyLinkRanges(cleanText, referenced);
     for (const range of ranges) {
       parts.push(cleanText.slice(cursor, range.start));
-      parts.push(<Link href={`/stories/${range.story.slug}`} key={`${range.start}-${range.story.id}`}>{cleanText.slice(range.start, range.end)}</Link>);
+      parts.push(<a href={`/stories/${range.story.slug}`} key={`${range.start}-${range.story.id}`}>{cleanText.slice(range.start, range.end)}</a>);
       cursor = range.end;
     }
   }
@@ -75,9 +75,9 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
     <div className="digest-more-grid">{digests.map((digest) => {
       const date = digest.slug.replace('daily-digest-', '');
       return <article key={digest.id}>
-        <Link className="digest-more-image" href={`/daily-digest/${date}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</Link>
+        <a className="digest-more-image" href={`/daily-digest/${date}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
         <time dateTime={digest.digest_period_end}>{longDate(digest.digest_period_end)}</time>
-        <h3><Link href={`/daily-digest/${date}`}>{cleanDigestText(digest.headline)}</Link></h3>
+        <h3><a href={`/daily-digest/${date}`}>{cleanDigestText(digest.headline)}</a></h3>
       </article>;
     })}</div>
   </section>;
@@ -100,7 +100,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
         <time dateTime={periodEnd}>{longDate(periodEnd)}</time>
         <h1>{cleanDigestText(content.headline)}</h1>
         <p>{cleanDigestText(content.standfirst)}</p>
-        <Link className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></Link>
+        <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
       </div>
       {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={resolvedImageUrl} alt={resolvedImageAlt} /><ImageCredit credit={heroStory?.image_credit} /></figure> : null}
     </header>
