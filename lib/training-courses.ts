@@ -1,3 +1,15 @@
+export type TrainingCoursePromotion = {
+  id: string;
+  title: string;
+  short_title: string | null;
+  description: string;
+  course_url: string;
+  primary_colour: string;
+  ad_headline: string;
+  ad_description: string;
+  cta_label: string;
+};
+
 export function slugifyCourse(value: string) {
   return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100) || 'course';
 }

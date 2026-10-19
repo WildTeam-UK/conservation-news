@@ -1,0 +1,13 @@
+import { ArrowRight, GraduationCap } from 'lucide-react';
+import type { CSSProperties } from 'react';
+import type { TrainingCoursePromotion } from '@/lib/training-courses';
+
+export function CoursePromotion({ course }: { course: TrainingCoursePromotion }) {
+  return <aside className="course-promotion" style={{ '--course-colour': course.primary_colour } as CSSProperties}>
+    <span className="course-promotion-icon"><GraduationCap aria-hidden="true" /></span>
+    <p className="eyebrow">WildTeam Training</p>
+    <h2>{course.ad_headline}</h2>
+    <p>{course.ad_description}</p>
+    <a href={course.course_url} target="_blank" rel="noreferrer">{course.cta_label} <ArrowRight aria-hidden="true" /></a>
+  </aside>;
+}

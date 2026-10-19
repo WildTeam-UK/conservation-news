@@ -5,6 +5,8 @@ import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
 import { stripSourceMarkers } from '@/lib/article-text';
 import type { EditorialImageCredit as EditorialImageCreditData } from '@/lib/images/types';
+import { CoursePromotion } from '@/components/course-promotion';
+import type { TrainingCoursePromotion } from '@/lib/training-courses';
 
 export type ArticleCoverage = {
   ecological: number;
@@ -32,6 +34,7 @@ export type ArticleTemplateData = {
   whatWeDontKnow: ArticleText[];
   sources: ArticleSource[];
   coverage: ArticleCoverage;
+  coursePromotion?: TrainingCoursePromotion | null;
 };
 
 function CoverageHelp({ label, text }: { label: string; text: string }) {
@@ -109,14 +112,14 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
         <section className="story-section"><p className="eyebrow">Open questions</p><h2>What we don&apos;t know</h2><ul className="evidence-points">{article.whatWeDontKnow.map((point, index) => <li key={`unknown-${index}`}><ArticleTextContent value={point} sources={sourcesById} /></li>)}</ul></section>
         <section className="story-section" id="sources"><p className="eyebrow">Source coverage</p><h2>Read the reporting</h2><div className="source-list">{article.sources.map((source, index) => <a href={source.url} target="_blank" rel="noreferrer" key={`${source.url}-${index}`} title={source.title}><span>{source.primary ? 'Primary story' : 'Also covering'}</span><strong>{source.name}</strong><ExternalLink /></a>)}</div></section>
       </div>
-      <aside className="coverage-card">
+      <div className="article-sidebar"><aside className="coverage-card">
         <p className="eyebrow">Coverage analysis</p>
         <BinaryAnalysis title="Ecological / Economic" firstLabel="Ecological" firstValue={coverage.ecological} secondLabel="Economic" tone="ecology-signal" tooltip="Shows whether coverage primarily frames the story around environmental outcomes or economic impacts such as costs, jobs, industry and development." />
         <BinaryAnalysis title="Evidence-led / Opinion-led" firstLabel="Evidence-led" firstValue={coverage.evidence} secondLabel="Opinion-led" tone="evidence-signal" tooltip="Shows how strongly the coverage relies on research, data and attributable evidence versus commentary, interpretation or argument." />
         <BinaryAnalysis title="Consensus / Contested" firstLabel="Consensus" firstValue={coverage.consensus} secondLabel="Contested" tone="consensus-signal" tooltip="Shows how much agreement exists across the sources and viewpoints represented in current coverage. This refers to coverage consensus, not scientific consensus." />
         <small>Coverage analysis reflects the sources, framing and viewpoints currently represented in this story. These signals are not judgements of factual accuracy and may change as new reporting and sources are added.</small>
         <Link className="analysis-link" href="/how-leaning-works">How our coverage analysis works <ArrowRight /></Link>
-      </aside>
+      </aside>{article.coursePromotion ? <CoursePromotion course={article.coursePromotion} /> : null}</div>
     </div>
   </article>;
 }
