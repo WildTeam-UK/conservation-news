@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect } from 'react';
 import { FALLBACK_HERO_COLOUR, readableHeroColour } from '@/lib/images/colour';
 
 type PaletteColour = { hex?: string };
@@ -44,18 +45,29 @@ export function DigestHeroImage({ src, alt, colourTargetId }: { src: string; alt
     if (target) target.style.backgroundColor = FALLBACK_HERO_COLOUR;
   }
 
-  async function applyImageColour() {
-    try {
-      const response = await fetch(paletteUrl(src));
-      if (!response.ok) throw new Error(`Image palette request failed with ${response.status}.`);
-      const palette = await response.json() as ImagePalette;
-      const target = document.getElementById(colourTargetId);
-      if (target) target.style.backgroundColor = readableHeroColour(preferredPaletteColour(palette));
-    } catch {
-      applyFallbackColour();
+  useEffect(() => {
+    if (!canRequestPalette) return;
+    const controller = new AbortController();
+
+    async function applyImageColour() {
+      try {
+        const response = await fetch(paletteUrl(src), { signal: controller.signal });
+        if (!response.ok) throw new Error(`Image palette request failed with ${response.status}.`);
+        const palette = await response.json() as ImagePalette;
+        const target = document.getElementById(colourTargetId);
+        if (target) target.style.backgroundColor = readableHeroColour(preferredPaletteColour(palette));
+      } catch (error) {
+        if (!(error instanceof DOMException && error.name === 'AbortError')) {
+          const target = document.getElementById(colourTargetId);
+          if (target) target.style.backgroundColor = FALLBACK_HERO_COLOUR;
+        }
+      }
     }
-  }
+
+    void applyImageColour();
+    return () => controller.abort();
+  }, [canRequestPalette, colourTargetId, src]);
 
   // oxlint-disable-next-line next/no-img-element -- external editorial images are hotlinked under the provider licence
-  return <img src={src} alt={alt} onLoad={canRequestPalette ? () => { void applyImageColour(); } : undefined} onError={applyFallbackColour} />;
+  return <img src={src} alt={alt} onError={applyFallbackColour} />;
 }
