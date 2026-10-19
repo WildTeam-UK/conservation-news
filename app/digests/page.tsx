@@ -2,6 +2,7 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
+import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedWeeklyDigests, type DigestStoryRecord, type DigestType } from '@/lib/digests';
@@ -48,6 +49,7 @@ export default async function DigestArchive() {
         </article>;
       })}
     </section> : <div className="digest-archive-empty shell"><h3>No digest editions yet</h3><p>The first published digest will appear here.</p></div>}
+    <WeeklyDigestNewsletterCta id="digest-archive-email" className="editorial-newsletter-cta shell" />
     <SimilarStories stories={latestStories} description="Explore the latest reporting behind the briefings." />
     <SiteFooter />
   </main>;

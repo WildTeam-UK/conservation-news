@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { InteriorHeader } from '@/components/interior-header';
+import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
@@ -53,6 +54,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
         <div><TopicTag topic={story.topic} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div>
       </article>)}
     </section>
+    <WeeklyDigestNewsletterCta id={`topic-${slug}-digest-email`} className="editorial-newsletter-cta shell" />
     <SimilarStories stories={related} />
     <SiteFooter />
   </main>;

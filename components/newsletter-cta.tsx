@@ -48,3 +48,10 @@ export function WeeklyDigestNewsletterCta({ id, className = '' }: { id: string; 
     <NewsletterSignupForm id={id} />
   </section>;
 }
+
+export function StreamlinedNewsletterCta({ id, className = '' }: { id: string; className?: string }) {
+  return <aside className={`digest-inline-newsletter ${className}`.trim()}>
+    <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h3>One clear conservation briefing, every Friday.</h3></div>
+    <NewsletterSignupForm id={id} />
+  </aside>;
+}

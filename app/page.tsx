@@ -1,6 +1,6 @@
 import { ArrowRight } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
-import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
+import { StreamlinedNewsletterCta } from '@/components/newsletter-cta';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteNavigation } from '@/components/site-navigation';
 import { TopicTag } from '@/components/topic-tag';
@@ -49,6 +49,8 @@ export default async function Home() {
       </div>
     </section>
 
+    <StreamlinedNewsletterCta id="homepage-digest-email" className="homepage-inline-newsletter shell" />
+
     <section className="topic-shelves" aria-label="Stories by topic">
       {shelfTopics.map((topic) => {
         const topicStories = liveStories.filter((story) => story.topic === topic || story.topics.includes(topic));
@@ -64,8 +66,6 @@ export default async function Home() {
         </section>;
       })}
     </section>
-
-    <WeeklyDigestNewsletterCta id="homepage-digest-email" className="homepage-newsletter-cta shell" />
     <SiteFooter />
   </main>;
 }

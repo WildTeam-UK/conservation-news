@@ -529,8 +529,9 @@ img{border-radius:18px}
 .digest-training-cta>a:hover{border-color:var(--forest);background:var(--forest);color:#fff}
 .site-navigation-button.secondary{border-color:var(--lime);background:transparent;color:var(--lime)}
 .site-navigation-button.secondary:hover{border-color:var(--forest);background:transparent;color:var(--forest)}
-.homepage-newsletter-cta{margin-top:70px;margin-bottom:70px}
-@media(max-width:600px){.homepage-newsletter-cta{margin-top:52px;margin-bottom:52px}}
+.homepage-inline-newsletter{width:min(1240px,calc(100% - 48px));margin-top:0;margin-bottom:80px;transform:none}
+.editorial-newsletter-cta{margin-top:0;margin-bottom:90px}
+@media(max-width:600px){.homepage-inline-newsletter{width:calc(100% - 30px);margin-bottom:58px}.editorial-newsletter-cta{margin-bottom:64px}}
 
 /* Shared editorial image attribution */
 .article-lead-image .editorial-image-credit,

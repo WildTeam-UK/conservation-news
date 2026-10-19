@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArticleTemplate } from '@/components/article-template';
 import { InteriorHeader } from '@/components/interior-header';
+import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { getPublishedStories, getPublishedStory, publishedStoryToArticle, publishedStoryToListing, relatedPublishedStories } from '@/lib/published-stories';
@@ -32,6 +33,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   return <main>
     <InteriorHeader />
     <ArticleTemplate article={publishedStoryToArticle(published)} sharePath={`/stories/${published.slug}`} />
+    <WeeklyDigestNewsletterCta id="article-digest-email" className="editorial-newsletter-cta shell" />
     <SimilarStories stories={related} description="Keep exploring this topic." />
     <SiteFooter />
   </main>;

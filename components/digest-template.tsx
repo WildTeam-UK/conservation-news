@@ -5,7 +5,7 @@ import { DigestHeroImage } from '@/components/digest-hero-image';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import { FALLBACK_HERO_COLOUR } from '@/lib/images/colour';
-import { NewsletterSignupForm, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
+import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
 
@@ -87,13 +87,6 @@ function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
   </section>;
 }
 
-function InlineDigestNewsletter() {
-  return <aside className="digest-inline-newsletter">
-    <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h3>One clear conservation briefing, every Friday.</h3></div>
-    <NewsletterSignupForm id="digest-email-inline" />
-  </aside>;
-}
-
 function WildTeamTrainingBanner() {
   return <aside className="digest-training-cta">
     <div>
@@ -143,7 +136,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
             {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><EditorialImageCredit credit={sectionImage.image_credit} className="digest-image-credit" /></figure> : null}
-            {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <InlineDigestNewsletter /> : null}</Fragment>)}
+            {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <StreamlinedNewsletterCta id="digest-email-inline" /> : null}</Fragment>)}
           </section>;
         })}
         <DigestSources stories={referencedStories.length ? referencedStories : stories} />
