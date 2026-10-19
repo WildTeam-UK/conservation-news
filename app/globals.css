@@ -469,6 +469,12 @@ img{border-radius:18px}
 .digest-newsletter-cta .digest-signup-control button,.digest-inline-newsletter .digest-signup-control button{display:flex;align-items:center;justify-content:center;gap:8px;flex:0 0 auto;padding:13px 17px;border:0;border-radius:7px;background:var(--lime);color:#fff;font-size:10px;font-weight:900;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:background .15s ease}
 .digest-signup-control button:hover{background:var(--orange)}
 .digest-signup-control button svg{width:14px}
+.digest-signup-control button:disabled,.digest-signup-control input:disabled{opacity:.65;cursor:wait}
+.digest-signup-honeypot{position:absolute!important;left:-10000px!important;width:1px!important;height:1px!important;overflow:hidden!important}
+.digest-signup-message{display:block;margin:10px 3px 0;color:#fff;font-size:11px;font-weight:900;line-height:1.4}
+.digest-signup-message.error{color:#ffd7b8}
+.digest-signup-privacy{margin:10px 3px 0!important;color:rgba(255,255,255,.72)!important;font-size:9px!important;line-height:1.45!important}
+.digest-signup-privacy a{text-decoration:underline;text-underline-offset:2px}
 .digest-inline-newsletter{display:grid;grid-template-columns:minmax(0,1fr) minmax(360px,.8fr);gap:38px;align-items:center;width:min(1240px,calc(100vw - 48px));margin:34px 0 34px 50%;padding:25px 32px;border-radius:18px;background:var(--forest);color:#fff;transform:translateX(-50%)}
 .digest-inline-newsletter .eyebrow{margin-bottom:8px;color:#fff;font-size:8px}
 .digest-inline-newsletter h3{margin:0;font-size:24px;font-weight:950;line-height:1.05;letter-spacing:-.015em;white-space:nowrap}
