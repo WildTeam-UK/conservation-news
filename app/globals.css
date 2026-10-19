@@ -436,7 +436,6 @@ img{border-radius:18px}
 
 /* Digest editorial refinements */
 .digest-public-hero{width:100%;max-width:none;min-height:680px;gap:0;padding:0}
-.interior-header:has(+ .digest-article) .site-masthead{border-bottom:0}
 .digest-article{margin-top:0}
 .digest-hero-copy{align-items:center;padding:clamp(58px,6vw,88px) clamp(32px,5vw,70px);border-radius:0;background:var(--forest);color:#fff;text-align:center}
 .digest-public-hero .digest-hero-copy h1{max-width:660px;margin:18px 0 0;color:#fff;font-family:var(--font-rounded),sans-serif;font-size:clamp(42px,4.8vw,68px);font-weight:850;line-height:.98;letter-spacing:-.02em}
