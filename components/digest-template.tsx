@@ -112,6 +112,17 @@ function InlineDigestNewsletter() {
   </aside>;
 }
 
+function WildTeamTrainingBanner() {
+  return <aside className="digest-training-cta">
+    <div>
+      <p className="eyebrow">Turn knowledge into action</p>
+      <h2>Build the skills to make conservation happen.</h2>
+      <p>Practical, accessible training for people protecting nature around the world.</p>
+    </div>
+    <a href="https://training.wildteam.org.uk/">Explore WildTeam training <ArrowRight /></a>
+  </aside>;
+}
+
 export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
   const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
@@ -156,7 +167,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
         <DigestSources stories={referencedStories.length ? referencedStories : stories} />
       </div>
 
-      <section className="digest-watch-list"><p className="eyebrow">What to watch</p><h2>The next developments</h2><ol>{content.what_to_watch.map((item, index) => <li key={index}>{cleanDigestText(item)}</li>)}</ol></section>
+      <WildTeamTrainingBanner />
       <section className="digest-newsletter-cta">
         <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
         <DigestSignupForm id="digest-email" />
