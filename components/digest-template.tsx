@@ -2,6 +2,7 @@
 import { ArrowRight } from 'lucide-react';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import type { EditorialImageCredit } from '@/lib/images/types';
+import { readableHeroColour } from '@/lib/images/colour';
 import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
 
@@ -83,20 +84,35 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
   </section>;
 }
 
+function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
+  const uniqueStories = [...new Map(stories.map((story) => [story.id, story])).values()];
+  if (!uniqueStories.length) return null;
+  return <section className="digest-source-list">
+    <p className="eyebrow">Source articles</p>
+    <h2>Stories used in this digest</h2>
+    <ul>{uniqueStories.map((story, index) => <li key={story.id}>
+      <span>{String(index + 1).padStart(2, '0')}</span>
+      <a href={`/stories/${story.slug}`}>{cleanDigestText(story.headline)} <ArrowRight /></a>
+    </li>)}</ul>
+  </section>;
+}
+
 export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
   const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
   const resolvedImageUrl = imageUrl ?? heroStory?.image_url ?? null;
   const resolvedImageAlt = imageAlt ?? heroStory?.image_alt ?? '';
+  const heroColour = readableHeroColour(content.hero_colour ?? heroStory?.image_credit?.colour);
   const sourceTopics = stories.flatMap((story) => story.topics ?? []);
   const displayTopics = (content.topics?.length ? content.topics : [...new Set(sourceTopics)]).slice(0, 3);
   const currentDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(periodEnd));
   const recentDailyDigests = content.digest_type === 'daily' ? moreDigests.filter((digest) => digest.slug !== `daily-digest-${currentDate}`).slice(0, 3) : [];
+  const referencedStories = [...new Set(content.sections.flatMap((section) => section.story_ids ?? []))].flatMap((id) => storyByReference.get(id) ?? []);
   const usedImages = new Set(resolvedImageUrl ? [resolvedImageUrl] : []);
 
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
-      <div className="digest-hero-copy">
+      <div className="digest-hero-copy" style={{ backgroundColor: heroColour }}>
         <time dateTime={periodEnd}>{longDate(periodEnd)}</time>
         <h1>{cleanDigestText(content.headline)}</h1>
         <p>{cleanDigestText(content.standfirst)}</p>
@@ -122,6 +138,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
             {section.paragraphs.map((paragraph, paragraphIndex) => <LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} key={paragraphIndex} />)}
           </section>;
         })}
+        <DigestSources stories={referencedStories.length ? referencedStories : stories} />
       </div>
 
       <section className="digest-watch-list"><p className="eyebrow">What to watch</p><h2>The next developments</h2><ol>{content.what_to_watch.map((item, index) => <li key={index}>{cleanDigestText(item)}</li>)}</ol></section>

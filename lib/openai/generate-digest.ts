@@ -4,6 +4,8 @@ import { cleanDigestText, type DigestContent, type DigestSourceStory, type Diges
 import { aiInstructions, parseAiJson } from './house-style';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
+import { readableHeroColour } from '@/lib/images/colour';
+import { getUnsplashImageColour } from '@/lib/images/unsplash';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'digest-v2-linked-editorial';
@@ -226,6 +228,16 @@ This is a private editorial draft for review. Return only the requested structur
     const lead = sourceStories.find((source) => sourceImageUrl(source) && source.generation_metadata?.article_content?.image_credit)
       ?? sourceStories.find((source) => sourceImageUrl(source))
       ?? sourceStories[0];
+    const leadCredit = lead.generation_metadata?.article_content?.image_credit;
+    let sourceColour = leadCredit?.colour ?? null;
+    if (!sourceColour && leadCredit?.provider === 'unsplash' && leadCredit.source_id) {
+      try {
+        sourceColour = await getUnsplashImageColour(leadCredit.source_id);
+      } catch (error) {
+        console.warn('Unable to retrieve the digest image colour from Unsplash', error);
+      }
+    }
+    content.hero_colour = readableHeroColour(sourceColour);
     const { data: topicRows, error: topicsError } = await supabase.from('topics').select('id, name').in('name', content.topics).eq('active', true);
     if (topicsError) throw topicsError;
     const topicsByName = new Map((topicRows ?? []).map((topic) => [topic.name, topic]));

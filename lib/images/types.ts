@@ -9,6 +9,7 @@ export type EditorialImageCredit = {
   licence_url: string;
   download_location: string;
   illustrative: boolean;
+  colour?: string;
 };
 
 export type UnsplashImageCandidate = {

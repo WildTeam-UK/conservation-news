@@ -117,6 +117,7 @@ function cleanImageCredit(value: unknown): EditorialImageCredit | null {
     licence_url: safeImageUrl(credit.licence_url),
     download_location: provider === 'unsplash' ? safeImageUrl(credit.download_location) : '',
     illustrative: Boolean(credit.illustrative),
+    colour: /^#[0-9a-f]{6}$/i.test(credit.colour ?? '') ? credit.colour : undefined,
   };
   return cleaned.creator_name || cleaned.source_name ? cleaned : null;
 }
@@ -162,6 +163,7 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
   const record = (value && typeof value === 'object' ? value : {}) as Record<string, unknown>;
   if (record.template_version === 2) {
     const content = record as StoryDraftContent;
+    const sourced = (item: SourcedDraftText): SourcedDraftText => ({ ...item, text: stripSourceMarkers(cleanText(item?.text, 8000)) });
     return {
       ...content,
       headline: stripSourceMarkers(cleanText(content.headline, 180)),
@@ -170,6 +172,12 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
       image_search_query: cleanText(content.image_search_query, 120) || stripSourceMarkers(cleanText(content.headline, 120)),
       image_search_fallbacks: Array.isArray(content.image_search_fallbacks) ? content.image_search_fallbacks.map((query) => cleanText(query, 120)).filter(Boolean).slice(0, 2) : [],
       image_credit: cleanImageCredit(content.image_credit),
+      story_at_a_glance: (content.story_at_a_glance ?? []).map(sourced),
+      key_takeaways: (content.key_takeaways ?? []).map(sourced),
+      why_it_matters: sourced(content.why_it_matters),
+      what_happens_next: sourced(content.what_happens_next),
+      what_we_know: (content.what_we_know ?? []).map(sourced),
+      what_we_dont_know: (content.what_we_dont_know ?? []).map(sourced),
       seo_title: stripSourceMarkers(cleanText(content.seo_title, 180)),
     };
   }
