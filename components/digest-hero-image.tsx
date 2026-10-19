@@ -1,6 +1,6 @@
 'use client';
 
-import { readableHeroColour } from '@/lib/images/colour';
+import { FALLBACK_HERO_COLOUR, readableHeroColour } from '@/lib/images/colour';
 
 function dominantColour(image: HTMLImageElement) {
   const canvas = document.createElement('canvas');
@@ -29,9 +29,17 @@ function dominantColour(image: HTMLImageElement) {
     buckets.set(key, bucket);
   }
 
-  const winner = [...buckets.values()].sort((first, second) => {
-    const firstScore = first.count * (0.8 + (first.saturation / first.count) * 0.4);
-    const secondScore = second.count * (0.8 + (second.saturation / second.count) * 0.4);
+  const candidates = [...buckets.values()];
+  const colourfulCandidates = candidates.filter((bucket) => (bucket.saturation / bucket.count) >= 0.18);
+  const colourfulPixelCount = colourfulCandidates.reduce((total, bucket) => total + bucket.count, 0);
+  const eligibleCandidates = colourfulPixelCount >= (canvas.width * canvas.height * 0.08)
+    ? colourfulCandidates
+    : candidates;
+  const winner = eligibleCandidates.sort((first, second) => {
+    const firstSaturation = first.saturation / first.count;
+    const secondSaturation = second.saturation / second.count;
+    const firstScore = first.count * (0.4 + firstSaturation * 1.6);
+    const secondScore = second.count * (0.4 + secondSaturation * 1.6);
     return secondScore - firstScore;
   })[0];
   if (!winner) return null;
@@ -48,15 +56,20 @@ export function DigestHeroImage({ src, alt, colourTargetId }: { src: string; alt
   }
 
   function applyImageColour(image: HTMLImageElement) {
+    const target = document.getElementById(colourTargetId);
     try {
       const colour = dominantColour(image);
-      const target = document.getElementById(colourTargetId);
-      if (colour && target) target.style.backgroundColor = readableHeroColour(colour);
+      if (target) target.style.backgroundColor = readableHeroColour(colour);
     } catch {
-      // Cross-origin or unsupported images retain the stored provider colour.
+      if (target) target.style.backgroundColor = FALLBACK_HERO_COLOUR;
     }
   }
 
+  function applyFallbackColour() {
+    const target = document.getElementById(colourTargetId);
+    if (target) target.style.backgroundColor = FALLBACK_HERO_COLOUR;
+  }
+
   // oxlint-disable-next-line next/no-img-element -- external editorial images are hotlinked under the provider licence
-  return <img src={src} alt={alt} crossOrigin={canSample ? 'anonymous' : undefined} onLoad={canSample ? (event) => applyImageColour(event.currentTarget) : undefined} />;
+  return <img src={src} alt={alt} crossOrigin={canSample ? 'anonymous' : undefined} onLoad={canSample ? (event) => applyImageColour(event.currentTarget) : undefined} onError={applyFallbackColour} />;
 }

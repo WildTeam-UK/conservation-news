@@ -4,7 +4,7 @@ import { Fragment } from 'react';
 import { DigestHeroImage } from '@/components/digest-hero-image';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
-import { readableHeroColour } from '@/lib/images/colour';
+import { FALLBACK_HERO_COLOUR } from '@/lib/images/colour';
 import { NewsletterSignupForm, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
@@ -110,7 +110,6 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
   const resolvedImageUrl = imageUrl ?? heroStory?.image_url ?? null;
   const resolvedImageAlt = imageAlt ?? heroStory?.image_alt ?? '';
-  const heroColour = readableHeroColour(content.hero_colour ?? heroStory?.image_credit?.colour);
   const sourceTopics = stories.flatMap((story) => story.topics ?? []);
   const displayTopics = (content.topics?.length ? content.topics : [...new Set(sourceTopics)]).slice(0, 3);
   const currentDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(periodEnd));
@@ -121,7 +120,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
 
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
-      <div className="digest-hero-copy" id={heroColourTargetId} style={{ backgroundColor: heroColour }}>
+      <div className="digest-hero-copy" id={heroColourTargetId} style={{ backgroundColor: FALLBACK_HERO_COLOUR }}>
         <div className="digest-hero-meta"><time dateTime={periodEnd}>{longDate(periodEnd)}</time><span aria-hidden="true">·</span><span>WILDNEWS {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span></div>
         <h1>{cleanDigestText(content.headline)}</h1>
         <p>{cleanDigestText(content.standfirst)}</p>

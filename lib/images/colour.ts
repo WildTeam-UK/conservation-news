@@ -1,4 +1,4 @@
-const FALLBACK_HERO_COLOUR = '#6e0f6c';
+export const FALLBACK_HERO_COLOUR = '#6e0f6c';
 
 function channelLuminance(value: number) {
   const channel = value / 255;
