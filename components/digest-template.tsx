@@ -1,27 +1,16 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic public routes */
 import { ArrowRight } from 'lucide-react';
 import { Fragment } from 'react';
+import { DigestHeroImage } from '@/components/digest-hero-image';
+import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
-import type { EditorialImageCredit } from '@/lib/images/types';
 import { readableHeroColour } from '@/lib/images/colour';
+import { NewsletterSignupForm, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
 
 function longDate(value: string) {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(new Date(value));
-}
-
-function ImageCreditText({ credit }: { credit: EditorialImageCredit }) {
-  return <>
-    Illustrative image by {credit.creator_url ? <a href={credit.creator_url} target="_blank" rel="noreferrer">{credit.creator_name}</a> : credit.creator_name}
-    {credit.source_name ? <> on {credit.source_url ? <a href={credit.source_url} target="_blank" rel="noreferrer">{credit.source_name}</a> : credit.source_name}</> : null}
-    {credit.licence_name ? <> | {credit.licence_url ? <a href={credit.licence_url} target="_blank" rel="noreferrer">{credit.licence_name}</a> : credit.licence_name}</> : null}
-  </>;
-}
-
-function ImageCredit({ credit }: { credit?: EditorialImageCredit | null }) {
-  if (!credit) return null;
-  return <figcaption className="digest-image-credit"><ImageCreditText credit={credit} /></figcaption>;
 }
 
 const linkStopWords = new Set(['about', 'after', 'again', 'against', 'could', 'finds', 'first', 'further', 'into', 'over', 'report', 'reports', 'study', 'their', 'these', 'this', 'with']);
@@ -98,17 +87,10 @@ function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
   </section>;
 }
 
-function DigestSignupForm({ id }: { id: string }) {
-  return <form className="digest-signup-form">
-    <label htmlFor={id}>Your email address</label>
-    <div className="digest-signup-control"><input id={id} type="email" placeholder="Email address" required /><button type="submit">Sign me up <ArrowRight /></button></div>
-  </form>;
-}
-
 function InlineDigestNewsletter() {
   return <aside className="digest-inline-newsletter">
     <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h3>One clear conservation briefing, every Friday.</h3></div>
-    <DigestSignupForm id="digest-email-inline" />
+    <NewsletterSignupForm id="digest-email-inline" />
   </aside>;
 }
 
@@ -135,16 +117,17 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   const recentDailyDigests = content.digest_type === 'daily' ? moreDigests.filter((digest) => digest.slug !== `daily-digest-${currentDate}`).slice(0, 3) : [];
   const referencedStories = [...new Set(content.sections.flatMap((section) => section.story_ids ?? []))].flatMap((id) => storyByReference.get(id) ?? []);
   const usedImages = new Set(resolvedImageUrl ? [resolvedImageUrl] : []);
+  const heroColourTargetId = `digest-hero-colour-${content.digest_type}-${currentDate}`;
 
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
-      <div className="digest-hero-copy" style={{ backgroundColor: heroColour }}>
+      <div className="digest-hero-copy" id={heroColourTargetId} style={{ backgroundColor: heroColour }}>
         <div className="digest-hero-meta"><time dateTime={periodEnd}>{longDate(periodEnd)}</time><span aria-hidden="true">·</span><span>WILDNEWS {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span></div>
         <h1>{cleanDigestText(content.headline)}</h1>
         <p>{cleanDigestText(content.standfirst)}</p>
         <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
       </div>
-      {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={resolvedImageUrl} alt={resolvedImageAlt} /><ImageCredit credit={heroStory?.image_credit} /></figure> : null}
+      {resolvedImageUrl ? <figure className="digest-lead-image"><DigestHeroImage src={resolvedImageUrl} alt={resolvedImageAlt} colourTargetId={heroColourTargetId} /><EditorialImageCredit credit={heroStory?.image_credit} className="digest-image-credit" /></figure> : null}
     </header>
 
     <div className="digest-article-body shell">
@@ -160,7 +143,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           if (sectionImage?.image_url) usedImages.add(sectionImage.image_url);
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
-            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><ImageCredit credit={sectionImage.image_credit} /></figure> : null}
+            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><EditorialImageCredit credit={sectionImage.image_credit} className="digest-image-credit" /></figure> : null}
             {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <InlineDigestNewsletter /> : null}</Fragment>)}
           </section>;
         })}
@@ -168,10 +151,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
       </div>
 
       <WildTeamTrainingBanner />
-      <section className="digest-newsletter-cta">
-        <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
-        <DigestSignupForm id="digest-email" />
-      </section>
+      <WeeklyDigestNewsletterCta id="digest-email" />
     </div>
 
     <MoreDailyDigests digests={recentDailyDigests} />
