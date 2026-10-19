@@ -500,3 +500,27 @@ img{border-radius:18px}
 .digest-archive-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px}.digest-archive-page .topic-story time{color:var(--muted);font-size:9px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}.digest-archive-page .topic-story .archive-tag-pill{display:inline-flex}.digest-archive-page .related{padding-top:72px}.digest-archive-page .wildteam-footer{margin-top:10px}
 @media(min-width:821px){.digest-archive-page .topic-story-featured .topic-story-image{height:auto;align-self:stretch}}
 @media(max-width:600px){.digest-archive-page .related{padding-top:52px}}
+
+/* Public CTA colour system */
+.site-navigation-button,
+.site-navigation-button.primary,
+.read-more-button,
+.action-button,
+.action-button-dark,
+.donate-button,
+.signup-form button,
+.donate-panel button,
+.digest-newsletter-cta .digest-signup-control button,
+.digest-inline-newsletter .digest-signup-control button,
+.digest-training-cta>a{border-color:var(--lime);background:var(--lime);color:#fff}
+.site-navigation-button:hover,
+.site-navigation-button.primary:hover,
+.read-more-button:hover,
+.action-button:hover,
+.action-button-dark:hover,
+.donate-button:hover,
+.signup-form button:hover,
+.donate-panel button:hover,
+.digest-newsletter-cta .digest-signup-control button:hover,
+.digest-inline-newsletter .digest-signup-control button:hover,
+.digest-training-cta>a:hover{border-color:var(--forest);background:var(--forest);color:#fff}
