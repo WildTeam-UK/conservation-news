@@ -16,6 +16,12 @@ type DigestSettings = {
   max_estimated_cost_usd: number | string;
 };
 
+type GenerateDigestOptions = {
+  targetDate?: string;
+  periodEnd?: string;
+  triggerType?: 'manual' | 'scheduled' | 'retry';
+};
+
 type SourceMetadata = {
   article_content?: {
     story_at_a_glance?: Array<{ text?: string }>;
@@ -97,14 +103,17 @@ function compactSource(story: DigestSourceStory & { generation_metadata: SourceM
   };
 }
 
-export async function generateDigest(type: DigestType, userId: string, targetDate?: string) {
+export async function generateDigest(type: DigestType, userId: string | null, options: GenerateDigestOptions = {}) {
   const supabase = getSupabaseAdminClient();
   const { data: settings, error: settingsError } = await supabase.from('digest_settings').select('*').eq('id', true).single();
   if (settingsError || !settings) throw settingsError ?? new Error('Digest settings were not found.');
   const config = settings as DigestSettings;
-  if (targetDate && type !== 'daily') throw new Error('Only missed daily editions can be generated for a specific date.');
-  const historicalPeriod = targetDate ? historicalDailyPeriod(targetDate) : null;
-  const end = historicalPeriod?.end ?? new Date();
+  if (options.targetDate && type !== 'daily') throw new Error('Only missed daily editions can be generated for a specific date.');
+  if (options.targetDate && options.periodEnd) throw new Error('A digest cannot use both a missed date and a scheduled period end.');
+  const historicalPeriod = options.targetDate ? historicalDailyPeriod(options.targetDate) : null;
+  const scheduledEnd = options.periodEnd ? new Date(options.periodEnd) : null;
+  if (scheduledEnd && Number.isNaN(scheduledEnd.getTime())) throw new Error('The scheduled digest period is invalid.');
+  const end = historicalPeriod?.end ?? scheduledEnd ?? new Date();
   const start = historicalPeriod?.start ?? new Date(end.getTime() - (type === 'weekly' ? 7 : 1) * 24 * 60 * 60 * 1000);
   const editionDate = historicalPeriod?.editionDate ?? londonDate(end);
   const slug = `${type}-digest-${editionDate}`;
@@ -131,7 +140,7 @@ export async function generateDigest(type: DigestType, userId: string, targetDat
 
   const runValues = {
     digest_type: type,
-    trigger_type: 'manual',
+    trigger_type: options.triggerType ?? 'manual',
     status: 'generating',
     period_start: start.toISOString(),
     period_end: end.toISOString(),

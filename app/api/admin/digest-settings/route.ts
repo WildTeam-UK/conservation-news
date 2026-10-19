@@ -18,6 +18,7 @@ export async function PATCH(request: Request) {
     weeklyMinStories?: number;
     weeklyMaxStories?: number;
     maxEstimatedCostUsd?: number;
+    automationEnabled?: boolean;
     publishImmediately?: boolean;
   } | null;
 
@@ -38,10 +39,10 @@ export async function PATCH(request: Request) {
   if (!Number.isFinite(maxCost) || maxCost < 0.05 || maxCost > 100) {
     return Response.json({ error: 'The estimated cost limit must be between $0.05 and $100.' }, { status: 400 });
   }
-  if (typeof body?.publishImmediately !== 'boolean') return Response.json({ error: 'Choose a valid publishing mode.' }, { status: 400 });
+  if (typeof body?.automationEnabled !== 'boolean' || typeof body?.publishImmediately !== 'boolean') return Response.json({ error: 'Choose valid automation and publishing modes.' }, { status: 400 });
 
   const { error } = await supabase.from('digest_settings').update({
-    automation_enabled: false,
+    automation_enabled: body.automationEnabled,
     run_time: `${runTime}:00`,
     automation_timezone: 'Europe/London',
     weekly_day: 5,
@@ -57,5 +58,5 @@ export async function PATCH(request: Request) {
   }).eq('id', true);
   if (error) return Response.json({ error: error.message }, { status: 500 });
 
-  return Response.json({ saved: true, testing: true });
+  return Response.json({ saved: true, automationEnabled: body.automationEnabled });
 }
