@@ -10,6 +10,18 @@ export type TrainingCoursePromotion = {
   cta_label: string;
 };
 
+export const GENERAL_TRAINING_PROMOTION: TrainingCoursePromotion = {
+  id: 'wildteam-training',
+  title: 'WildTeam Training',
+  short_title: 'Training',
+  description: 'Practical conservation training created and taught by working conservation professionals.',
+  course_url: 'https://training.wildteam.org.uk/courses',
+  primary_colour: '#6e0f6c',
+  ad_headline: 'Turn conservation ambition into practical action',
+  ad_description: 'Build job-ready skills with flexible courses created and taught by working conservation professionals.',
+  cta_label: 'Explore WildTeam Training',
+};
+
 export function slugifyCourse(value: string) {
   return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100) || 'course';
 }

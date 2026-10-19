@@ -6,7 +6,7 @@ import { TopicTag } from '@/components/topic-tag';
 import { stripSourceMarkers } from '@/lib/article-text';
 import type { EditorialImageCredit as EditorialImageCreditData } from '@/lib/images/types';
 import { CoursePromotion } from '@/components/course-promotion';
-import type { TrainingCoursePromotion } from '@/lib/training-courses';
+import { GENERAL_TRAINING_PROMOTION, type TrainingCoursePromotion } from '@/lib/training-courses';
 
 export type ArticleCoverage = {
   ecological: number;
@@ -119,7 +119,7 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
         <BinaryAnalysis title="Consensus / Contested" firstLabel="Consensus" firstValue={coverage.consensus} secondLabel="Contested" tone="consensus-signal" tooltip="Shows how much agreement exists across the sources and viewpoints represented in current coverage. This refers to coverage consensus, not scientific consensus." />
         <small>Coverage analysis reflects the sources, framing and viewpoints currently represented in this story. These signals are not judgements of factual accuracy and may change as new reporting and sources are added.</small>
         <Link className="analysis-link" href="/how-leaning-works">How our coverage analysis works <ArrowRight /></Link>
-      </aside>{article.coursePromotion ? <CoursePromotion course={article.coursePromotion} /> : null}</div>
+      </aside><CoursePromotion course={article.coursePromotion ?? GENERAL_TRAINING_PROMOTION} /></div>
     </div>
   </article>;
 }
