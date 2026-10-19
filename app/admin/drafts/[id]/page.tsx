@@ -9,6 +9,7 @@ import { DraftEditor, type DraftSource } from '@/components/draft-editor';
 import { PublishControls } from '@/components/publish-controls';
 import { migrateDraftContent, type DraftCoverageAnalysis } from '@/lib/openai/draft-story';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import type { TrainingCoursePromotion } from '@/lib/training-courses';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,11 +42,15 @@ export default async function DraftPage({ params }: { params: Promise<{ id: stri
   if (!metadata.article_content) notFound();
   const topics = [metadata.topic_classification?.primary_topic, ...(metadata.topic_classification?.secondary_topics ?? [])].filter((topic): topic is string => Boolean(topic));
   const articleContent = migrateDraftContent(metadata.article_content, { topics, coverage_analysis: metadata.coverage_analysis, image_url: story.image_url, image_alt: story.image_alt, byline: story.byline });
-  const [{ data: coverageUpdateRows }, { data: queueItem, error: queueError }] = await Promise.all([
+  const [{ data: coverageUpdateRows }, { data: queueItem, error: queueError }, { data: courseRecommendation, error: courseError }] = await Promise.all([
     story.cluster_id ? supabase.from('story_cluster_updates').select('id, relationship, rationale, created_at, source_items(title, url, sources(name))').eq('cluster_id', story.cluster_id).eq('status', 'pending_review').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason').eq('story_id', story.id).maybeSingle(),
+    supabase.from('story_course_recommendations').select('training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)').eq('story_id', story.id).eq('placement', 'featured').maybeSingle(),
   ]);
   if (queueError) throw new Error('Unable to load this article’s publishing status.');
+  if (courseError) throw new Error('Unable to load this article’s training recommendation.');
+  const linkedCourse = courseRecommendation?.training_courses;
+  const coursePromotion = (Array.isArray(linkedCourse) ? linkedCourse[0] : linkedCourse) as TrainingCoursePromotion | null | undefined;
   const coverageUpdates = (coverageUpdateRows ?? []) as CoverageUpdate[];
   const queueStatus = queueItem?.status;
   const isQueued = queueStatus && ['queued', 'scheduled', 'publishing'].includes(queueStatus);
@@ -62,7 +67,7 @@ export default async function DraftPage({ params }: { params: Promise<{ id: stri
       {story.status === 'draft' ? <section className={`draft-queue-panel ${isHeld ? 'held' : isQueued ? 'scheduled' : 'unscheduled'}`}><span>{isHeld ? <CircleAlert /> : <CalendarClock />}</span><div><p className="eyebrow">Publishing queue</p><h2>{isHeld ? 'Held for review' : isQueued ? queueStatus === 'queued' ? 'Waiting for a slot' : 'Scheduled' : 'Not scheduled'}</h2><p>{isHeld ? queueItem?.hold_reason || 'This article needs attention before it can be scheduled.' : isQueued ? queueItem?.scheduled_for ? `Due to publish ${new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(queueItem.scheduled_for))}.` : 'It will receive a publishing time when the schedule is next balanced.' : 'This private draft will not publish automatically unless you add it to the queue.'}</p></div><div className="draft-queue-panel-actions">{!isQueued && !isHeld ? <AddToQueueButton storyId={story.id} /> : null}<Link href="/admin/queue">View queue</Link></div></section> : null}
       {coverageUpdates?.length ? <section className="new-coverage-panel"><div><BellRing /><span><strong>New coverage available</strong><small>These sources were matched to this story after the article was drafted. Review them before deciding whether the article needs updating.</small></span></div>{coverageUpdates.map((update) => { const item = Array.isArray(update.source_items) ? update.source_items[0] : update.source_items; const publisher = item && (Array.isArray(item.sources) ? item.sources[0]?.name : item.sources?.name); return item ? <a href={item.url} target="_blank" rel="noreferrer" key={update.id}><span><strong>{item.title}</strong><small>{publisher ?? 'Source'} · {update.relationship.replace('_', ' ')}</small>{update.rationale ? <em>{update.rationale}</em> : null}</span><ExternalLink /></a> : null; })}</section> : null}
       <PublishControls storyId={story.id} slug={story.slug} status={story.status} publishedAt={story.published_at} content={articleContent} sourceCount={metadata.source_ids?.length ?? 0} />
-      <DraftEditor storyId={story.id} initialContent={articleContent} sourceList={metadata.source_ids ?? []} updatedAt={story.updated_at} readOnly={story.status === 'published'} />
+      <DraftEditor storyId={story.id} initialContent={articleContent} sourceList={metadata.source_ids ?? []} updatedAt={story.updated_at} coursePromotion={coursePromotion} readOnly={story.status === 'published'} />
       <p className="draft-model-note">Generated with {metadata.model ?? 'OpenAI'} · estimated model cost ${Number(metadata.estimated_cost_usd ?? 0).toFixed(4)}. Sources and factual claims still require human review.</p>
     </div>
   </main>;

@@ -6,8 +6,8 @@ import { AdminNavToggle } from '@/components/admin-nav-toggle';
 import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 
 type AdminNavProps = {
-  active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'digests' | 'sources' | 'tags' | 'settings';
-  subview?: 'pipeline-status' | 'collected' | 'candidates' | 'monitored' | 'recommendations' | 'topics' | 'tags';
+  active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'digests' | 'sources' | 'tags' | 'training' | 'settings';
+  subview?: 'pipeline-status' | 'collected' | 'candidates' | 'monitored' | 'recommendations' | 'topics' | 'tags' | 'courses';
 };
 
 export function AdminNav({ active, subview }: AdminNavProps) {
@@ -30,6 +30,7 @@ export function AdminNav({ active, subview }: AdminNavProps) {
       <span className="admin-nav-group">Library</span>
       <AdminNavSection icon="sources" label="Sources" description="Feeds and source health" active={active === 'sources'} items={[{ label: 'Monitored sources', href: '/admin/sources?view=monitored', active: subview === 'monitored' }, { label: 'Recommendations', href: '/admin/sources?view=recommendations', active: subview === 'recommendations' }]} />
       <AdminNavSection icon="taxonomy" label="Taxonomy" description="Topics and tags" active={active === 'tags'} items={[{ label: 'Topics', href: '/admin/tags?view=topics', active: subview === 'topics' }, { label: 'Tags', href: '/admin/tags?view=tags', active: subview === 'tags' }]} />
+      <AdminNavSection icon="training" label="Training" description="Courses and recommendations" active={active === 'training'} items={[{ label: 'Courses', href: '/admin/training', active: subview === 'courses' }]} />
       <AdminProfileMenu active={active === 'settings'} />
       <div className="admin-mobile-sign-out"><AdminSignOutButton /></div>
     </nav>

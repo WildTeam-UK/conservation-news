@@ -7,6 +7,7 @@ import { ArticleTemplate, type ArticleTemplateData } from '@/components/article-
 import type { EditorialImageCredit, UnsplashImageCandidate } from '@/lib/images/types';
 import type { DraftCoverageAnalysis, SourcedDraftText, StoryDraftContent } from '@/lib/openai/draft-story';
 import { EDITORIAL_TOPICS } from '@/lib/taxonomy';
+import type { TrainingCoursePromotion } from '@/lib/training-courses';
 
 export type DraftSource = { id: string; title: string; publisher: string; url: string; source_type: string };
 
@@ -28,7 +29,7 @@ function SingleSourcedField({ label, item, sources, onChange }: { label: string;
   return <SourcedFields label={label} items={[item]} sources={sources} onChange={(items) => items[0] && onChange(items[0])} />;
 }
 
-export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, readOnly = false }: { storyId: string; initialContent: StoryDraftContent; sourceList: DraftSource[]; updatedAt: string; readOnly?: boolean }) {
+export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, coursePromotion, readOnly = false }: { storyId: string; initialContent: StoryDraftContent; sourceList: DraftSource[]; updatedAt: string; coursePromotion?: TrainingCoursePromotion | null; readOnly?: boolean }) {
   const router = useRouter();
   const [content, setContent] = useState(initialContent);
   const [saving, setSaving] = useState(false);
@@ -163,6 +164,7 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, re
       evidence: content.coverage_analysis.evidence,
       consensus: content.coverage_analysis.consensus,
     },
+    coursePromotion,
   };
   const coverageLooksUncalibrated = [content.coverage_analysis.ecological, content.coverage_analysis.evidence, content.coverage_analysis.consensus].every((score) => score <= 1);
 
