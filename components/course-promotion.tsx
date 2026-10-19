@@ -8,7 +8,7 @@ export function CoursePromotion({ course }: { course: TrainingCoursePromotion })
       <p className="eyebrow">WildTeam Training</p>
       <h2>{course.ad_headline}</h2>
       {course.id !== 'wildteam-training' ? <p className="course-promotion-course">{course.title}</p> : null}
-      <p>{course.ad_description}</p>
+      <p className="course-promotion-description">{course.ad_description}</p>
     </div>
     <a href={course.course_url} target="_blank" rel="noreferrer">{course.cta_label} <ArrowRight aria-hidden="true" /></a>
   </aside>;
