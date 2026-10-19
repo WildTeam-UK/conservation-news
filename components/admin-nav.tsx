@@ -2,6 +2,7 @@
 import { Activity, CalendarClock, CalendarDays, FilePenLine, LayoutDashboard, Rss, Tags } from 'lucide-react';
 import { AdminProfileMenu } from '@/components/admin-profile-menu';
 import { AdminNavToggle } from '@/components/admin-nav-toggle';
+import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 
 type AdminNavProps = {
   active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'digests' | 'sources' | 'tags' | 'settings';
@@ -11,7 +12,7 @@ type AdminNavProps = {
 export function AdminNav({ active, subview }: AdminNavProps) {
   return (
     <>
-    <nav className="admin-nav" aria-label="Editorial navigation">
+    <nav className="admin-nav" id="admin-navigation" aria-label="Editorial navigation">
       <AdminNavToggle />
       <span className="admin-nav-group">Workspace</span>
       {/* Full page loads reliably refresh the protected Supabase session in Vinext. */}
@@ -35,6 +36,7 @@ export function AdminNav({ active, subview }: AdminNavProps) {
       <a className={active === 'tags' ? 'active' : ''} href="/admin/tags" title="Taxonomy"><Tags /><span><strong>Taxonomy</strong><small>Topics and tags</small></span></a>
       <div className="admin-nav-subitems" aria-label="Taxonomy views"><a className={subview === 'topics' ? 'active' : ''} href="/admin/tags?view=topics">Topics</a><a className={subview === 'tags' ? 'active' : ''} href="/admin/tags?view=tags">Tags</a></div>
       <AdminProfileMenu active={active === 'settings'} />
+      <div className="admin-mobile-sign-out"><AdminSignOutButton /></div>
     </nav>
     </>
   );
