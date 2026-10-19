@@ -128,7 +128,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
       <div className="digest-hero-copy" style={{ backgroundColor: heroColour }}>
-        <time dateTime={periodEnd}>{longDate(periodEnd)}</time>
+        <div className="digest-hero-meta"><time dateTime={periodEnd}>{longDate(periodEnd)}</time><span aria-hidden="true">·</span><span>WILDNEWS {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span></div>
         <h1>{cleanDigestText(content.headline)}</h1>
         <p>{cleanDigestText(content.standfirst)}</p>
         <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
