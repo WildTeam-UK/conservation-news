@@ -1,6 +1,8 @@
 import { timingSafeEqual } from 'node:crypto';
 import { advanceEditorialRun } from '@/lib/editorial-runner';
 import { collectEnabledSources } from '@/lib/ingestion/rss';
+import { generateDigest } from '@/lib/openai/generate-digest';
+import { publishDigest } from '@/lib/publish-digest';
 import { publishClaimedQueueItem } from '@/lib/publication-queue';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 
@@ -33,6 +35,28 @@ async function recordHeartbeatFailure(detail: string) {
   }).eq('id', true);
 }
 
+async function recordDigestSuccess() {
+  await getSupabaseAdminClient().from('digest_settings').update({
+    last_automation_tick_at: new Date().toISOString(),
+    last_automation_error: null,
+    consecutive_automation_failures: 0,
+  }).eq('id', true);
+}
+
+async function recordDigestFailure(runId: string, detail: string) {
+  const supabase = getSupabaseAdminClient();
+  const { data } = await supabase.from('digest_settings').select('consecutive_automation_failures').eq('id', true).maybeSingle();
+  await Promise.all([
+    supabase.from('digest_settings').update({
+      last_automation_tick_at: new Date().toISOString(),
+      last_automation_error: detail.slice(0, 1000),
+      consecutive_automation_failures: Number(data?.consecutive_automation_failures ?? 0) + 1,
+    }).eq('id', true),
+    supabase.from('digest_runs').update({ status: 'failed', error_summary: detail.slice(0, 1000), completed_at: new Date().toISOString() }).eq('id', runId),
+    supabase.from('digest_run_events').insert({ run_id: runId, stage: 'automation', level: 'error', message: detail.slice(0, 1000) }),
+  ]);
+}
+
 export async function POST(request: Request) {
   if (!isAuthorized(request)) return Response.json({ error: 'Automation authorization failed.' }, { status: 401 });
 
@@ -41,6 +65,39 @@ export async function POST(request: Request) {
     const { data: duePublication, error: publicationClaimError } = await supabase.rpc('claim_due_publication');
     if (publicationClaimError) throw publicationClaimError;
     const publication = duePublication ? await publishClaimedQueueItem(duePublication) : null;
+
+    const { data: digestClaimRows, error: digestClaimError } = await supabase.rpc('claim_due_digest_run');
+    const digestFunctionMissing = digestClaimError && ['PGRST202', '42883'].includes(digestClaimError.code ?? '');
+    if (digestClaimError && !digestFunctionMissing) throw digestClaimError;
+    const digestClaim = Array.isArray(digestClaimRows) ? digestClaimRows[0] : null;
+    if (digestClaim?.claimed_run_id) {
+      try {
+        await supabase.from('digest_run_events').insert({
+          run_id: digestClaim.claimed_run_id,
+          stage: digestClaim.is_recovery ? 'retry' : 'automation',
+          message: digestClaim.is_recovery ? 'Interrupted scheduled digest recovered by the automation heartbeat.' : `Scheduled ${digestClaim.claimed_digest_type} digest claimed automatically.`,
+        });
+        const generated = await generateDigest(digestClaim.claimed_digest_type, null, {
+          periodEnd: digestClaim.claimed_period_end,
+          triggerType: digestClaim.is_recovery ? 'retry' : 'scheduled',
+        });
+        if (generated.runId !== digestClaim.claimed_run_id) {
+          await supabase.from('digest_runs').update({ status: 'skipped', story_id: generated.storyId, completed_at: new Date().toISOString(), error_summary: 'An edition for this London calendar date already existed.' }).eq('id', digestClaim.claimed_run_id);
+        }
+        const digestPublication = digestClaim.should_publish && generated.storyId
+          ? await publishDigest(generated.storyId, { reviewerId: null, automated: true })
+          : null;
+        await recordDigestSuccess();
+        await recordHeartbeatSuccess();
+        return Response.json({ action: digestPublication ? 'digest_published' : 'digest_generated', publication, digest: generated, digestPublication });
+      } catch (digestError) {
+        const detail = digestError instanceof Error ? digestError.message : 'Scheduled digest generation failed.';
+        await recordDigestFailure(digestClaim.claimed_run_id, detail);
+        await recordHeartbeatSuccess();
+        console.error('Digest automation failed', digestError);
+        return Response.json({ action: 'digest_failed', publication, digestError: detail });
+      }
+    }
 
     const { data, error } = await supabase.rpc('claim_due_editorial_run');
     if (error) throw error;

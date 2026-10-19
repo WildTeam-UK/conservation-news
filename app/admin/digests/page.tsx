@@ -46,6 +46,7 @@ const defaultSettings = {
   weekly_max_stories: 25,
   max_estimated_cost_usd: 0.5,
   publish_immediately: false,
+  last_automation_error: null,
 };
 
 export default async function DigestsPage() {
@@ -70,6 +71,7 @@ export default async function DigestsPage() {
       </section>
 
       {databaseWarning ? <div className="digest-database-warning" role="alert">{databaseWarning}</div> : null}
+      {digestSettings.last_automation_error ? <div className="digest-database-warning" role="alert"><strong>Digest automation needs attention.</strong> {digestSettings.last_automation_error}</div> : null}
 
       <section className="digest-overview-grid" aria-label="Digest setup status">
         <article><span><Clock3 /></span><div><small>Planned schedule</small><strong>{String(digestSettings.run_time).slice(0, 5)} UK time</strong><p>Daily, with the weekly edition replacing Friday&apos;s daily edition.</p></div></article>
@@ -84,6 +86,7 @@ export default async function DigestsPage() {
         weeklyMinStories={digestSettings.weekly_min_stories}
         weeklyMaxStories={digestSettings.weekly_max_stories}
         maxEstimatedCostUsd={Number(digestSettings.max_estimated_cost_usd)}
+        automationEnabled={digestSettings.automation_enabled}
         publishImmediately={digestSettings.publish_immediately}
       />
 
