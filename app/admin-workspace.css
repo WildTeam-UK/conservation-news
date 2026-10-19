@@ -30,11 +30,11 @@
 }
 
 .admin-overview-shell{padding-top:52px;padding-bottom:90px}
-.overview-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:flex-end;justify-content:space-between;gap:42px}
+.overview-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:flex-end;justify-content:space-between;gap:20px 42px}
 .overview-heading>div:first-child{grid-column:1/-1;max-width:none}
 .overview-heading h1{max-width:none;margin:8px 0 0;font-size:clamp(43px,5.5vw,70px);font-weight:900;line-height:.96;letter-spacing:-.05em}
 .overview-heading h1 .overview-greeting{color:var(--lime)}
-.overview-heading>div:first-child>p:last-child{max-width:670px;margin:20px 0 0;color:var(--muted);font-size:15px;line-height:1.6}
+.overview-heading-description{grid-column:1;align-self:center;max-width:670px;margin:0;color:var(--muted);font-size:15px;line-height:1.6}
 .overview-health-pill{display:flex;align-items:center;gap:11px;flex:0 0 auto;min-width:200px;padding:13px 15px;border:1px solid #e4c191;border-radius:14px;background:#fff8e8;color:#8a520d}
 .overview-health-pill.healthy{border-color:#b9d8bf;background:#edf8ef;color:#17602d}
 .overview-health-pill{grid-column:2}
@@ -178,7 +178,7 @@
   .admin-nav .admin-nav-subitems a.active{border-bottom-color:transparent;background:transparent;color:var(--forest);font-weight:950}
   .admin-nav-profile{display:none!important}
   .admin-shell{width:min(100% - 34px,860px);margin:0 auto}
-  .overview-heading{align-items:flex-start;flex-direction:column}.overview-health-pill{align-self:flex-start}
+  .overview-heading{grid-template-columns:1fr;align-items:flex-start}.overview-heading-description,.overview-health-pill{grid-column:1}.overview-health-pill{align-self:flex-start}
   .overview-system-grid{grid-template-columns:1fr}.overview-columns{grid-template-columns:1fr}
   .overview-flow-track{grid-template-columns:repeat(5,minmax(120px,1fr));overflow-x:auto}.overview-flow-track>svg{display:none}
   .pipeline-heading{align-items:flex-start;flex-direction:column}.pipeline-flow{grid-template-columns:1fr}.pipeline-columns{grid-template-columns:1fr}

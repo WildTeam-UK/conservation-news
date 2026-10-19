@@ -94,7 +94,8 @@ export default async function AdminDashboard() {
 
       <div className="admin-shell admin-overview-shell">
         <section className="overview-heading" aria-labelledby="admin-heading">
-          <div><p className="eyebrow">Editorial overview</p><h1 id="admin-heading"><span className="overview-greeting" lang={greeting.lang} title={`${greeting.language} greeting`}>{greeting.text}</span> {profile.greetingName}, here&apos;s everything at a glance.</h1><p>The routine work is automated. This page shows what is moving, what publishes next and where you may need to step in.</p></div>
+          <div><p className="eyebrow">Editorial overview</p><h1 id="admin-heading"><span className="overview-greeting" lang={greeting.lang} title={`${greeting.language} greeting`}>{greeting.text}</span> {profile.greetingName}, here&apos;s everything at a glance.</h1></div>
+          <p className="overview-heading-description">The routine work is automated. This page shows what is moving, what publishes next and where you may need to step in.</p>
           <div className={`overview-health-pill ${automationHealthy ? 'healthy' : 'attention'}`}>{automationHealthy ? <CheckCircle2 /> : <AlertTriangle />}<span><strong>{automationHealthy ? 'System healthy' : 'Check system'}</strong><small>{attentionCount ? `${attentionCount} item${attentionCount === 1 ? '' : 's'} need attention` : 'No action needed'}</small></span></div>
         </section>
 
