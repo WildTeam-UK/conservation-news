@@ -1,5 +1,5 @@
 import { createSupabaseServerClient } from '@/lib/supabase/server';
-import { getGoodNewsBackfillStatus } from '@/lib/openai/backfill-conservation-outlooks';
+import { getGoodNewsStatus } from '@/lib/good-news-status';
 
 export async function PATCH(request: Request) {
   const supabase = await createSupabaseServerClient();
@@ -12,5 +12,5 @@ export async function PATCH(request: Request) {
   const minimumConfidence = Math.max(0, Math.min(100, Math.round(Number(body.minimumConfidence))));
   const { error } = await supabase.from('good_news_settings').update({ minimum_score: minimumScore, minimum_confidence: minimumConfidence }).eq('id', true);
   if (error) return Response.json({ error: 'Good News settings could not be saved.' }, { status: 500 });
-  return Response.json({ saved: true, status: await getGoodNewsBackfillStatus() });
+  return Response.json({ saved: true, status: await getGoodNewsStatus() });
 }

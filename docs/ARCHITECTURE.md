@@ -79,7 +79,7 @@ The unused generic starter component collection and its component-only dependenc
 | `components/` | Public and admin React components |
 | `lib/` | Editorial, ingestion, AI, publishing, taxonomy, SEO and service logic |
 | `lib/supabase/` | Browser, SSR and service-role Supabase clients |
-| `lib/openai/` | Assessment, research, drafting, digest and backfill generation |
+| `lib/openai/` | Assessment, research, drafting and digest generation |
 | `lib/images/` | Unsplash integration, attribution and colour handling |
 | `supabase/migrations/` | Ordered production database migrations |
 | `public/` | Fonts, favicons, logos, social image and local team imagery |
@@ -205,7 +205,6 @@ Used server-side for:
 - Taxonomy suggestions and descriptions
 - Course recommendations and contextual-link assessment
 - Daily and weekly digest generation
-- Historical backfills from admin-only controls
 
 All generated editorial prompts should include `AI_HOUSE_STYLE`. Estimated usage is stored with run and generation records.
 

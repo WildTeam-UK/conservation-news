@@ -6,8 +6,6 @@ import { AdminNav } from '@/components/admin-nav';
 import { RunAssessmentButton } from '@/components/run-assessment-button';
 import { RunCollectionButton } from '@/components/run-collection-button';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
-import { ArticleLinkBackfill } from '@/components/article-link-backfill';
-import { getArticleLinkBackfillStatus } from '@/lib/openai/backfill-article-links';
 
 export const dynamic = 'force-dynamic';
 
@@ -47,7 +45,7 @@ const dateTime = new Intl.DateTimeFormat('en-GB', {
 
 export default async function PipelinePage() {
   const { supabase } = await requireContentAdmin();
-  const [itemsResult, pendingResult, processingResult, failedResult, selectedResult, rejectedResult, sourcesResult, recentItemsResult, candidatesResult, ingestionResult, editorialResult, linkingBackfillStatus] = await Promise.all([
+  const [itemsResult, pendingResult, processingResult, failedResult, selectedResult, rejectedResult, sourcesResult, recentItemsResult, candidatesResult, ingestionResult, editorialResult] = await Promise.all([
     supabase.from('source_items').select('*', { count: 'exact', head: true }),
     supabase.from('source_items').select('*', { count: 'exact', head: true }).eq('assessment_status', 'pending'),
     supabase.from('source_items').select('*', { count: 'exact', head: true }).eq('assessment_status', 'processing'),
@@ -59,7 +57,6 @@ export default async function PipelinePage() {
     supabase.from('story_clusters').select('id, working_title, overall_score, evidence_score, assessment').eq('status', 'selected').order('overall_score', { ascending: false }).limit(5),
     supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, error_summary, created_at').order('created_at', { ascending: false }).limit(1),
     supabase.from('editorial_runs').select('id, status, drafts_created, candidates_selected, estimated_cost_usd, created_at').order('created_at', { ascending: false }).limit(1),
-    getArticleLinkBackfillStatus(),
   ]);
 
   if (recentItemsResult.error || candidatesResult.error) throw new Error('Unable to load the editorial pipeline.');
@@ -99,7 +96,6 @@ export default async function PipelinePage() {
               <article><span><BrainCircuit /></span><div><h3>Assess pending items</h3><p>Group related coverage, score the stories and add qualifying recommendations to Candidates.</p></div><RunAssessmentButton /></article>
             </div>
           </section>
-          <ArticleLinkBackfill initialStatus={linkingBackfillStatus} />
         </details>
 
         <div className="pipeline-columns">
