@@ -1,6 +1,6 @@
 'use client';
 
-import { Menu, X } from 'lucide-react';
+import { ArrowRight, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { Brand } from '@/components/brand';
 
@@ -13,7 +13,7 @@ const navigationLinks = [
 
 const navigationActions = [
   { label: 'How we use AI', href: '/how-we-use-ai', kind: 'secondary' },
-  { label: 'Good News', href: '/good-news', kind: 'good-news' },
+  { label: 'Read good news', href: '/good-news', kind: 'good-news' },
 ] as const;
 
 export function SiteNavigation() {
@@ -30,7 +30,7 @@ export function SiteNavigation() {
         {navigationLinks.map((link) => <a href={link.href} onClick={closeMenu} key={link.label}>{link.label}</a>)}
       </nav>
       <div className="site-navigation-actions">
-        {navigationActions.map((action) => <a className={`site-navigation-button ${action.kind}`} href={action.href} onClick={closeMenu} key={action.label}>{action.label}</a>)}
+        {navigationActions.map((action) => <a className={`site-navigation-button ${action.kind}`} href={action.href} onClick={closeMenu} key={action.label}><span>{action.label}</span>{action.kind === 'good-news' ? <ArrowRight aria-hidden="true" /> : null}</a>)}
       </div>
     </div>
   </div>;
