@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
-import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
+import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedWeeklyDigests, type DigestStoryRecord, type DigestType } from '@/lib/digests';
@@ -33,7 +33,7 @@ export default async function DigestArchive() {
       <div className="digest-archive-type-tags"><DigestTag type="daily" /><DigestTag type="weekly" /></div>
       <h1><InlineBrand text="WILDNEWS" /> digests</h1>
       <p>Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week.</p>
-      <StreamlinedNewsletterCta id="digest-archive-hero-email" className="digest-archive-hero-newsletter" />
+      <a className="digest-archive-subscribe-link" href="#digest-archive-newsletter">Subscribe to the weekly <ArrowRight /></a>
     </section>
     {digests.length ? <section className="topic-page-grid shell">
       {digests.map((digest, index) => {
@@ -51,7 +51,7 @@ export default async function DigestArchive() {
         </article>;
       })}
     </section> : <div className="digest-archive-empty shell"><h3>No digest editions yet</h3><p>The first published digest will appear here.</p></div>}
-    <WeeklyDigestNewsletterCta id="digest-archive-email" className="editorial-newsletter-cta shell" />
+    <div id="digest-archive-newsletter" className="archive-newsletter-anchor"><WeeklyDigestNewsletterCta id="digest-archive-email" className="editorial-newsletter-cta shell" /></div>
     <SimilarStories stories={latestStories} description="Explore the latest reporting behind the briefings." />
     <SiteFooter />
   </main>;
