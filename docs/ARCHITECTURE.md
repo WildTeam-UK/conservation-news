@@ -63,7 +63,7 @@ Preview deployments are marked `noindex`. Production metadata permits indexing o
 
 - Global CSS in `app/globals.css`
 - Admin workspace CSS in `app/admin-workspace.css`
-- Tailwind, `tw-animate-css` and Shadcn CSS are currently imported by the legacy global stylesheet
+- WildNews-owned global CSS with no utility-framework or component-library runtime
 - Local VAG Rounded font files under `public/fonts`
 
 The unused generic starter component collection and its component-only dependencies were removed during pre-launch cleanup. Public and admin interfaces use WildNews-owned components in `components/`.
@@ -82,7 +82,7 @@ The unused generic starter component collection and its component-only dependenc
 | `lib/openai/` | Assessment, research, drafting and digest generation |
 | `lib/images/` | Unsplash integration, attribution and colour handling |
 | `supabase/migrations/` | Ordered production database migrations |
-| `public/` | Fonts, favicons, logos, social image and local team imagery |
+| `public/` | Fonts, favicon, logo and social-sharing image |
 | `docs/` | Architecture, design and database documentation |
 
 ## Public routes
@@ -248,7 +248,6 @@ Only names and purposes belong in source control.
 - WildTeam logo used in schema: `public/wildteam-logo.png`
 - Default social image: `public/og.png`
 - Dynamic editorial images: remote Unsplash URLs with stored attribution
-- Local team images: `public/team/`
 
 `app/layout.tsx` defines default metadata. `lib/seo.ts` centralises canonical URLs, Open Graph/Twitter values and Schema.org objects. Story and digest routes emit `NewsArticle`; the root emits `WebSite` and `Organization`.
 

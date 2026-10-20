@@ -1,7 +1,3 @@
-@import 'tailwindcss/index.css';
-@import 'tw-animate-css';
-@import 'shadcn/tailwind.css';
-
 @font-face{font-family:'VAG Rounded';src:url('/fonts/vag-rounded-light.woff2') format('woff2');font-style:normal;font-weight:300 500;font-display:swap}
 @font-face{font-family:'VAG Rounded';src:url('/fonts/vag-rounded-bold.woff') format('woff');font-style:normal;font-weight:501 800;font-display:swap}
 @font-face{font-family:'VAG Rounded';src:url('/fonts/vag-rounded-black.woff') format('woff');font-style:normal;font-weight:801 950;font-display:swap}
