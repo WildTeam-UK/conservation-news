@@ -13,7 +13,7 @@ const navigationLinks = [
 
 const navigationActions = [
   { label: 'How we use AI', href: '/how-we-use-ai', kind: 'secondary' },
-  { label: 'Good News', href: '/good-news', kind: 'good-news' },
+  { label: 'Good News', href: '/good-news-in-conservation', kind: 'good-news' },
 ] as const;
 
 export function SiteNavigation() {
