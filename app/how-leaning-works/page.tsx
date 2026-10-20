@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { InlineBrand } from '@/components/inline-brand';
+import { pageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'How our coverage analysis works | WILDNEWS',
-  description: 'How WildNews analyses conservation framing, evidence and agreement across current coverage.',
-};
+  description: 'How WILDNEWS analyses ecological framing, attributable evidence and agreement across current conservation coverage.',
+  path: '/how-leaning-works',
+});
 
 export default function LeaningMethodologyPage() {
   return <main>

@@ -1,4 +1,5 @@
 /* oxlint-disable next/no-html-link-for-pages, next/no-img-element -- full page links keep Vinext navigation reliable and remote editorial imagery is dynamic */
+import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
 import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
@@ -8,12 +9,14 @@ import { StoryTags } from '@/components/story-tags';
 import { getGoodNewsSettings, getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 import { cleanCopy, storyHref, storyImage, topicSlug } from '@/lib/stories';
 import { EDITORIAL_TOPICS } from '@/lib/taxonomy';
+import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, pageMetadata } from '@/lib/seo';
 import { GoodNewsBadge } from '@/components/good-news-badge';
 import { InlineBrand } from '@/components/inline-brand';
 
 const shelfTopics = [...EDITORIAL_TOPICS];
 
 export const dynamic = 'force-dynamic';
+export const metadata: Metadata = pageMetadata({ title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: '/' });
 
 export default async function Home() {
   const [publishedRecords, goodNewsSettings] = await Promise.all([getPublishedStories(30), getGoodNewsSettings()]);

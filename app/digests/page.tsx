@@ -9,12 +9,14 @@ import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedWeek
 import { getGoodNewsSettings, getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 import { InlineBrand } from '@/components/inline-brand';
 import { DigestTag } from '@/components/digest-tag';
+import { pageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = {
+export const metadata: Metadata = pageMetadata({
   title: 'Daily and weekly conservation news digests | WILDNEWS',
   description: 'Explore connected daily and weekly WILDNEWS briefings covering the conservation stories, evidence and developments that matter.',
-};
+  path: '/digests',
+});
 
 const digestDate = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' });
 

@@ -4,11 +4,13 @@ import { ArrowRight, CircleCheckBig, CircleDotDashed, CircleMinus, TriangleAlert
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { InlineBrand } from '@/components/inline-brand';
+import { pageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'How WILDNEWS classifies good news',
+export const metadata: Metadata = pageMetadata({
+  title: 'How WILDNEWS classifies good conservation news',
   description: 'The evidence-led method WILDNEWS uses to identify conservation stories that demonstrate clear progress.',
-};
+  path: '/how-we-classify-good-news',
+});
 
 export default function GoodNewsMethodPage() {
   return <main>
