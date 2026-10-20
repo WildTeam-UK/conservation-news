@@ -28,7 +28,7 @@ export default async function Home() {
       <SiteNavigation />
     </header>
     <AllTopicsNav />
-    <div className="ai-disclosure shell"><p><strong>How we use AI:</strong> <InlineBrand text="WILDNEWS" /> uses AI to find, group and summarise conservation coverage, making a large and fragmented field easier to follow. These summaries are not original reporting, and AI can miss context, so we always link to the source material. <a href="/how-we-use-ai">Read our full approach <ArrowRight /></a></p></div>
+    <div className="ai-disclosure shell"><p><InlineBrand text="WILDNEWS" /> uses AI to find, group and summarise conservation coverage, making a large and fragmented field easier to follow. These summaries are not original reporting, and AI can miss context, so we always link to the source material. <a href="/how-we-use-ai">Read our full approach <ArrowRight /></a></p></div>
 
     <section className="hero shell" aria-labelledby="lead-story">
       <div className="hero-grid">

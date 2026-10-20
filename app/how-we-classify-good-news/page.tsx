@@ -25,10 +25,10 @@ export default function GoodNewsMethodPage() {
       <section className="ai-process" aria-labelledby="outlook-classes">
         <div className="section-heading"><h2 id="outlook-classes">Four possible outlooks</h2><p>The archive includes only strongly supported positive stories.</p></div>
         <div className="good-news-class-grid">
-          <article><CircleCheckBig /><span>Positive</span><p>Clear, evidenced or highly credible achieved progress.</p></article>
-          <article><CircleDotDashed /><span>Mixed</span><p>Meaningful progress and meaningful limitations, risks or harm coexist.</p></article>
-          <article><CircleMinus /><span>Neutral</span><p>The reporting is informational or the conservation outcome is not yet clear.</p></article>
-          <article><TriangleAlert /><span>Negative</span><p>The evidence describes harm, loss, deterioration or weakened protection.</p></article>
+          <article><div className="good-news-class-heading"><CircleCheckBig /><span>Positive</span></div><p>Clear, evidenced or highly credible achieved progress.</p></article>
+          <article><div className="good-news-class-heading"><CircleDotDashed /><span>Mixed</span></div><p>Meaningful progress and meaningful limitations, risks or harm coexist.</p></article>
+          <article><div className="good-news-class-heading"><CircleMinus /><span>Neutral</span></div><p>The reporting is informational or the conservation outcome is not yet clear.</p></article>
+          <article><div className="good-news-class-heading"><TriangleAlert /><span>Negative</span></div><p>The evidence describes harm, loss, deterioration or weakened protection.</p></article>
         </div>
       </section>
 
