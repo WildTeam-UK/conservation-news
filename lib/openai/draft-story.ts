@@ -12,7 +12,7 @@ import { buildArticleLinkTargets } from '@/lib/article-link-candidates';
 import { applyArticleLinkPlan, articleLinkRows, cleanArticleLinks, countArticleLinks, type ArticleContextualLink, type ArticleLinkPlanItem } from '@/lib/article-linking';
 
 const MODEL = 'gpt-6-luna';
-const PROMPT_VERSION = 'draft-v5-controlled-linking';
+const PROMPT_VERSION = 'draft-v6-conservation-outlook-fallback';
 
 export type SourcedDraftText = { text: string; source_ids: string[]; links?: ArticleContextualLink[] };
 
@@ -49,6 +49,12 @@ type GeneratedDraftContent = Pick<StoryDraftContent,
   'what_happens_next' | 'what_we_know' | 'what_we_dont_know' | 'seo_title' | 'seo_description' |
   'image_search_query' | 'image_search_fallbacks'
 > & {
+  conservation_outlook: {
+    classification: 'positive' | 'mixed' | 'neutral' | 'negative';
+    score: number;
+    confidence: number;
+    rationale: string;
+  };
   course_recommendation: {
     course_id: string;
     confidence: number;
@@ -296,6 +302,8 @@ Also supply three concise, visually literal Unsplash search queries. The primary
 
 Every factual paragraph and point must cite one or more supplied source IDs. Use only IDs in the supplied source list. If support is missing, omit the claim. "What we don't know" should accurately describe genuine uncertainty, evidence gaps or unresolved questions supported by the reporting. Never manufacture disagreement or balance. The headline and standfirst should be informative rather than sensational. SEO text must be accurate and natural, not keyword-stuffed.
 
+Also classify the article's conservation outlook. Positive requires clear, evidenced or highly credible achieved progress for nature or conservation practice. A proposal, pledge, funding announcement, planned intervention or optimistic quotation is not positive evidence on its own. Mixed means meaningful progress and meaningful limitations, risks or harm coexist. Neutral means the story is primarily informational or no conservation outcome is yet clear. Negative means it documents harm, loss, deterioration or weakened protection. Score the outcome from 0 (wholly negative) through 50 (neutral or not yet known) to 100 (clear, substantial positive progress). Confidence measures how strongly the supplied evidence supports the classification. Give a concise evidence-based rationale.
+
 This is a private first draft for human review, never a finished or published article.`),
     input: JSON.stringify({
       candidate: { working_title: cluster.working_title, assessment: cluster.assessment },
@@ -336,6 +344,17 @@ This is a private first draft for human review, never a finished or published ar
           seo_description: { type: 'string' },
           image_search_query: { type: 'string' },
           image_search_fallbacks: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'string' } },
+          conservation_outlook: {
+            type: 'object',
+            properties: {
+              classification: { type: 'string', enum: ['positive', 'mixed', 'neutral', 'negative'] },
+              score: { type: 'integer', minimum: 0, maximum: 100 },
+              confidence: { type: 'integer', minimum: 0, maximum: 100 },
+              rationale: { type: 'string' },
+            },
+            required: ['classification', 'score', 'confidence', 'rationale'],
+            additionalProperties: false,
+          },
           course_recommendation: {
             type: 'object',
             properties: {
@@ -364,7 +383,7 @@ This is a private first draft for human review, never a finished or published ar
             },
           },
         },
-        required: ['headline', 'standfirst', 'story_at_a_glance', 'key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know', 'seo_title', 'seo_description', 'image_search_query', 'image_search_fallbacks', 'course_recommendation', 'link_plan'],
+        required: ['headline', 'standfirst', 'story_at_a_glance', 'key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know', 'seo_title', 'seo_description', 'image_search_query', 'image_search_fallbacks', 'conservation_outlook', 'course_recommendation', 'link_plan'],
         additionalProperties: false,
         $defs: { sourced_text: { type: 'object', properties: { text: { type: 'string' }, source_ids: { type: 'array', minItems: 1, items: { type: 'string', pattern: '^source-[1-9][0-9]*$' } } }, required: ['text', 'source_ids'], additionalProperties: false } },
       },
@@ -373,6 +392,20 @@ This is a private first draft for human review, never a finished or published ar
 
   if (!response.output_text) throw new Error('OpenAI returned no draft output.');
   const generated = parseAiJson<GeneratedDraftContent>(response.output_text);
+  const researchOutlook = research.coverage_analysis;
+  const conservationOutlook = Number.isFinite(researchOutlook.conservation_outlook_score) && Number.isFinite(researchOutlook.conservation_outlook_confidence) && researchOutlook.conservation_outlook_rationale
+    ? {
+        classification: researchOutlook.conservation_outlook,
+        score: clampScore(researchOutlook.conservation_outlook_score),
+        confidence: clampScore(researchOutlook.conservation_outlook_confidence),
+        rationale: cleanText(researchOutlook.conservation_outlook_rationale, 1000),
+      }
+    : {
+        classification: generated.conservation_outlook.classification,
+        score: clampScore(generated.conservation_outlook.score),
+        confidence: clampScore(generated.conservation_outlook.confidence),
+        rationale: cleanText(generated.conservation_outlook.rationale, 1000),
+      };
   const recommendedCourse = courses.find((course) => course.id === generated.course_recommendation.course_id);
   const courseConfidence = Math.max(0, Math.min(100, Math.round(Number(generated.course_recommendation.confidence) || 0)));
   let selectedImage: UnsplashImageCandidate | null = null;
@@ -413,6 +446,7 @@ This is a private first draft for human review, never a finished or published ar
     article_content: content,
     source_ids: sourceContext,
     coverage_analysis: research.coverage_analysis,
+    conservation_outlook: conservationOutlook,
     topic_classification: research.topic_classification,
     tags: research.tags,
     model: MODEL,
@@ -457,6 +491,17 @@ This is a private first draft for human review, never a finished or published ar
     generation_metadata: generationMetadata,
   }).select('id').single();
   if (storyError || !story) throw storyError ?? new Error('Could not save the generated draft.');
+
+  const { error: outlookError } = await supabase.from('story_conservation_outlooks').upsert({
+    story_id: story.id,
+    classification: conservationOutlook.classification,
+    score: conservationOutlook.score,
+    confidence: conservationOutlook.confidence,
+    rationale: conservationOutlook.rationale,
+    prompt_version: 'good-news-v1',
+    assessed_at: new Date().toISOString(),
+  }, { onConflict: 'story_id' });
+  if (outlookError) throw outlookError;
 
   const { data: storedTopics, error: topicsError } = await supabase.from('topics').select('id, name').in('name', topics);
   if (topicsError) throw topicsError;

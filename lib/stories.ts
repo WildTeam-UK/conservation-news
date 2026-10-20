@@ -13,6 +13,8 @@ export type Story = {
   leaning: 'Left' | 'Centre' | 'Right';
   balance: [number, number, number];
   sources: { name: string; url: string; primary?: boolean }[];
+  goodNews?: boolean;
+  digestType?: 'daily' | 'weekly';
 };
 
 // These are the permanent editorial categories. Story content itself now comes

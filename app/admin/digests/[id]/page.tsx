@@ -28,7 +28,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   const sourceStories = await hydrateDigestSourceStories(linkedStories);
   const content = (story.generation_metadata as { digest_content?: DigestContent }).digest_content;
   if (!content) notFound();
-  const moreDigests = content.digest_type === 'daily' ? await getPublishedDailyDigests(4) : [];
+  const moreDigests = content.digest_type === 'daily' ? await getPublishedDailyDigests(7) : [];
   const editionDate = story.slug.replace(`${content.digest_type}-digest-`, '');
   const publicPath = `/${content.digest_type === 'weekly' ? 'weekly-digest' : 'daily-digest'}/${editionDate}`;
   const historicalPublicationDate = editionDate < londonCalendarDate.format(new Date()) ? editionDate : undefined;

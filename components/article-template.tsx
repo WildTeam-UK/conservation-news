@@ -9,6 +9,7 @@ import type { EditorialImageCredit as EditorialImageCreditData } from '@/lib/ima
 import { CoursePromotion } from '@/components/course-promotion';
 import { GENERAL_TRAINING_PROMOTION, type TrainingCoursePromotion } from '@/lib/training-courses';
 import type { ArticleContextualLink } from '@/lib/article-linking';
+import { GoodNewsBadge } from '@/components/good-news-badge';
 
 export type ArticleCoverage = {
   ecological: number;
@@ -37,6 +38,7 @@ export type ArticleTemplateData = {
   sources: ArticleSource[];
   coverage: ArticleCoverage;
   coursePromotion?: TrainingCoursePromotion | null;
+  goodNews?: boolean;
 };
 
 function CoverageHelp({ label, text }: { label: string; text: string }) {
@@ -105,7 +107,7 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
   const sourcesById = new Map(article.sources.flatMap((source) => source.id ? [[source.id, source] as const] : []));
   return <article className="article-template">
     <header className="article-hero shell">
-      <div className="article-topics">{article.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
+      <div className="article-topics">{article.goodNews ? <GoodNewsBadge href="/good-news-in-conservation" /> : null}{article.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
       <h1>{article.headline}</h1>
       <div className="article-coverage-summary" aria-label="Coverage analysis summary">
         <div className="leaning-summary-heading"><span>Coverage mix</span><Link className="analysis-help" href="/how-leaning-works" aria-label="Learn how our coverage analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">A quick view of the ecological, evidence and consensus signals found across current coverage. Click to learn how it works.</span></Link></div>
@@ -116,7 +118,7 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
         </div>
       </div>
     </header>
-    <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt ?? ''} /><EditorialImageCredit credit={article.imageCredit} /></> : <span>Lead image to be selected</span>}</figure>
+    <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt ?? ''} />{article.goodNews ? <GoodNewsBadge overlay /> : null}<EditorialImageCredit credit={article.imageCredit} /></> : <span>Lead image to be selected</span>}</figure>
     <section className="article-overview shell">
       <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}<p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
       <h2>The story at a glance</h2>

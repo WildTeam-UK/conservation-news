@@ -5,6 +5,10 @@ import './admin-workspace.css';
 export const metadata: Metadata = {
   title: 'WILDNEWS | Conservation, clearly told',
   description: 'Independent reporting from the front lines of conservation.',
+  icons: {
+    icon: '/favicon.png',
+    apple: '/favicon.png',
+  },
   openGraph: {
     title: 'WILDNEWS | Conservation, clearly told',
     description: 'Independent reporting from the front lines of conservation.',

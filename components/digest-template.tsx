@@ -7,8 +7,10 @@ import { cleanDigestText, type DigestContent, type DigestSourceStory, type Diges
 import { FALLBACK_HERO_COLOUR } from '@/lib/images/colour';
 import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SocialShare } from '@/components/social-share';
+import { InlineBrand } from '@/components/inline-brand';
 import { TopicTag } from '@/components/topic-tag';
 import { TrainingBanner } from '@/components/training-banner';
+import { DigestTag } from '@/components/digest-tag';
 
 function longDate(value: string) {
   return new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(new Date(value));
@@ -96,7 +98,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   const sourceTopics = stories.flatMap((story) => story.topics ?? []);
   const displayTopics = (content.topics?.length ? content.topics : [...new Set(sourceTopics)]).slice(0, 3);
   const currentDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(periodEnd));
-  const recentDailyDigests = content.digest_type === 'daily' ? moreDigests.filter((digest) => digest.slug !== `daily-digest-${currentDate}`).slice(0, 3) : [];
+  const recentDailyDigests = content.digest_type === 'daily' ? moreDigests.filter((digest) => digest.slug !== `daily-digest-${currentDate}`).slice(0, 6) : [];
   const referencedStories = [...new Set(content.sections.flatMap((section) => section.story_ids ?? []))].flatMap((id) => storyByReference.get(id) ?? []);
   const usedImages = new Set(resolvedImageUrl ? [resolvedImageUrl] : []);
   const heroColourTargetId = `digest-hero-colour-${content.digest_type}-${currentDate}`;
@@ -104,7 +106,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
       <div className="digest-hero-copy" id={heroColourTargetId} style={{ backgroundColor: FALLBACK_HERO_COLOUR }}>
-        <div className="digest-hero-meta"><time dateTime={periodEnd}>{longDate(periodEnd)}</time><span aria-hidden="true">·</span><span>WILDNEWS {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span></div>
+        <div className="digest-hero-meta"><time dateTime={periodEnd}>{longDate(periodEnd)}</time><span aria-hidden="true">·</span><span><InlineBrand text="WILDNEWS" /> {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span></div>
         <h1>{cleanDigestText(content.headline)}</h1>
         <p>{cleanDigestText(content.standfirst)}</p>
         <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
@@ -114,7 +116,10 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
 
     <div className="digest-article-body shell">
       <div className="digest-reading-column">
-        {displayTopics.length ? <div className="digest-body-topics">{displayTopics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div> : null}
+        <div className="digest-body-topics">
+          <DigestTag type={content.digest_type} />
+          {displayTopics.map((topic) => <TopicTag topic={topic} key={topic} />)}
+        </div>
         <div className="digest-introduction-layout">
           {sharePath ? <SocialShare path={sharePath} title={cleanDigestText(content.headline)} label="Share this digest" /> : null}
           <section className="digest-introduction">{content.introduction.map((paragraph, index) => <LinkedParagraph text={paragraph} stories={storyByReference} key={index} />)}</section>

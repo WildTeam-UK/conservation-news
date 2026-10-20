@@ -14,6 +14,7 @@ type PublishedTopicLink = { topics: { name: string; slug: string } | { name: str
 type PublishedTagLink = { confidence: number | null; content_tags: { name: string; slug: string; status: string } | { name: string; slug: string; status: string }[] | null };
 type PublishedCourseRecommendation = { placement: string; confidence: number | null; rationale: string | null; training_courses: TrainingCoursePromotion | TrainingCoursePromotion[] | null };
 type PublishedContextualLink = { link_type: ArticleLinkType; target_id: string; href: string; anchor_text: string; section_key: ArticleLinkSection; item_index: number; external: boolean; confidence: number; rationale: string | null };
+export type PublishedConservationOutlook = { classification: 'positive' | 'mixed' | 'neutral' | 'negative'; score: number; confidence: number; rationale: string };
 
 export type PublicTaxonomyArchive = { name: string; slug: string; description: string | null; seo_title: string | null; meta_description: string | null };
 
@@ -35,6 +36,7 @@ export type PublishedStory = {
   story_tags: PublishedTagLink[];
   story_course_recommendations: PublishedCourseRecommendation[];
   story_contextual_links: PublishedContextualLink[];
+  story_conservation_outlooks: PublishedConservationOutlook | PublishedConservationOutlook[] | null;
 };
 
 function publicClient() {
@@ -42,7 +44,7 @@ function publicClient() {
   return createClient(url, publishableKey, { auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false } });
 }
 
-const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, byline, published_at, updated_at, content_type, digest_period_end, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale)';
+const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, byline, published_at, updated_at, content_type, digest_period_end, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale), story_conservation_outlooks(classification, score, confidence, rationale)';
 
 function one<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? value[0] ?? null : value;
@@ -60,6 +62,24 @@ export function publishedTags(story: PublishedStory) {
     const tag = one(link.content_tags);
     return tag?.status === 'approved' ? [{ name: tag.name, slug: tag.slug, confidence: link.confidence ?? 0 }] : [];
   }).sort((a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name));
+}
+
+export function publishedConservationOutlook(story: PublishedStory) {
+  return one(story.story_conservation_outlooks);
+}
+
+export async function getGoodNewsSettings() {
+  const { data, error } = await publicClient().from('good_news_settings').select('minimum_score, minimum_confidence').eq('id', true).single();
+  if (error) throw error;
+  return data as { minimum_score: number; minimum_confidence: number };
+}
+
+export type GoodNewsSettings = Awaited<ReturnType<typeof getGoodNewsSettings>>;
+
+export function isPublishedGoodNews(story: PublishedStory, settings?: GoodNewsSettings) {
+  if (!settings || story.content_type !== 'news') return false;
+  const outlook = publishedConservationOutlook(story);
+  return outlook?.classification === 'positive' && outlook.score >= settings.minimum_score && outlook.confidence >= settings.minimum_confidence;
 }
 
 export async function getPublicTopic(slug: string): Promise<PublicTaxonomyArchive | null> {
@@ -103,7 +123,7 @@ export function relatedPublishedStories(referenceStories: PublishedStory[], cand
     .map(({ story }) => story);
 }
 
-export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateData {
+export function publishedStoryToArticle(story: PublishedStory, goodNewsSettings?: GoodNewsSettings): ArticleTemplateData {
   const content = attachStoredArticleLinks(migrateDraftContent(structuredClone(story.generation_metadata.article_content)), story.story_contextual_links.map((link) => ({ type: link.link_type, target_id: link.target_id, href: link.href, anchor_text: link.anchor_text, section_key: link.section_key, item_index: link.item_index, external: link.external, confidence: link.confidence, rationale: link.rationale ?? '' })));
   const sources = [...story.story_sources].sort((a, b) => a.display_order - b.display_order);
   const featuredRecommendation = story.story_course_recommendations?.find((recommendation) => recommendation.placement === 'featured');
@@ -125,10 +145,11 @@ export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateD
     sources: sources.map((source) => ({ id: `source-${source.display_order}`, name: source.source_name, title: source.source_title, url: source.source_url, primary: source.source_role === 'primary' })),
     coverage: content.coverage_analysis,
     coursePromotion,
+    goodNews: isPublishedGoodNews(story, goodNewsSettings),
   };
 }
 
-export function publishedStoryToListing(story: PublishedStory): Story {
+export function publishedStoryToListing(story: PublishedStory, goodNewsSettings?: GoodNewsSettings): Story {
   const topics = publishedTopics(story);
   if (story.content_type !== 'news') {
     const content = story.generation_metadata.digest_content as DigestContent;
@@ -148,6 +169,8 @@ export function publishedStoryToListing(story: PublishedStory): Story {
       leaning: 'Centre',
       balance: [34, 52, 14],
       sources: [],
+      goodNews: false,
+      digestType: type,
     };
   }
   const content = story.generation_metadata.article_content as StoryDraftContent;
@@ -164,5 +187,6 @@ export function publishedStoryToListing(story: PublishedStory): Story {
     leaning: 'Centre',
     balance: [34, 52, 14],
     sources: story.story_sources.map((source) => ({ name: source.source_name, url: source.source_url, primary: source.source_role === 'primary' })),
+    goodNews: isPublishedGoodNews(story, goodNewsSettings),
   };
 }
