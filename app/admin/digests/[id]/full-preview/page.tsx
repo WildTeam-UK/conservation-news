@@ -27,7 +27,7 @@ export default async function FullDigestPreviewPage({ params }: { params: Promis
   const metadata = story.generation_metadata as DigestMetadata;
   if (!metadata.digest_content) notFound();
   const sourceStories = await hydrateDigestSourceStories(metadata.digest_source_stories ?? []);
-  const moreDigests = metadata.digest_content.digest_type === 'daily' ? await getPublishedDailyDigests(4) : [];
+  const moreDigests = metadata.digest_content.digest_type === 'daily' ? await getPublishedDailyDigests(7) : [];
 
   return <main>
     <InteriorHeader />

@@ -170,6 +170,7 @@ export function publishedStoryToListing(story: PublishedStory, goodNewsSettings?
       balance: [34, 52, 14],
       sources: [],
       goodNews: false,
+      digestType: type,
     };
   }
   const content = story.generation_metadata.article_content as StoryDraftContent;

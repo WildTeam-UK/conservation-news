@@ -5,7 +5,7 @@ import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
-import { TopicTag } from '@/components/topic-tag';
+import { StoryTags } from '@/components/story-tags';
 import { getGoodNewsSettings, getPublishedStories, getPublicTag, publishedStoryToListing, publishedTags, relatedPublishedStories } from '@/lib/published-stories';
 import { cleanCopy, storyHref, storyImage } from '@/lib/stories';
 import { GoodNewsBadge } from '@/components/good-news-badge';
@@ -30,7 +30,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
   return <main className="archive-page">
     <InteriorHeader />
     <section className="topic-page-hero shell tag-page-hero"><a className="archive-tag-pill" href={`/tags/${tag.slug}`}>{tag.name}</a><h1>{tag.name}</h1><p><InlineBrand text={tag.description ?? `Source-led conservation briefings connected to ${tag.name}.`} /></p><span>{stories.length} {stories.length === 1 ? 'story' : 'stories'}</span></section>
-    <section className="topic-page-grid shell">{stories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}><a className="topic-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a><div><TopicTag topic={story.topic} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div></article>)}</section>
+    <section className="topic-page-grid shell">{stories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}><a className="topic-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a><div><StoryTags story={story} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div></article>)}</section>
     <WeeklyDigestNewsletterCta id={`tag-${slug}-digest-email`} className="editorial-newsletter-cta shell" />
     <SimilarStories stories={related} />
     <SiteFooter />

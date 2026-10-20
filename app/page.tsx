@@ -4,7 +4,7 @@ import { AllTopicsNav } from '@/components/all-topics-nav';
 import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteNavigation } from '@/components/site-navigation';
-import { TopicTag } from '@/components/topic-tag';
+import { StoryTags } from '@/components/story-tags';
 import { getGoodNewsSettings, getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 import { cleanCopy, storyHref, storyImage, topicSlug } from '@/lib/stories';
 import { EDITORIAL_TOPICS } from '@/lib/taxonomy';
@@ -33,7 +33,7 @@ export default async function Home() {
     <section className="hero shell" aria-labelledby="lead-story">
       <div className="hero-grid">
         <div className="hero-copy">
-          <div className="hero-meta"><TopicTag topic={lead.topic} /></div>
+          <div className="hero-meta"><StoryTags story={lead} /></div>
           <h1 id="lead-story"><a href={storyHref(lead)}>{cleanCopy(lead.title)}</a></h1>
           <p className="standfirst">{cleanCopy(lead.summary)}</p>
           <a className="read-more-button" href={storyHref(lead)}>Read more <ArrowRight /></a>
@@ -45,10 +45,10 @@ export default async function Home() {
     <section className="latest shell" id="latest" aria-labelledby="latest-heading">
       <div className="section-heading"><h2 id="latest-heading">Latest stories</h2><p>Reporting, analysis and ideas from the people protecting nature.</p></div>
       <div className="latest-columns">
-        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={storyHref(story)} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a><div className="story-copy"><TopicTag topic={story.topic} /><h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p></div></article>)}</div>
+        <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={storyHref(story)} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a><div className="story-copy"><StoryTags story={story} /><h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p></div></article>)}</div>
         <aside className="latest-compact" aria-label="More latest stories">{compactLatest.map((story) => <article className="compact-story" key={story.slug}>
           <a className="compact-story-image" href={storyHref(story)}><img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
-          <div><TopicTag topic={story.topic} /><h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3></div>
+          <div><StoryTags story={story} /><h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3></div>
         </article>)}</aside>
       </div>
     </section>
@@ -63,7 +63,7 @@ export default async function Home() {
           <div className="shelf-heading"><div><h2><a href={`/topics/${topicSlug(topic)}`}>{topic}</a></h2></div><a href={`/topics/${topicSlug(topic)}`}>See all {topic.toLowerCase()} <ArrowRight /></a></div>
           <div className="topic-track">{topicStories.map((story) => <article className="carousel-card" key={story.slug}>
             <a className="carousel-image" href={storyHref(story)}><img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
-            <TopicTag topic={story.topic} />
+            <StoryTags story={story} />
             <h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3>
             <a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a>
           </article>)}</div>

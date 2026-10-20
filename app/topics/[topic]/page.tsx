@@ -6,6 +6,7 @@ import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
+import { StoryTags } from '@/components/story-tags';
 import { getGoodNewsSettings, getPublishedStories, getPublicTopic, publishedStoryToListing, publishedTopics, relatedPublishedStories } from '@/lib/published-stories';
 import { allTopics, cleanCopy, getTopic, storyHref, storyImage, topicSlug } from '@/lib/stories';
 import { GoodNewsBadge } from '@/components/good-news-badge';
@@ -47,7 +48,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
     <section className="topic-page-grid shell">
       {topicStories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}>
         <a className="topic-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
-        <div><TopicTag topic={story.topic} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div>
+        <div><StoryTags story={story} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div>
       </article>)}
     </section>
     <WeeklyDigestNewsletterCta id={`topic-${slug}-digest-email`} className="editorial-newsletter-cta shell" />

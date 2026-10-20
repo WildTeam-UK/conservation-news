@@ -8,6 +8,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedWeeklyDigests, type DigestStoryRecord, type DigestType } from '@/lib/digests';
 import { getGoodNewsSettings, getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 import { InlineBrand } from '@/components/inline-brand';
+import { DigestTag } from '@/components/digest-tag';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
@@ -42,7 +43,7 @@ export default async function DigestArchive() {
         return <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={digest.id}>
           <a className="topic-story-image" href={path} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
           <div>
-            <div className="digest-archive-meta"><span className="archive-tag-pill">{type === 'weekly' ? 'Weekly digest' : 'Daily digest'}</span><time dateTime={digest.digest_period_end}>{digestDate.format(new Date(digest.digest_period_end))}</time></div>
+            <div className="digest-archive-meta"><DigestTag type={type} /><time dateTime={digest.digest_period_end}>{digestDate.format(new Date(digest.digest_period_end))}</time></div>
             <h2><a href={path}>{cleanDigestText(digest.headline)}</a></h2>
             {index === 0 ? <p>{cleanDigestText(digest.standfirst)}</p> : null}
             <a className="text-link" href={path}>Read this edition <ArrowRight /></a>
