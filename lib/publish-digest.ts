@@ -21,7 +21,7 @@ function londonPublicationTime(date: string) {
 export async function publishDigest(storyId: string, { reviewerId, publicationDate, automated = false }: { reviewerId: string | null; publicationDate?: string; automated?: boolean }) {
   const supabase = getSupabaseAdminClient();
   const { data: story, error: storyError } = await supabase.from('stories')
-    .select('id, slug, status, content_type, published_at, generation_metadata')
+    .select('id, slug, status, content_type, published_at, image_url, image_alt, generation_metadata')
     .eq('id', storyId)
     .in('content_type', ['daily_digest', 'weekly_digest'])
     .maybeSingle();
@@ -60,7 +60,7 @@ export async function publishDigest(storyId: string, { reviewerId, publicationDa
   content.topics = topicNames;
 
   const hydratedSources = await hydrateDigestSourceStories((metadata.digest_source_stories ?? []) as DigestSourceStory[]);
-  const leadImage = hydratedSources.find((source) => source.image_url);
+  const leadImage = hydratedSources.find((source) => source.image_url === story.image_url) ?? hydratedSources.find((source) => source.image_url);
   const { data: topicRows, error: topicError } = await supabase.from('topics').select('id, name').in('name', topicNames).eq('active', true);
   if (topicError || !topicRows?.length) throw topicError ?? new Error('The digest topics could not be prepared.');
   const byName = new Map(topicRows.map((topic) => [topic.name, topic]));

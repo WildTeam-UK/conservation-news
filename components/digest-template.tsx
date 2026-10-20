@@ -115,7 +115,10 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
 
     <div className="digest-article-body shell">
       <div className="digest-reading-column">
-        {displayTopics.length ? <div className="digest-body-topics">{displayTopics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div> : null}
+        <div className="digest-body-topics">
+          <span className="topic-tag digest-edition-pill"><InlineBrand text="WILDNEWS" /> {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span>
+          {displayTopics.map((topic) => <TopicTag topic={topic} key={topic} />)}
+        </div>
         <div className="digest-introduction-layout">
           {sharePath ? <SocialShare path={sharePath} title={cleanDigestText(content.headline)} label="Share this digest" /> : null}
           <section className="digest-introduction">{content.introduction.map((paragraph, index) => <LinkedParagraph text={paragraph} stories={storyByReference} key={index} />)}</section>

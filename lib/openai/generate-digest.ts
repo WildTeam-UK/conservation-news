@@ -225,7 +225,29 @@ This is a private editorial draft for review. Return only the requested structur
     const outputTokens = response.usage?.output_tokens ?? 0;
     const estimatedCostUsd = estimateLunaTokenCost(inputTokens, outputTokens);
     if (estimatedCostUsd > Number(config.max_estimated_cost_usd)) throw new Error(`The generated digest cost estimate ($${estimatedCostUsd.toFixed(4)}) exceeded the configured $${Number(config.max_estimated_cost_usd).toFixed(2)} limit.`);
-    const lead = sourceStories.find((source) => sourceImageUrl(source) && source.generation_metadata?.article_content?.image_credit)
+    const { data: recentDigestRows, error: recentDigestError } = await supabase.from('stories')
+      .select('image_url')
+      .in('content_type', ['daily_digest', 'weekly_digest'])
+      .eq('status', 'published')
+      .not('image_url', 'is', null)
+      .order('published_at', { ascending: false })
+      .limit(5);
+    if (recentDigestError) throw recentDigestError;
+    const recentDigestImages = new Set((recentDigestRows ?? []).flatMap((story) => story.image_url ?? []));
+    const newestArticleImages = new Set(sourceStories.slice(0, 3).flatMap((source) => sourceImageUrl(source) ?? []));
+    const imageIsFresh = (source: DigestSourceStory & { generation_metadata: SourceMetadata }) => {
+      const image = sourceImageUrl(source);
+      return Boolean(image && !recentDigestImages.has(image) && !newestArticleImages.has(image));
+    };
+    const imageIsUnusedByRecentDigest = (source: DigestSourceStory & { generation_metadata: SourceMetadata }) => {
+      const image = sourceImageUrl(source);
+      return Boolean(image && !recentDigestImages.has(image));
+    };
+    const lead = sourceStories.find((source) => imageIsFresh(source) && source.generation_metadata?.article_content?.image_credit)
+      ?? sourceStories.find(imageIsFresh)
+      ?? sourceStories.find((source) => imageIsUnusedByRecentDigest(source) && source.generation_metadata?.article_content?.image_credit)
+      ?? sourceStories.find(imageIsUnusedByRecentDigest)
+      ?? sourceStories.find((source) => sourceImageUrl(source) && source.generation_metadata?.article_content?.image_credit)
       ?? sourceStories.find((source) => sourceImageUrl(source))
       ?? sourceStories[0];
     const leadCredit = lead.generation_metadata?.article_content?.image_credit;

@@ -1,7 +1,6 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic archive routes */
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
-import { redirect } from 'next/navigation';
 import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
@@ -9,7 +8,6 @@ import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { getGoodNewsSettings, getPublishedStories, getPublicTopic, publishedStoryToListing, publishedTopics, relatedPublishedStories } from '@/lib/published-stories';
 import { allTopics, cleanCopy, getTopic, storyHref, storyImage, topicSlug } from '@/lib/stories';
-import { legacyTopicRedirect } from '@/lib/taxonomy';
 import { GoodNewsBadge } from '@/components/good-news-badge';
 import { InlineBrand } from '@/components/inline-brand';
 
@@ -21,8 +19,6 @@ export function generateStaticParams() {
 
 export async function generateMetadata({ params }: { params: Promise<{ topic: string }> }): Promise<Metadata> {
   const slug = (await params).topic;
-  const legacyDestination = legacyTopicRedirect(slug);
-  if (legacyDestination) redirect(`/topics/${legacyDestination}`);
   const [archive, published] = await Promise.all([getPublicTopic(slug), getPublishedStories(200)]);
   const hasPublishedStory = archive ? published.some((story) => publishedTopics(story).some((topic) => topicSlug(topic) === slug)) : false;
   if (!archive || !hasPublishedStory) return { title: 'Topic not found | WILDNEWS', robots: { index: false, follow: false } };
@@ -31,8 +27,6 @@ export async function generateMetadata({ params }: { params: Promise<{ topic: st
 
 export default async function TopicPage({ params }: { params: Promise<{ topic: string }> }) {
   const slug = (await params).topic;
-  const legacyDestination = legacyTopicRedirect(slug);
-  if (legacyDestination) redirect(`/topics/${legacyDestination}`);
   const [publishedRecords, archive, goodNewsSettings] = await Promise.all([getPublishedStories(200), getPublicTopic(slug), getGoodNewsSettings()]);
   const topic = archive?.name ?? [...new Set(publishedRecords.flatMap(publishedTopics))].find((name) => topicSlug(name) === slug) ?? getTopic(slug);
   if (!topic || !archive) return <main className="missing shell"><h1>Topic not found</h1><a href="/">Back to WildNews</a></main>;
