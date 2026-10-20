@@ -32,8 +32,8 @@ export default async function DigestArchive() {
     <section className="topic-page-hero shell">
       <div className="digest-archive-type-tags"><DigestTag type="daily" /><DigestTag type="weekly" /></div>
       <h1><InlineBrand text="WILDNEWS" /> digests</h1>
-      <p>Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week.</p>
-      <a className="digest-archive-subscribe-link" href="#digest-archive-newsletter">Subscribe to the weekly <ArrowRight /></a>
+      <p>Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week. <a className="digest-archive-subscribe-link" href="#digest-archive-newsletter">Subscribe to the <InlineBrand text="WILDNEWS" /> weekly <ArrowRight /></a></p>
+      <span>{digests.length} {digests.length === 1 ? 'edition' : 'editions'}</span>
     </section>
     {digests.length ? <section className="topic-page-grid shell">
       {digests.map((digest, index) => {
