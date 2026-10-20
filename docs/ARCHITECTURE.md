@@ -66,7 +66,7 @@ Preview deployments are marked `noindex`. Production metadata permits indexing o
 - Tailwind, `tw-animate-css` and Shadcn CSS are currently imported by the legacy global stylesheet
 - Local VAG Rounded font files under `public/fonts`
 
-The repository still contains an unused generic `components/ui` starter collection and associated packages. No application code outside that collection imports those components. Their removal is a cleanup task, not an architectural migration.
+The unused generic starter component collection and its component-only dependencies were removed during pre-launch cleanup. Public and admin interfaces use WildNews-owned components in `components/`.
 
 ## Repository structure
 
@@ -240,7 +240,7 @@ Only names and purposes belong in source control.
 | `NODE_ENV` | Platform supplied | Runtime mode fallback |
 | `CODEX_SANDBOX` | Local tooling | Enables polling for local sandbox HMR |
 
-Current inconsistency: `.env.example` lists `CRON_SECRET`, while application code reads `AUTOMATION_SECRET`, and it omits the Brevo variables. This must be corrected during cleanup.
+`.env.example` contains the user-configured variables required by the application. Platform-provided and local-tooling variables are documented here but do not require manual values in the example file.
 
 ## Assets and metadata
 
