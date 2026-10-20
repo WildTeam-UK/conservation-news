@@ -1,6 +1,7 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic archive routes */
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
+import { notFound } from 'next/navigation';
 import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
@@ -11,6 +12,7 @@ import { getGoodNewsSettings, getPublishedStories, getPublicTopic, publishedStor
 import { allTopics, cleanCopy, getTopic, storyHref, storyImage, topicSlug } from '@/lib/stories';
 import { GoodNewsBadge } from '@/components/good-news-badge';
 import { InlineBrand } from '@/components/inline-brand';
+import { pageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,18 +25,20 @@ export async function generateMetadata({ params }: { params: Promise<{ topic: st
   const [archive, published] = await Promise.all([getPublicTopic(slug), getPublishedStories(200)]);
   const hasPublishedStory = archive ? published.some((story) => publishedTopics(story).some((topic) => topicSlug(topic) === slug)) : false;
   if (!archive || !hasPublishedStory) return { title: 'Topic not found | WILDNEWS', robots: { index: false, follow: false } };
-  return { title: archive.seo_title ?? `${archive.name} news | WILDNEWS`, description: archive.meta_description ?? archive.description ?? `The latest ${archive.name.toLowerCase()} reporting, analysis and ideas from WILDNEWS.` };
+  const title = archive.seo_title ?? `${archive.name} news | WILDNEWS`;
+  const description = archive.meta_description ?? archive.description ?? `The latest ${archive.name.toLowerCase()} reporting, analysis and ideas from WILDNEWS.`;
+  return pageMetadata({ title, description, path: `/topics/${slug}` });
 }
 
 export default async function TopicPage({ params }: { params: Promise<{ topic: string }> }) {
   const slug = (await params).topic;
   const [publishedRecords, archive, goodNewsSettings] = await Promise.all([getPublishedStories(200), getPublicTopic(slug), getGoodNewsSettings()]);
   const topic = archive?.name ?? [...new Set(publishedRecords.flatMap(publishedTopics))].find((name) => topicSlug(name) === slug) ?? getTopic(slug);
-  if (!topic || !archive) return <main className="missing shell"><h1>Topic not found</h1><a href="/">Back to WildNews</a></main>;
+  if (!topic || !archive) notFound();
 
   const topicRecords = publishedRecords.filter((story) => publishedTopics(story).some((storyTopic) => storyTopic === topic));
   const topicStories = topicRecords.map((story) => publishedStoryToListing(story, goodNewsSettings));
-  if (!topicStories.length) return <main className="missing shell"><h1>Topic not found</h1><a href="/">Back to WildNews</a></main>;
+  if (!topicStories.length) notFound();
   const related = relatedPublishedStories(topicRecords, publishedRecords).map((story) => publishedStoryToListing(story, goodNewsSettings));
 
   return <main className="archive-page">

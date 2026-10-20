@@ -10,9 +10,10 @@ import { getGoodNewsSettings, getPublishedStories, publishedConservationOutlook,
 import { cleanCopy, storyHref, storyImage } from '@/lib/stories';
 import { GoodNewsBadge } from '@/components/good-news-badge';
 import { InlineBrand } from '@/components/inline-brand';
+import { pageMetadata } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
-export const metadata: Metadata = { title: 'Good conservation news | WILDNEWS', description: 'Evidence-led conservation stories showing clear, credible progress for nature and conservation practice.' };
+export const metadata: Metadata = pageMetadata({ title: 'Good conservation news | WILDNEWS', description: 'Evidence-led conservation stories showing clear, credible progress for nature and conservation practice.', path: '/good-news-in-conservation' });
 
 export default async function GoodNewsPage() {
   const [published, settings] = await Promise.all([getPublishedStories(300), getGoodNewsSettings()]);

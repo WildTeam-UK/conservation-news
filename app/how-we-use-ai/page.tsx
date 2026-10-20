@@ -4,11 +4,13 @@ import { ArrowRight, CheckCircle2, Search, Sparkles } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { InlineBrand } from '@/components/inline-brand';
+import { pageMetadata } from '@/lib/seo';
 
-export const metadata: Metadata = {
-  title: 'How WILDNEWS uses AI',
+export const metadata: Metadata = pageMetadata({
+  title: 'How WILDNEWS uses AI | Our transparent approach',
   description: 'A transparent explanation of how AI helps WILDNEWS aggregate and summarise conservation coverage.',
-};
+  path: '/how-we-use-ai',
+});
 
 export default function AiTransparencyPage() {
   return <main>

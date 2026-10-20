@@ -1,8 +1,16 @@
 /* oxlint-disable next/no-img-element -- the remote editorial image is intentionally rendered directly */
+import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { InlineBrand } from '@/components/inline-brand';
+import { pageMetadata } from '@/lib/seo';
+
+export const metadata: Metadata = pageMetadata({
+  title: 'About WILDNEWS | Conservation coverage from WildTeam',
+  description: 'Learn why WILDNEWS brings together source-led conservation reporting, evidence and practical ideas from around the world.',
+  path: '/about',
+});
 
 export default function About() {
   return <main>
