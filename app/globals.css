@@ -491,6 +491,8 @@ img{border-radius:18px}
 .training-banner>a svg{width:15px}
 @media(max-width:900px){.training-banner{grid-template-columns:1fr;gap:28px}.training-banner>a{justify-self:start}}
 @media(max-width:600px){.training-banner{margin-top:58px;padding:30px 24px}.training-banner h2{font-size:34px}.training-banner>a{width:100%}}
+.archive-training-promotion{grid-column:1/-1;margin:34px 0 18px}
+@media(max-width:600px){.archive-training-promotion{margin:26px 0 12px}}
 .digest-watch-list{background:var(--cream)}
 .digest-watch-list h2,.digest-newsletter-cta h2{font-size:43px;font-weight:950;line-height:1;letter-spacing:-.035em}
 .digest-ai-disclosure{margin-top:52px;padding:23px 25px;border-radius:18px;background:var(--cream)}
