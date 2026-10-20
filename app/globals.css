@@ -448,7 +448,7 @@ img{border-radius:18px}
 .digest-ai-link{display:inline-flex;align-items:center;gap:7px;margin-top:28px;color:#fff;font-size:10px;font-weight:900;text-transform:uppercase;letter-spacing:.05em}
 .digest-ai-link:hover{text-decoration:underline;text-underline-offset:3px}
 .digest-ai-link svg{width:15px}
-.digest-body-topics{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:24px}.digest-tag{font-family:var(--font-ui),sans-serif}.digest-tag+.topic-tag{margin-left:6px}
+.digest-body-topics{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:24px}.digest-tag{border:2px solid transparent;background:linear-gradient(#fff,#fff) padding-box,linear-gradient(90deg,#6e0f6c,#b41e8e,#e60088) border-box;color:var(--forest);font-family:var(--font-ui),sans-serif}.digest-tag>span{background:linear-gradient(90deg,#6e0f6c,#b41e8e,#e60088);background-clip:text;-webkit-background-clip:text;color:transparent}.digest-tag>svg{color:var(--lime)}.digest-tag:hover{background:linear-gradient(#fff,#fff) padding-box,linear-gradient(90deg,#6e0f6c,#b41e8e,#e60088) border-box;color:var(--forest)}.digest-tag+.topic-tag{margin-left:6px}
 .digest-lead-image{display:block;height:auto;min-height:680px}
 .digest-lead-image>img{height:100%;min-height:680px;border-radius:0}
 .digest-article-body{padding-top:42px}
