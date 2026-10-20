@@ -7,13 +7,13 @@ import { Brand } from '@/components/brand';
 const navigationLinks = [
   { label: 'Community', href: 'https://training.wildteam.org.uk/social' },
   { label: 'Jobs', href: 'https://training.wildteam.org.uk/job-board' },
-  { label: 'Good News', href: '/good-news' },
+  { label: 'Training', href: 'https://training.wildteam.org.uk/' },
   { label: 'Digests', href: '/digests' },
 ];
 
 const navigationActions = [
   { label: 'How we use AI', href: '/how-we-use-ai', kind: 'secondary' },
-  { label: 'Training', href: 'https://training.wildteam.org.uk/', kind: 'primary' },
+  { label: 'Good News', href: '/good-news', kind: 'primary' },
 ] as const;
 
 export function SiteNavigation() {

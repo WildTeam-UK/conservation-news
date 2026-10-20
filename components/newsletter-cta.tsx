@@ -2,6 +2,7 @@
 
 import { ArrowRight } from 'lucide-react';
 import { type SubmitEvent, useState } from 'react';
+import { InlineBrand } from '@/components/inline-brand';
 
 type SignupStatus = 'idle' | 'submitting' | 'success' | 'error';
 
@@ -38,20 +39,20 @@ export function NewsletterSignupForm({ id }: { id: string }) {
     <input className="digest-signup-honeypot" name="website" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" />
     <div className="digest-signup-control"><input id={id} name="email" type="email" inputMode="email" autoComplete="email" placeholder="Email address" maxLength={254} required disabled={status === 'submitting'} /><button type="submit" disabled={status === 'submitting'}>{status === 'submitting' ? 'Signing up…' : 'Sign me up'} <ArrowRight /></button></div>
     {message ? <output className={`digest-signup-message ${status}`} aria-live="polite">{message}</output> : null}
-    <p className="digest-signup-privacy">By signing up, you agree to receive the WildNews Weekly Digest. You can unsubscribe at any time. <a href="https://training.wildteam.org.uk/privacy">Privacy policy</a>.</p>
+    <p className="digest-signup-privacy">By signing up, you agree to receive the <InlineBrand text="WILDNEWS" /> Weekly Digest. You can unsubscribe at any time. <a href="https://training.wildteam.org.uk/privacy">Privacy policy</a>.</p>
   </form>;
 }
 
 export function WeeklyDigestNewsletterCta({ id, className = '' }: { id: string; className?: string }) {
   return <section className={`digest-newsletter-cta ${className}`.trim()}>
-    <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
+    <div><p className="eyebrow"><InlineBrand text="WILDNEWS" /> WEEKLY DIGEST</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
     <NewsletterSignupForm id={id} />
   </section>;
 }
 
 export function StreamlinedNewsletterCta({ id, className = '' }: { id: string; className?: string }) {
   return <aside className={`digest-inline-newsletter ${className}`.trim()}>
-    <div><p className="eyebrow">WILDNEWS WEEKLY DIGEST</p><h3>One clear conservation briefing, every Friday.</h3></div>
+    <div><p className="eyebrow"><InlineBrand text="WILDNEWS" /> WEEKLY DIGEST</p><h3>One clear conservation briefing, every Friday.</h3></div>
     <NewsletterSignupForm id={id} />
   </aside>;
 }

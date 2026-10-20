@@ -6,7 +6,8 @@ import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedWeeklyDigests, type DigestStoryRecord, type DigestType } from '@/lib/digests';
-import { getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
+import { getGoodNewsSettings, getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
+import { InlineBrand } from '@/components/inline-brand';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
@@ -21,15 +22,15 @@ function digestType(digest: DigestStoryRecord): DigestType {
 }
 
 export default async function DigestArchive() {
-  const [daily, weekly, published] = await Promise.all([getPublishedDailyDigests(60), getPublishedWeeklyDigests(52), getPublishedStories(24)]);
+  const [daily, weekly, published, goodNewsSettings] = await Promise.all([getPublishedDailyDigests(60), getPublishedWeeklyDigests(52), getPublishedStories(24), getGoodNewsSettings()]);
   const digests = [...daily, ...weekly].sort((a, b) => new Date(b.published_at ?? b.digest_period_end).getTime() - new Date(a.published_at ?? a.digest_period_end).getTime());
-  const latestStories = published.filter((story) => story.content_type === 'news').slice(0, 6).map(publishedStoryToListing);
+  const latestStories = published.filter((story) => story.content_type === 'news').slice(0, 6).map((story) => publishedStoryToListing(story, goodNewsSettings));
 
   return <main className="archive-page digest-archive-page">
     <InteriorHeader />
     <section className="topic-page-hero shell">
       <div className="archive-tag-pill">Daily + weekly</div>
-      <h1>WildNews digests</h1>
+      <h1><InlineBrand text="WILDNEWS" /> digests</h1>
       <p>Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week.</p>
       <span>{digests.length} {digests.length === 1 ? 'edition' : 'editions'}</span>
     </section>

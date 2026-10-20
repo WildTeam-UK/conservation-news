@@ -74,6 +74,14 @@ export async function getGoodNewsSettings() {
   return data as { minimum_score: number; minimum_confidence: number };
 }
 
+export type GoodNewsSettings = Awaited<ReturnType<typeof getGoodNewsSettings>>;
+
+export function isPublishedGoodNews(story: PublishedStory, settings?: GoodNewsSettings) {
+  if (!settings || story.content_type !== 'news') return false;
+  const outlook = publishedConservationOutlook(story);
+  return outlook?.classification === 'positive' && outlook.score >= settings.minimum_score && outlook.confidence >= settings.minimum_confidence;
+}
+
 export async function getPublicTopic(slug: string): Promise<PublicTaxonomyArchive | null> {
   const { data, error } = await publicClient().from('topics').select('name, slug, description, seo_title, meta_description').eq('slug', slug).eq('active', true).maybeSingle();
   if (error) throw error;
@@ -115,7 +123,7 @@ export function relatedPublishedStories(referenceStories: PublishedStory[], cand
     .map(({ story }) => story);
 }
 
-export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateData {
+export function publishedStoryToArticle(story: PublishedStory, goodNewsSettings?: GoodNewsSettings): ArticleTemplateData {
   const content = attachStoredArticleLinks(migrateDraftContent(structuredClone(story.generation_metadata.article_content)), story.story_contextual_links.map((link) => ({ type: link.link_type, target_id: link.target_id, href: link.href, anchor_text: link.anchor_text, section_key: link.section_key, item_index: link.item_index, external: link.external, confidence: link.confidence, rationale: link.rationale ?? '' })));
   const sources = [...story.story_sources].sort((a, b) => a.display_order - b.display_order);
   const featuredRecommendation = story.story_course_recommendations?.find((recommendation) => recommendation.placement === 'featured');
@@ -137,10 +145,11 @@ export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateD
     sources: sources.map((source) => ({ id: `source-${source.display_order}`, name: source.source_name, title: source.source_title, url: source.source_url, primary: source.source_role === 'primary' })),
     coverage: content.coverage_analysis,
     coursePromotion,
+    goodNews: isPublishedGoodNews(story, goodNewsSettings),
   };
 }
 
-export function publishedStoryToListing(story: PublishedStory): Story {
+export function publishedStoryToListing(story: PublishedStory, goodNewsSettings?: GoodNewsSettings): Story {
   const topics = publishedTopics(story);
   if (story.content_type !== 'news') {
     const content = story.generation_metadata.digest_content as DigestContent;
@@ -160,6 +169,7 @@ export function publishedStoryToListing(story: PublishedStory): Story {
       leaning: 'Centre',
       balance: [34, 52, 14],
       sources: [],
+      goodNews: false,
     };
   }
   const content = story.generation_metadata.article_content as StoryDraftContent;
@@ -176,5 +186,6 @@ export function publishedStoryToListing(story: PublishedStory): Story {
     leaning: 'Centre',
     balance: [34, 52, 14],
     sources: story.story_sources.map((source) => ({ name: source.source_name, url: source.source_url, primary: source.source_role === 'primary' })),
+    goodNews: isPublishedGoodNews(story, goodNewsSettings),
   };
 }

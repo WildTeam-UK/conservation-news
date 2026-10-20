@@ -6,7 +6,7 @@ import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
-import { getPublishedStories, getPublishedStory, publishedStoryToArticle, publishedStoryToListing, relatedPublishedStories } from '@/lib/published-stories';
+import { getGoodNewsSettings, getPublishedStories, getPublishedStory, publishedStoryToArticle, publishedStoryToListing, relatedPublishedStories } from '@/lib/published-stories';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,12 +27,12 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   const published = await getPublishedStory(slug);
   if (!published) return <main className="missing shell"><h1>Story not found</h1><Link href="/">Back to WildNews</Link></main>;
 
-  const allPublished = await getPublishedStories(20);
-  const related = relatedPublishedStories([published], allPublished).map(publishedStoryToListing);
+  const [allPublished, goodNewsSettings] = await Promise.all([getPublishedStories(20), getGoodNewsSettings()]);
+  const related = relatedPublishedStories([published], allPublished).map((story) => publishedStoryToListing(story, goodNewsSettings));
 
   return <main>
     <InteriorHeader />
-    <ArticleTemplate article={publishedStoryToArticle(published)} sharePath={`/stories/${published.slug}`} />
+    <ArticleTemplate article={publishedStoryToArticle(published, goodNewsSettings)} sharePath={`/stories/${published.slug}`} />
     <WeeklyDigestNewsletterCta id="article-digest-email" className="editorial-newsletter-cta shell" />
     <SimilarStories stories={related} description="Keep exploring this topic." />
     <SiteFooter />
