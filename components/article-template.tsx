@@ -1,5 +1,6 @@
 import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
@@ -7,6 +8,7 @@ import { stripSourceMarkers } from '@/lib/article-text';
 import type { EditorialImageCredit as EditorialImageCreditData } from '@/lib/images/types';
 import { CoursePromotion } from '@/components/course-promotion';
 import { GENERAL_TRAINING_PROMOTION, type TrainingCoursePromotion } from '@/lib/training-courses';
+import type { ArticleContextualLink } from '@/lib/article-linking';
 
 export type ArticleCoverage = {
   ecological: number;
@@ -14,7 +16,7 @@ export type ArticleCoverage = {
   consensus: number;
 };
 
-export type ArticleText = string | { text: string; sourceIds?: string[] };
+export type ArticleText = string | { text: string; sourceIds?: string[]; links?: ArticleContextualLink[] };
 
 type ArticleSource = { id?: string; name: string; title?: string; url: string; primary?: boolean };
 
@@ -70,9 +72,29 @@ function articleTextValue(value: ArticleText) {
   return stripSourceMarkers(text);
 }
 
+function LinkedArticleText({ text, links }: { text: string; links?: ArticleContextualLink[] }) {
+  if (!links?.length) return text;
+  const positioned = links.flatMap((link) => {
+    const start = text.toLocaleLowerCase('en-GB').indexOf(link.anchor_text.toLocaleLowerCase('en-GB'));
+    return start >= 0 ? [{ link, start, end: start + link.anchor_text.length }] : [];
+  }).sort((a, b) => a.start - b.start);
+  const nodes: ReactNode[] = [];
+  let cursor = 0;
+  positioned.forEach(({ link, start, end }, index) => {
+    if (start < cursor) return;
+    if (start > cursor) nodes.push(text.slice(cursor, start));
+    nodes.push(<a className="article-contextual-link" href={link.href} {...(link.external ? { target: '_blank', rel: 'noreferrer' } : {})} key={`${link.type}-${link.target_id}-${index}`}>{text.slice(start, end)}</a>);
+    cursor = end;
+  });
+  if (cursor < text.length) nodes.push(text.slice(cursor));
+  return <>{nodes}</>;
+}
+
 function ArticleTextContent({ value, sources }: { value: ArticleText; sources: Map<string, ArticleSource> }) {
   const sourceIds = typeof value === 'string' ? [] : [...new Set(value.sourceIds ?? [])];
-  return <>{articleTextValue(value)}{sourceIds.length ? <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
+  const text = articleTextValue(value);
+  const links = typeof value === 'string' ? [] : value.links;
+  return <><LinkedArticleText text={text} links={links} />{sourceIds.length ? <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
     const source = sources.get(id);
     return source ? <a href={source.url} target="_blank" rel="noreferrer" title={`${source.name}${source.title ? `: ${source.title}` : ''}`} aria-label={`Source ${id.replace('source-', '')}: ${source.name}`} key={id}>{id.replace('source-', '')}</a> : null;
   })}</span> : null}</>;
