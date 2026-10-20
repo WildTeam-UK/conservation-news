@@ -36,7 +36,7 @@ export type PublishedStory = {
   story_tags: PublishedTagLink[];
   story_course_recommendations: PublishedCourseRecommendation[];
   story_contextual_links: PublishedContextualLink[];
-  story_conservation_outlooks: PublishedConservationOutlook[];
+  story_conservation_outlooks: PublishedConservationOutlook | PublishedConservationOutlook[] | null;
 };
 
 function publicClient() {
@@ -65,7 +65,7 @@ export function publishedTags(story: PublishedStory) {
 }
 
 export function publishedConservationOutlook(story: PublishedStory) {
-  return story.story_conservation_outlooks?.[0] ?? null;
+  return one(story.story_conservation_outlooks);
 }
 
 export async function getGoodNewsSettings() {
