@@ -7,6 +7,7 @@ import { Brand } from '@/components/brand';
 const navigationLinks = [
   { label: 'Community', href: 'https://training.wildteam.org.uk/social' },
   { label: 'Jobs', href: 'https://training.wildteam.org.uk/job-board' },
+  { label: 'Good News', href: '/good-news' },
   { label: 'Digests', href: '/digests' },
 ];
 

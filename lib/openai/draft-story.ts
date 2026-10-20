@@ -458,6 +458,20 @@ This is a private first draft for human review, never a finished or published ar
   }).select('id').single();
   if (storyError || !story) throw storyError ?? new Error('Could not save the generated draft.');
 
+  const outlook = research.coverage_analysis;
+  if (Number.isFinite(outlook.conservation_outlook_score) && Number.isFinite(outlook.conservation_outlook_confidence) && outlook.conservation_outlook_rationale) {
+    const { error: outlookError } = await supabase.from('story_conservation_outlooks').upsert({
+      story_id: story.id,
+      classification: outlook.conservation_outlook,
+      score: outlook.conservation_outlook_score,
+      confidence: outlook.conservation_outlook_confidence,
+      rationale: outlook.conservation_outlook_rationale,
+      prompt_version: 'good-news-v1',
+      assessed_at: new Date().toISOString(),
+    }, { onConflict: 'story_id' });
+    if (outlookError) throw outlookError;
+  }
+
   const { data: storedTopics, error: topicsError } = await supabase.from('topics').select('id, name').in('name', topics);
   if (topicsError) throw topicsError;
   const primaryTopic = taxonomyReviewRequired ? null : storedTopics?.find((topic) => topic.name === topics[0]);

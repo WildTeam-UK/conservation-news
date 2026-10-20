@@ -7,7 +7,7 @@ import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 
 type AdminNavProps = {
   active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'digests' | 'sources' | 'tags' | 'training' | 'settings';
-  subview?: 'pipeline-status' | 'collected' | 'candidates' | 'monitored' | 'recommendations' | 'topics' | 'tags' | 'courses';
+  subview?: 'pipeline-status' | 'collected' | 'candidates' | 'monitored' | 'recommendations' | 'topics' | 'tags' | 'good-news' | 'courses';
 };
 
 export function AdminNav({ active, subview }: AdminNavProps) {
@@ -29,7 +29,7 @@ export function AdminNav({ active, subview }: AdminNavProps) {
       <a className={active === 'digests' ? 'active' : ''} href="/admin/digests" title="Digests"><CalendarDays /><span><strong>Digests</strong><small>Daily and weekly editions</small></span></a>
       <span className="admin-nav-group">Library</span>
       <AdminNavSection icon="sources" label="Sources" description="Feeds and source health" active={active === 'sources'} items={[{ label: 'Monitored sources', href: '/admin/sources?view=monitored', active: subview === 'monitored' }, { label: 'Recommendations', href: '/admin/sources?view=recommendations', active: subview === 'recommendations' }]} />
-      <AdminNavSection icon="taxonomy" label="Taxonomy" description="Topics and tags" active={active === 'tags'} items={[{ label: 'Topics', href: '/admin/tags?view=topics', active: subview === 'topics' }, { label: 'Tags', href: '/admin/tags?view=tags', active: subview === 'tags' }]} />
+      <AdminNavSection icon="taxonomy" label="Taxonomy" description="Topics and classifications" active={active === 'tags'} items={[{ label: 'Topics', href: '/admin/tags?view=topics', active: subview === 'topics' }, { label: 'Tags', href: '/admin/tags?view=tags', active: subview === 'tags' }, { label: 'Good News', href: '/admin/good-news', active: subview === 'good-news' }]} />
       <AdminNavSection icon="training" label="Training" description="Courses and recommendations" active={active === 'training'} items={[{ label: 'Courses', href: '/admin/training', active: subview === 'courses' }]} />
       <AdminProfileMenu active={active === 'settings'} />
       <div className="admin-mobile-sign-out"><AdminSignOutButton /></div>
