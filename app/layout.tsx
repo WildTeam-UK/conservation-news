@@ -36,5 +36,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en-GB"><body><JsonLd data={siteJsonLd} />{children}</body></html>;
+  return <html lang="en-GB"><head><link rel="describedby" href="/llms.txt" type="text/markdown" /></head><body><JsonLd data={siteJsonLd} />{children}</body></html>;
 }
