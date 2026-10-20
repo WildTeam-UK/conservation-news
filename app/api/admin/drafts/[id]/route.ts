@@ -3,6 +3,7 @@ import { recordUnsplashSelection } from '@/lib/images/unsplash';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { queueReadyDrafts } from '@/lib/publication-queue';
 import { normalizeEditorialTopics } from '@/lib/taxonomy';
+import { articleLinkRows } from '@/lib/article-linking';
 
 export const dynamic = 'force-dynamic';
 
@@ -65,6 +66,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (storedTopics?.length) {
       const { error: linkTopicsError } = await supabase.from('story_topics').insert(storedTopics.map((topic) => ({ story_id: id, topic_id: topic.id })));
       if (linkTopicsError) throw linkTopicsError;
+    }
+    const contextualLinks = articleLinkRows(id, content);
+    const { error: clearContextualLinksError } = await supabase.from('story_contextual_links').delete().eq('story_id', id);
+    if (clearContextualLinksError) throw clearContextualLinksError;
+    if (contextualLinks.length) {
+      const { error: contextualLinksError } = await supabase.from('story_contextual_links').insert(contextualLinks);
+      if (contextualLinksError) throw contextualLinksError;
     }
     if (selectedNewUnsplashImage) {
       try {

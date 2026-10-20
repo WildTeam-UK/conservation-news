@@ -10,6 +10,7 @@ import { PublishControls } from '@/components/publish-controls';
 import { migrateDraftContent, type DraftCoverageAnalysis } from '@/lib/openai/draft-story';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import type { TrainingCoursePromotion } from '@/lib/training-courses';
+import { attachStoredArticleLinks, type ArticleLinkSection, type ArticleLinkType } from '@/lib/article-linking';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,13 +43,16 @@ export default async function DraftPage({ params }: { params: Promise<{ id: stri
   if (!metadata.article_content) notFound();
   const topics = [metadata.topic_classification?.primary_topic, ...(metadata.topic_classification?.secondary_topics ?? [])].filter((topic): topic is string => Boolean(topic));
   const articleContent = migrateDraftContent(metadata.article_content, { topics, coverage_analysis: metadata.coverage_analysis, image_url: story.image_url, image_alt: story.image_alt, byline: story.byline });
-  const [{ data: coverageUpdateRows }, { data: queueItem, error: queueError }, { data: courseRecommendation, error: courseError }] = await Promise.all([
+  const [{ data: coverageUpdateRows }, { data: queueItem, error: queueError }, { data: courseRecommendation, error: courseError }, { data: contextualLinkRows, error: contextualLinksError }] = await Promise.all([
     story.cluster_id ? supabase.from('story_cluster_updates').select('id, relationship, rationale, created_at, source_items(title, url, sources(name))').eq('cluster_id', story.cluster_id).eq('status', 'pending_review').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason').eq('story_id', story.id).maybeSingle(),
     supabase.from('story_course_recommendations').select('training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)').eq('story_id', story.id).eq('placement', 'featured').maybeSingle(),
+    supabase.from('story_contextual_links').select('link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale').eq('story_id', story.id),
   ]);
   if (queueError) throw new Error('Unable to load this article’s publishing status.');
   if (courseError) throw new Error('Unable to load this article’s training recommendation.');
+  if (contextualLinksError) throw new Error('Unable to load this article’s contextual links. Run the article-linking migration first.');
+  attachStoredArticleLinks(articleContent, (contextualLinkRows ?? []).map((link) => ({ type: link.link_type as ArticleLinkType, target_id: link.target_id, href: link.href, anchor_text: link.anchor_text, section_key: link.section_key as ArticleLinkSection, item_index: link.item_index, external: link.external, confidence: link.confidence, rationale: link.rationale ?? '' })));
   const linkedCourse = courseRecommendation?.training_courses;
   const coursePromotion = (Array.isArray(linkedCourse) ? linkedCourse[0] : linkedCourse) as TrainingCoursePromotion | null | undefined;
   const coverageUpdates = (coverageUpdateRows ?? []) as CoverageUpdate[];

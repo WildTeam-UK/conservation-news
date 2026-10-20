@@ -1,17 +1,19 @@
 import { createClient } from '@supabase/supabase-js';
 import type { ArticleTemplateData } from '@/components/article-template';
 import { stripSourceMarkers } from '@/lib/article-text';
-import type { StoryDraftContent } from '@/lib/openai/draft-story';
+import { migrateDraftContent, type StoryDraftContent } from '@/lib/openai/draft-story';
 import { digestPath, type DigestContent, type DigestSourceStory } from '@/lib/digests';
 import type { Story } from '@/lib/stories';
 import { getPublicSupabaseConfig } from '@/lib/supabase/config';
 import { normalizeEditorialTopics } from '@/lib/taxonomy';
 import type { TrainingCoursePromotion } from '@/lib/training-courses';
+import { attachStoredArticleLinks, type ArticleLinkSection, type ArticleLinkType } from '@/lib/article-linking';
 
 type PublishedSource = { source_name: string; source_title: string; source_url: string; source_role: string; display_order: number };
 type PublishedTopicLink = { topics: { name: string; slug: string } | { name: string; slug: string }[] | null };
 type PublishedTagLink = { confidence: number | null; content_tags: { name: string; slug: string; status: string } | { name: string; slug: string; status: string }[] | null };
 type PublishedCourseRecommendation = { placement: string; confidence: number | null; rationale: string | null; training_courses: TrainingCoursePromotion | TrainingCoursePromotion[] | null };
+type PublishedContextualLink = { link_type: ArticleLinkType; target_id: string; href: string; anchor_text: string; section_key: ArticleLinkSection; item_index: number; external: boolean; confidence: number; rationale: string | null };
 
 export type PublicTaxonomyArchive = { name: string; slug: string; description: string | null; seo_title: string | null; meta_description: string | null };
 
@@ -32,6 +34,7 @@ export type PublishedStory = {
   story_topics: PublishedTopicLink[];
   story_tags: PublishedTagLink[];
   story_course_recommendations: PublishedCourseRecommendation[];
+  story_contextual_links: PublishedContextualLink[];
 };
 
 function publicClient() {
@@ -39,7 +42,7 @@ function publicClient() {
   return createClient(url, publishableKey, { auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false } });
 }
 
-const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, byline, published_at, updated_at, content_type, digest_period_end, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label))';
+const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, byline, published_at, updated_at, content_type, digest_period_end, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale)';
 
 function one<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? value[0] ?? null : value;
@@ -101,7 +104,7 @@ export function relatedPublishedStories(referenceStories: PublishedStory[], cand
 }
 
 export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateData {
-  const content = story.generation_metadata.article_content as StoryDraftContent;
+  const content = attachStoredArticleLinks(migrateDraftContent(structuredClone(story.generation_metadata.article_content)), story.story_contextual_links.map((link) => ({ type: link.link_type, target_id: link.target_id, href: link.href, anchor_text: link.anchor_text, section_key: link.section_key, item_index: link.item_index, external: link.external, confidence: link.confidence, rationale: link.rationale ?? '' })));
   const sources = [...story.story_sources].sort((a, b) => a.display_order - b.display_order);
   const featuredRecommendation = story.story_course_recommendations?.find((recommendation) => recommendation.placement === 'featured');
   const coursePromotion = featuredRecommendation ? one(featuredRecommendation.training_courses) : null;
@@ -114,11 +117,11 @@ export function publishedStoryToArticle(story: PublishedStory): ArticleTemplateD
     imageAlt: story.image_alt ?? content.image_alt,
     imageCredit: content.image_credit,
     updatedAt: story.updated_at,
-    keyTakeaways: content.key_takeaways.map((item) => ({ text: item.text, sourceIds: item.source_ids })),
-    whyItMatters: { text: content.why_it_matters.text, sourceIds: content.why_it_matters.source_ids },
-    whatHappensNext: { text: content.what_happens_next.text, sourceIds: content.what_happens_next.source_ids },
-    whatWeKnow: content.what_we_know.map((item) => ({ text: item.text, sourceIds: item.source_ids })),
-    whatWeDontKnow: content.what_we_dont_know.map((item) => ({ text: item.text, sourceIds: item.source_ids })),
+    keyTakeaways: content.key_takeaways.map((item) => ({ text: item.text, sourceIds: item.source_ids, links: item.links })),
+    whyItMatters: { text: content.why_it_matters.text, sourceIds: content.why_it_matters.source_ids, links: content.why_it_matters.links },
+    whatHappensNext: { text: content.what_happens_next.text, sourceIds: content.what_happens_next.source_ids, links: content.what_happens_next.links },
+    whatWeKnow: content.what_we_know.map((item) => ({ text: item.text, sourceIds: item.source_ids, links: item.links })),
+    whatWeDontKnow: content.what_we_dont_know.map((item) => ({ text: item.text, sourceIds: item.source_ids, links: item.links })),
     sources: sources.map((source) => ({ id: `source-${source.display_order}`, name: source.source_name, title: source.source_title, url: source.source_url, primary: source.source_role === 'primary' })),
     coverage: content.coverage_analysis,
     coursePromotion,
