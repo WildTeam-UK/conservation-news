@@ -1,0 +1,218 @@
+# WildNews design system
+
+This document records the design currently implemented by WildNews. It is descriptive, not a redesign brief. When the code and this document disagree, inspect the live component and effective CSS cascade before changing either.
+
+## Foundations
+
+### Colour tokens
+
+The public application defines its core tokens in `app/globals.css`.
+
+| Token | Value | Implemented use |
+| --- | --- | --- |
+| `--ink` / `--foreground` | `#080808` | Primary text, strong rules and dark surfaces |
+| `--forest` / `--primary` | `#6e0f6c` | WildTeam purple, headings, links and primary hover states |
+| `--lime` | `#e60088` | WildTeam pink, primary actions, accents and focus states |
+| `--cream` | `#fef3e5` | Warm neutral panels, topic pills and supporting surfaces |
+| `--paper` / `--background` | `#ffffff` | Page and card surfaces |
+| `--rule` / `--border` | `#d6d1d3` | Standard dividers and quiet borders |
+| `--muted` | `#5d5d61` | Secondary copy, dates and metadata |
+| `--coral` | `#e84a43` | Legacy accent with limited current use |
+| `--orange` | `#ff8044` | Legacy accent with limited current use |
+
+The variable names `--forest` and `--lime` are historical; their effective colours are purple and pink. Do not infer new green styling from their names. Status panels also use local success, warning and error colours. Course promotions use a course-specific `--course-colour` supplied by the database.
+
+The Good News and digest “fancy” labels use a gradient made from `#6e0f6c`, `#b41e8e` and `#e60088`. Their hover state is solid pink with white text.
+
+### Typography
+
+The application uses **VAG Rounded** throughout. Local files live under `public/fonts`:
+
+- Light: `vag-rounded-light.woff2`, weights 300–500
+- Bold: `vag-rounded-bold.woff`, weights 501–800
+- Black: `vag-rounded-black.woff`, weights 801–950
+
+`--font-rounded`, `--font-sans`, `--font-ui` and `--font-serif` currently resolve to the same family. There is no active serif typeface despite the legacy variable name.
+
+Implemented hierarchy:
+
+- Public body default: 18px.
+- Editorial body copy: normally 16–18px with 1.5–1.78 line height.
+- Article and digest introductions: about 18px on small screens and 21px on larger screens.
+- Labels, dates, eyebrows and metadata: usually 8–12px, bold or black, uppercase, with positive letter spacing.
+- Card titles: commonly 21–25px.
+- Section headings: commonly 36–44px, depending on context and viewport.
+- Feature and archive titles: responsive `clamp()` sizes, normally around 48–96px.
+- Article hero titles: up to approximately 104px on wide screens and 48px on phones.
+- Display headings use tight line height and negative letter spacing. Body copy uses normal tracking.
+
+The `WILDNEWS` wordmark uses weight 950, tight tracking and separate purple `WILD` and pink `NEWS` spans. Inline branding follows this treatment except inside the digest hero, newsletter CTAs and training banner, where it inherits the surrounding typography and colour.
+
+### Layout and spacing
+
+- Standard public shell: `min(1240px, 100% - 48px)` and horizontally centred.
+- Phone shell gutter: 15px on each side (`100% - 30px`).
+- The primary editorial reading column is approximately 760px.
+- Digest editorial images may expand to approximately 920px while remaining centred on the reading column.
+- Public sections generally use generous vertical spacing, commonly 52–110px.
+- Component gaps commonly use 7–12px for compact controls, 20–32px for cards, and 50–90px for major grids.
+
+The main public grids are:
+
+- Homepage hero: asymmetric two-column copy and image layout.
+- Latest stories: primary list plus compact secondary column.
+- Standard listings: two-column card grid on desktop.
+- Topic shelves: horizontal snap-scrolling card tracks.
+- Article body: main editorial column plus sticky analysis/training sidebar.
+- Digest hero: 50/50 copy and image.
+- Archive lead: one featured story followed by standard story cards.
+- Related or “more” stories: three-column discovery grid.
+
+### Responsive tiers
+
+The stylesheet contains feature-specific breakpoints. The principal behavioural tiers are:
+
+- Above 920px: full desktop admin navigation.
+- 821px and above: desktop public navigation and multi-column public layouts.
+- 900–1120px: tablet adjustments for selected admin, digest and card layouts.
+- 820px and below: public navigation becomes a hamburger menu; major grids stack.
+- 600px and below: digest-specific phone treatment.
+- 560px and below: compact public typography, 15px gutters and phone card layouts.
+- 520px and below: selected admin controls stack fully.
+
+Do not introduce another breakpoint without confirming that an existing tier cannot express the required behaviour.
+
+## Shape, borders and depth
+
+- Global component radius token: 18px.
+- Public button radius: 6px.
+- Image and standard card radii: commonly 18px.
+- Large editorial panels and promotions: commonly 22–24px.
+- Admin inputs and small controls: commonly 8–10px.
+- Pills and circular controls: 999px or 50%.
+- Standard dividers: 1px `--rule`.
+- Strong section dividers: 3px `--ink`.
+- Public components are generally flat. Admin cards use a quiet grey border and a `3px 3px` neutral shadow.
+- Image attributions use a white 99px-radius capsule, small muted text and a subtle shadow.
+
+The admin surface standardises card borders and shadows through `--admin-card-border` and `--admin-card-shadow` in `app/admin-workspace.css`.
+
+## Interaction states
+
+- Primary public buttons: pink background, white text; purple background on hover.
+- Secondary public buttons: transparent with pink border/text; purple border/text on hover.
+- The Good News navigation button uses the primary treatment plus a periodic shine. Reduced-motion users do not receive the animation.
+- Topic pills: cream with purple text; pink with white text on hover.
+- Fancy digest and Good News pills: white centre, 1px gradient border and gradient text; pink with white text on hover.
+- Editorial text links: purple, frequently with a pink underline or arrow.
+- Images in prominent story links use a subtle scale-up hover.
+- Source-number circles use a grey border/text and change to pink on hover or focus.
+- Focus-visible states must remain distinct. Animation must respect `prefers-reduced-motion`.
+
+## Shared public components
+
+### Navigation
+
+`SiteNavigation` is sticky through its containing header. Desktop height is approximately 94px. It contains the WILDNEWS wordmark, primary links, an outlined “How we use AI” action and the highlighted Good News action. At 820px and below it becomes a full-width dropdown controlled by a hamburger button.
+
+`InteriorHeader` reuses the same public navigation on interior pages.
+
+### Buttons
+
+Use existing button classes or component-owned styles:
+
+- Primary: `.site-navigation-button.primary`, `.read-more-button`, `.action-button` and CTA buttons.
+- Secondary outline: `.site-navigation-button.secondary`.
+- Compact admin actions remain component-specific but share grey borders, 8–10px radii and uppercase labels.
+
+### Topic, tag and status labels
+
+- `TopicTag` is the standard taxonomy link and may render as a topic pill.
+- Approved discovery tags appear as small outlined pills.
+- `DigestTag` represents daily or weekly editions and always links to `/digests`.
+- `GoodNewsBadge` links to `/good-news-in-conservation`; image overlays collapse to the icon treatment.
+- Admin statuses use compact filled pills with semantic success, warning and error colours.
+
+### Story cards
+
+Story discovery uses a small set of repeated patterns:
+
+- `story-card`: image and copy rows used in the main latest-stories list.
+- `compact-story`: smaller image/title rows.
+- `carousel-card`: horizontal topic-shelf cards.
+- `topic-story`: archive cards, with the first item promoted to `topic-story-featured`.
+- `related` / `SimilarStories`: three-card discovery section.
+- `digest-more`: six most recent daily digest cards on daily digest pages.
+
+Cards display the appropriate topic or digest label above the title. Good News is signalled on the image. Titles, images and explicit read links lead to the same canonical story URL.
+
+### Calls to action
+
+- `WeeklyDigestNewsletterCta`: full-width purple email panel.
+- `StreamlinedNewsletterCta`: compact in-flow signup treatment.
+- `TrainingBanner`: full-width editorial training promotion.
+- `CoursePromotion`: course-specific sidebar promotion using the configured course colour.
+
+Email controls visually combine a white input and pink action. Training and newsletter components suppress multicolour inline WILDNEWS branding so text inherits the CTA treatment.
+
+### Footer
+
+`SiteFooter` is the shared WildTeam footer. It uses a dark background, grouped About/Explore/Legal links, social icons, CPD mark and the WildTeam mission statement.
+
+## Editorial page patterns
+
+### News articles
+
+The article template is shared by every published news story:
+
+1. Centred hero with Good News/topic pills, title and compact coverage summary.
+2. Full-width lead image with attribution.
+3. “The story at a glance” introduction, discovery tags, update date and vertical share controls.
+4. Structured editorial sections: what you need to know, why it matters, what happens next, what is known, what is unknown, and source reporting.
+5. Sticky desktop sidebar containing coverage analysis and a course promotion.
+6. Newsletter CTA and related-story discovery supplied by the page route.
+
+Inline source references are numbered circles. Contextual links may point to relevant internal stories, taxonomy pages, courses or external sources. Links are not added merely to meet a quota.
+
+### Digests
+
+Daily and weekly digests share one template:
+
+1. Full-width split hero with colour derived from the featured image and WildTeam purple as fallback.
+2. Edition/date metadata, title, standfirst and AI-method link.
+3. Digest and topic pills above the editorial introduction.
+4. Flowing editorial sections with wider supporting images.
+5. One compact newsletter CTA within the body.
+6. Source-article list, training banner and full newsletter CTA.
+7. Six recent daily digests on daily editions.
+
+Friday produces a weekly edition instead of a daily edition.
+
+### Archives
+
+Topic, approved-tag, Good News and digest archives use a shared visual language: a full-width header, description and count, followed by one featured story and standard listing cards. Newsletter and related-story sections sit beneath the archive results where configured.
+
+## Admin workspace
+
+The admin uses the same font and core palette with denser typography. Desktop has an expanded left navigation; mobile uses a hamburger-controlled menu. Grouped navigation sections preserve their open state when the active child belongs to that group.
+
+Admin pages use:
+
+- Compact uppercase labels and metadata.
+- White cards on a neutral page surface.
+- Grey borders and subtle grey offset shadows.
+- Disclosure panels for advanced or infrequent manual controls.
+- Responsive tables, cards and stacked controls rather than shrinking desktop layouts below usability.
+
+## Current implementation debt
+
+These are recorded facts, not design changes:
+
+- `app/globals.css` contains chronological layers of overrides, so an early declaration is not always the effective style.
+- Several equivalent values are literals rather than named tokens.
+- Historical token names do not match their current colours.
+- The admin and public styles partly overlap in `globals.css`; admin consolidation is incomplete.
+- Many feature-specific breakpoints repeat the same viewport widths.
+
+Cleanup should consolidate these rules only after verifying that rendered desktop, tablet and mobile output remains unchanged.
+
