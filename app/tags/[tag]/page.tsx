@@ -1,8 +1,6 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic archive routes */
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
-import { Fragment } from 'react';
-import { ArchiveTrainingPromotion } from '@/components/archive-training-promotion';
 import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
@@ -30,7 +28,7 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
   return <main className="archive-page">
     <InteriorHeader />
     <section className="topic-page-hero shell tag-page-hero"><a className="archive-tag-pill" href={`/tags/${tag.slug}`}>{tag.name}</a><h1>{tag.name}</h1><p>{tag.description ?? `Source-led conservation briefings connected to ${tag.name}.`}</p><span>{stories.length} {stories.length === 1 ? 'story' : 'stories'}</span></section>
-    <section className="topic-page-grid shell">{stories.map((story, index) => <Fragment key={story.slug}><article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'}><a className="topic-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" /></a><div><TopicTag topic={story.topic} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div></article>{stories.length >= 6 && index === 4 ? <ArchiveTrainingPromotion /> : null}</Fragment>)}</section>
+    <section className="topic-page-grid shell">{stories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}><a className="topic-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" /></a><div><TopicTag topic={story.topic} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div></article>)}</section>
     <WeeklyDigestNewsletterCta id={`tag-${slug}-digest-email`} className="editorial-newsletter-cta shell" />
     <SimilarStories stories={related} />
     <SiteFooter />

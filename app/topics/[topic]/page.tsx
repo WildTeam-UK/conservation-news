@@ -2,8 +2,6 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { redirect } from 'next/navigation';
-import { Fragment } from 'react';
-import { ArchiveTrainingPromotion } from '@/components/archive-training-promotion';
 import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
@@ -51,10 +49,10 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
       <span>{topicStories.length} {topicStories.length === 1 ? 'story' : 'stories'}</span>
     </section>
     <section className="topic-page-grid shell">
-      {topicStories.map((story, index) => <Fragment key={story.slug}><article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'}>
+      {topicStories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}>
         <a className="topic-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" /></a>
         <div><TopicTag topic={story.topic} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div>
-      </article>{topicStories.length >= 6 && index === 4 ? <ArchiveTrainingPromotion /> : null}</Fragment>)}
+      </article>)}
     </section>
     <WeeklyDigestNewsletterCta id={`topic-${slug}-digest-email`} className="editorial-newsletter-cta shell" />
     <SimilarStories stories={related} />
