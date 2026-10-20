@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
-import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
+import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedWeeklyDigests, type DigestStoryRecord, type DigestType } from '@/lib/digests';
@@ -30,10 +30,10 @@ export default async function DigestArchive() {
   return <main className="archive-page digest-archive-page">
     <InteriorHeader />
     <section className="topic-page-hero shell">
-      <div className="archive-tag-pill">Daily + weekly</div>
+      <div className="digest-archive-type-tags"><DigestTag type="daily" /><DigestTag type="weekly" /></div>
       <h1><InlineBrand text="WILDNEWS" /> digests</h1>
       <p>Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week.</p>
-      <span>{digests.length} {digests.length === 1 ? 'edition' : 'editions'}</span>
+      <StreamlinedNewsletterCta id="digest-archive-hero-email" className="digest-archive-hero-newsletter" />
     </section>
     {digests.length ? <section className="topic-page-grid shell">
       {digests.map((digest, index) => {

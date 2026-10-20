@@ -3,9 +3,10 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
+import { SimilarStories } from '@/components/similar-stories';
 import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
-import { getGoodNewsSettings, getPublishedStories, publishedConservationOutlook, publishedStoryToListing } from '@/lib/published-stories';
+import { getGoodNewsSettings, getPublishedStories, publishedConservationOutlook, publishedStoryToListing, relatedPublishedStories } from '@/lib/published-stories';
 import { cleanCopy, storyHref, storyImage } from '@/lib/stories';
 import { GoodNewsBadge } from '@/components/good-news-badge';
 import { InlineBrand } from '@/components/inline-brand';
@@ -15,12 +16,14 @@ export const metadata: Metadata = { title: 'Good conservation news | WILDNEWS', 
 
 export default async function GoodNewsPage() {
   const [published, settings] = await Promise.all([getPublishedStories(300), getGoodNewsSettings()]);
-  const stories = published
+  const goodNewsRecords = published
     .filter((story) => story.content_type === 'news')
     .filter((story) => {
       const outlook = publishedConservationOutlook(story);
       return outlook?.classification === 'positive' && outlook.score >= settings.minimum_score && outlook.confidence >= settings.minimum_confidence;
-    })
+    });
+  const stories = goodNewsRecords.map((story) => publishedStoryToListing(story, settings));
+  const related = relatedPublishedStories(goodNewsRecords, published.filter((story) => story.content_type === 'news'))
     .map((story) => publishedStoryToListing(story, settings));
 
   return <main className="archive-page good-news-page">
@@ -38,6 +41,7 @@ export default async function GoodNewsPage() {
       </article>)}
     </section> : <section className="good-news-empty shell"><h2>The threshold is doing its job.</h2><p>No published story currently has enough evidence to qualify. New stories will appear here automatically when they meet the standard.</p></section>}
     <WeeklyDigestNewsletterCta id="good-news-digest-email" className="editorial-newsletter-cta shell" />
+    <SimilarStories stories={related} description="Keep exploring the latest conservation coverage." />
     <SiteFooter />
   </main>;
 }
