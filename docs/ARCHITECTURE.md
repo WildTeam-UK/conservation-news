@@ -98,7 +98,7 @@ Core public routes are:
 - `/tags/[tag]`: approved discovery-tag archive
 - `/good-news-in-conservation`: positive-outlook archive
 - `/how-we-use-ai`
-- `/how-leaning-works`
+- `/how-coverage-analysis-works`
 - `/how-we-classify-good-news`
 - `/about`
 
@@ -254,9 +254,7 @@ Only names and purposes belong in source control.
 
 `app/sitemap.ts` derives public URLs from current published content and taxonomy. `app/llms.txt/route.ts` derives its latest stories, digests, topics and approved tags from the same data.
 
-### Known asset issue
-
-`public/og.png` contains the obsolete FIELDNOTE brand while serving as the default social image. It must be replaced before launch.
+The default social image is a 1200×630 WildNews-branded graphic. Public metadata uses the intended canonical domain and falls back to this image when a story-specific image is unavailable.
 
 ## Legacy Sites remnants
 

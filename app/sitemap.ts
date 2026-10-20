@@ -10,7 +10,7 @@ const staticPages: Array<{ path: string; priority: number; changeFrequency: Meta
   { path: '/good-news-in-conservation', priority: 0.9, changeFrequency: 'daily' },
   { path: '/how-we-use-ai', priority: 0.6, changeFrequency: 'monthly' },
   { path: '/how-we-classify-good-news', priority: 0.6, changeFrequency: 'monthly' },
-  { path: '/how-leaning-works', priority: 0.5, changeFrequency: 'monthly' },
+  { path: '/how-coverage-analysis-works', priority: 0.5, changeFrequency: 'monthly' },
   { path: '/about', priority: 0.5, changeFrequency: 'monthly' },
 ];
 

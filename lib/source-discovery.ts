@@ -261,7 +261,7 @@ async function fetchPublic(urlValue: string, accept: string) {
   if (!url) throw new Error('The site URL is not permitted.');
   for (let redirect = 0; redirect < 4; redirect += 1) {
     const response = await fetch(url, {
-      headers: { Accept: accept, 'User-Agent': 'WildNews Source Discovery/1.0 (+https://conservation-news.vercel.app)' },
+      headers: { Accept: accept, 'User-Agent': 'WildNews Source Discovery/1.0 (+https://news.wildteam.org.uk)' },
       redirect: 'manual',
       signal: AbortSignal.timeout(7_000),
     });

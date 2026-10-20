@@ -7,10 +7,10 @@ import { pageMetadata } from '@/lib/seo';
 export const metadata: Metadata = pageMetadata({
   title: 'How our coverage analysis works | WILDNEWS',
   description: 'How WILDNEWS analyses ecological framing, attributable evidence and agreement across current conservation coverage.',
-  path: '/how-leaning-works',
+  path: '/how-coverage-analysis-works',
 });
 
-export default function LeaningMethodologyPage() {
+export default function CoverageAnalysisMethodologyPage() {
   return <main>
     <InteriorHeader />
     <article className="methodology-page shell">

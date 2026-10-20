@@ -151,7 +151,7 @@ async function collectSource(source: SourceRecord, runId: string) {
 
   const url = assertSafeFeedUrl(source.feed_url);
   const response = await fetch(url, {
-    headers: { 'User-Agent': 'WildNews Feed Collector/1.0 (+https://conservation-news.vercel.app)' },
+    headers: { 'User-Agent': 'WildNews Feed Collector/1.0 (+https://news.wildteam.org.uk)' },
     signal: AbortSignal.timeout(20_000),
   });
 
