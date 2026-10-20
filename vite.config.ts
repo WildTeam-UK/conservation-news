@@ -1,4 +1,3 @@
-import { sites } from '@openai/sites-vite-plugin';
 import tailwindcss from '@tailwindcss/postcss';
 import { nitro } from 'nitro/vite';
 import vinext from 'vinext';
@@ -15,7 +14,6 @@ export default defineConfig(async () => {
       : undefined,
     plugins: [
       vinext(),
-      sites(),
       nitro(),
     ],
   };

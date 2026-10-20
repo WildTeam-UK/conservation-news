@@ -257,20 +257,13 @@ Current inconsistency: `.env.example` lists `CRON_SECRET`, while application cod
 
 ### Known asset issue
 
-`public/favicon.svg` is the legacy ChatGPT Sites favicon and is currently advertised alongside the correct PNG. `public/og.png` contains the obsolete FIELDNOTE brand while serving as the default social image. Both are pre-launch cleanup items.
+`public/og.png` contains the obsolete FIELDNOTE brand while serving as the default social image. It must be replaced before launch.
 
 ## Legacy Sites remnants
 
-The repository began from a ChatGPT Sites-oriented starter. The following remnants are not part of the intended architecture:
+The repository began from a ChatGPT Sites-oriented starter. Its Sites hosting manifest, Vite plugin, plugin configuration, package name and SVG favicon were removed during pre-launch cleanup. The application does not use Sites authentication, connectors, D1, R2 or deployment.
 
-- `.openai/hosting.json`
-- `@openai/sites-vite-plugin`
-- `sites()` in `vite.config.ts`
-- Package name `sites-project`
-- `public/favicon.svg`
-- Generated `dist/.openai/hosting.json`
-
-The application does not use Sites authentication, connectors, D1, R2 or deployment. These remnants should be removed together and the complete Vercel build retested. Vinext, Vite and Nitro remain active framework dependencies.
+Vinext, Vite and Nitro remain active framework dependencies and produce the Vercel deployment.
 
 ## Verification
 

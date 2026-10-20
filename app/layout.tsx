@@ -15,7 +15,7 @@ export const metadata: Metadata = {
   robots: isProductionDeployment() ? { index: true, follow: true } : { index: false, follow: false, noarchive: true },
   manifest: '/manifest.webmanifest',
   icons: {
-    icon: [{ url: '/favicon.png', type: 'image/png' }, { url: '/favicon.svg', type: 'image/svg+xml' }],
+    icon: [{ url: '/favicon.png', type: 'image/png', sizes: '50x50' }],
     apple: '/favicon.png',
   },
   openGraph: {
