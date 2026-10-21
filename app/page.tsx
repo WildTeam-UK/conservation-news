@@ -7,6 +7,7 @@ import { SiteFooter } from '@/components/site-footer';
 import { SiteNavigation } from '@/components/site-navigation';
 import { StoryTags } from '@/components/story-tags';
 import { TopicStoryShelf } from '@/components/topic-story-shelf';
+import { TrainingBanner } from '@/components/training-banner';
 import { getGoodNewsSettings, getPublishedStories, getPublishedStoriesForTopic, publishedStoryToListing } from '@/lib/published-stories';
 import { cleanCopy, storyHref, storyImage } from '@/lib/stories';
 import { EDITORIAL_TOPICS } from '@/lib/taxonomy';
@@ -67,6 +68,7 @@ export default async function Home() {
     <section className="topic-shelves" aria-label="Stories by topic">
       {topicShelves.map(({ topic, stories }) => <TopicStoryShelf topic={topic} stories={stories} key={topic} />)}
     </section>
+    <TrainingBanner className="shell" />
     <NewsletterCta id="homepage-footer-digest-email" className="homepage-newsletter-cta shell" />
     <SiteFooter />
   </main>;
