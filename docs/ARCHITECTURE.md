@@ -45,6 +45,8 @@ The public application reads published records with the Supabase publishable key
 
 Preview deployments are marked `noindex`. Production metadata permits indexing of public pages while `robots.txt` excludes `/admin/` and `/api/`.
 
+Vercel applies baseline browser-security headers to every route: MIME sniffing is disabled, framing is denied, cross-origin referrers are limited to their origin, and unused camera, geolocation, microphone, payment and USB capabilities are disabled. A Content Security Policy is not currently declared because the Vinext runtime and existing inline styles require a tested policy rather than a permissive placeholder.
+
 ## Framework and principal dependencies
 
 ### Runtime
