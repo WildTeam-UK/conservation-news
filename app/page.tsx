@@ -6,8 +6,9 @@ import { NewsletterCta } from '@/components/newsletter-cta';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteNavigation } from '@/components/site-navigation';
 import { StoryTags } from '@/components/story-tags';
-import { getGoodNewsSettings, getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
-import { cleanCopy, storyHref, storyImage, topicSlug } from '@/lib/stories';
+import { TopicStoryShelf } from '@/components/topic-story-shelf';
+import { getGoodNewsSettings, getPublishedStories, getPublishedStoriesForTopic, publishedStoryToListing } from '@/lib/published-stories';
+import { cleanCopy, storyHref, storyImage } from '@/lib/stories';
 import { EDITORIAL_TOPICS } from '@/lib/taxonomy';
 import { DEFAULT_DESCRIPTION, DEFAULT_TITLE, pageMetadata } from '@/lib/seo';
 import { GoodNewsBadge } from '@/components/good-news-badge';
@@ -19,12 +20,17 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = pageMetadata({ title: DEFAULT_TITLE, description: DEFAULT_DESCRIPTION, path: '/' });
 
 export default async function Home() {
-  const [publishedRecords, goodNewsSettings] = await Promise.all([getPublishedStories(30), getGoodNewsSettings()]);
+  const [publishedRecords, goodNewsSettings, topicRecords] = await Promise.all([
+    getPublishedStories(17),
+    getGoodNewsSettings(),
+    Promise.all(shelfTopics.map(async (topic) => [topic, await getPublishedStoriesForTopic(topic, 12)] as const)),
+  ]);
   const published = publishedRecords.map((story) => publishedStoryToListing(story, goodNewsSettings));
   const liveStories = published;
   const [lead, ...moreStories] = liveStories;
   const primaryLatest = moreStories.slice(0, 6);
   const compactLatest = moreStories.slice(6, 16);
+  const topicShelves = topicRecords.map(([topic, stories]) => ({ topic, stories: stories.map((story) => publishedStoryToListing(story, goodNewsSettings)) }));
 
   return <main>
     <header className="site-header">
@@ -59,19 +65,7 @@ export default async function Home() {
     <NewsletterCta id="homepage-digest-email" className="homepage-inline-newsletter shell" variant="streamlined" />
 
     <section className="topic-shelves" aria-label="Stories by topic">
-      {shelfTopics.map((topic) => {
-        const topicStories = liveStories.filter((story) => story.topic === topic || story.topics.includes(topic));
-        if (!topicStories.length) return null;
-        return <section className="topic-shelf shell" key={topic}>
-          <div className="shelf-heading"><div><h2><a href={`/topics/${topicSlug(topic)}`}>{topic}</a></h2></div><a href={`/topics/${topicSlug(topic)}`}>See all {topic.toLowerCase()} <ArrowRight /></a></div>
-          <div className="topic-track">{topicStories.map((story) => <article className="carousel-card" key={story.slug}>
-            <a className="carousel-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" loading="lazy" decoding="async" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
-            <StoryTags story={story} />
-            <h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3>
-            <a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a>
-          </article>)}</div>
-        </section>;
-      })}
+      {topicShelves.map(({ topic, stories }) => <TopicStoryShelf topic={topic} stories={stories} key={topic} />)}
     </section>
     <NewsletterCta id="homepage-footer-digest-email" className="homepage-newsletter-cta shell" />
     <SiteFooter />

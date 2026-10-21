@@ -94,7 +94,7 @@ The unused generic starter component collection and its component-only dependenc
 
 Core public routes are:
 
-- `/`: latest stories and populated topic shelves
+- `/`: latest stories plus independently queried topic shelves containing up to 12 recent published stories per editorial topic
 - `/stories/[slug]`: standard news briefing
 - `/daily-digest/[date]`: daily editorial digest
 - `/weekly-digest/[date]`: Friday weekly digest

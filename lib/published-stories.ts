@@ -100,6 +100,19 @@ export async function getPublishedStories(limit = 100): Promise<PublishedStory[]
   return (data ?? []) as unknown as PublishedStory[];
 }
 
+export async function getPublishedStoriesForTopic(topic: string, limit = 12): Promise<PublishedStory[]> {
+  const topicMatchSelect = `${storyListingSelect}, homepage_topic:story_topics!inner(topics!inner(name))`;
+  const { data, error } = await getSupabasePublicClient().from('stories')
+    .select(topicMatchSelect)
+    .eq('status', 'published')
+    .lte('published_at', new Date().toISOString())
+    .eq('homepage_topic.topics.name', topic)
+    .order('published_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as unknown as PublishedStory[];
+}
+
 export async function getAllPublishedStories(maximum = 50_000): Promise<PublishedStory[]> {
   const pageSize = 1000;
   const stories: PublishedStory[] = [];
