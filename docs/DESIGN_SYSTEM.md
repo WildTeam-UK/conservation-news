@@ -143,7 +143,7 @@ Use existing button classes or component-owned styles:
 - Approved discovery tags appear as small outlined pills.
 - `DigestTag` represents daily or weekly editions and always links to `/digests`.
 - `GoodNewsBadge` links to `/good-news-in-conservation`; image overlays collapse to the icon treatment.
-- Public topic, digest and expanded Good News pills use the shared `editorial-pill` structure. The pill itself owns flex alignment; its direct icon and label children must not stretch or establish another flex layout. The label trims the font's invisible cap-height and baseline space with `text-box`, allowing the parent to centre the visible label against the icon without positional offsets.
+- Public topic, digest and expanded Good News pills use the shared `editorial-pill` structure and a consistent font weight of 500. The pill itself owns flex alignment; its direct icon and label children must not stretch or establish another flex layout. The label trims the font's invisible cap-height and baseline space with `text-box`, allowing the parent to centre the visible label against the icon without positional offsets.
 - Admin statuses use compact filled pills with semantic success, warning and error colours.
 
 ### Story cards
