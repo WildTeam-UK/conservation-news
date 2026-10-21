@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { XMLParser } from 'fast-xml-parser';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { safePublicHttpUrl } from '@/lib/urls';
 
 type SourceRecord = {
   id: string;
@@ -67,16 +68,8 @@ const isoDate = (value: string | null) => {
 };
 
 function assertSafeFeedUrl(value: string) {
-  const url = new URL(value);
-  const host = url.hostname.toLowerCase();
-  const blocked = host === 'localhost' || host === '::1' || host.endsWith('.local') ||
-    host.startsWith('127.') || host.startsWith('10.') || host.startsWith('192.168.') ||
-    host.startsWith('169.254.') || /^172\.(1[6-9]|2\d|3[01])\./.test(host);
-
-  if (!['http:', 'https:'].includes(url.protocol) || blocked) {
-    throw new Error('Source URL is not permitted.');
-  }
-
+  const url = safePublicHttpUrl(value);
+  if (!url) throw new Error('Source URL is not permitted.');
   return url;
 }
 
