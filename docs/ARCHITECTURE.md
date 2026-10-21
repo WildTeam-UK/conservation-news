@@ -42,6 +42,8 @@ The public application reads published records with the Supabase publishable key
 - Build command: `vite build`
 - Application build script: `vinext build`
 - Production start command: `node .output/server/index.mjs`
+- Supported Node.js runtime: 22.13 or newer
+- Pinned package manager: pnpm 11.25.0
 
 Preview deployments are marked `noindex`. Production metadata permits indexing of public pages while `robots.txt` excludes `/admin/` and `/api/`.
 
