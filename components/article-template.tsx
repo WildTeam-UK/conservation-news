@@ -10,6 +10,7 @@ import { CoursePromotion } from '@/components/course-promotion';
 import { GENERAL_TRAINING_PROMOTION, type TrainingCoursePromotion } from '@/lib/training-courses';
 import type { ArticleContextualLink } from '@/lib/article-linking';
 import { GoodNewsBadge } from '@/components/good-news-badge';
+import { londonLongDateFormatter } from '@/lib/date-format';
 
 export type ArticleCoverage = {
   ecological: number;
@@ -66,7 +67,7 @@ function CoverageSummaryBinary({ title, firstLabel, firstValue, secondLabel, ton
 function formattedDate(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(date);
+  return londonLongDateFormatter.format(date);
 }
 
 function articleTextValue(value: ArticleText) {

@@ -9,6 +9,7 @@ import { getGoodNewsSettings, getPublishedStories, publishedStoryToListing } fro
 import { InlineBrand } from '@/components/inline-brand';
 import { DigestTag } from '@/components/digest-tag';
 import { pageMetadata } from '@/lib/seo';
+import { londonLongDateFormatter } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = pageMetadata({
@@ -16,8 +17,6 @@ export const metadata: Metadata = pageMetadata({
   description: 'Explore connected daily and weekly WILDNEWS briefings covering the conservation stories, evidence and developments that matter.',
   path: '/digests',
 });
-
-const digestDate = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' });
 
 function digestType(digest: DigestStoryRecord): DigestType {
   return digest.content_type === 'weekly_digest' ? 'weekly' : 'daily';
@@ -46,7 +45,7 @@ export default async function DigestArchive() {
           href={path}
           image={digest.image_url}
           imageAlt={digest.image_alt ?? ''}
-          labels={<div className="digest-archive-meta"><DigestTag type={type} /><time dateTime={digest.digest_period_end}>{digestDate.format(new Date(digest.digest_period_end))}</time></div>}
+          labels={<div className="digest-archive-meta"><DigestTag type={type} /><time dateTime={digest.digest_period_end}>{londonLongDateFormatter.format(new Date(digest.digest_period_end))}</time></div>}
           title={cleanDigestText(digest.headline)}
           summary={index === 0 ? cleanDigestText(digest.standfirst) : null}
           linkLabel="Read this edition"
