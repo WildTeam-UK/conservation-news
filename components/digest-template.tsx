@@ -5,7 +5,7 @@ import { DigestHeroImage } from '@/components/digest-hero-image';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import { FALLBACK_HERO_COLOUR } from '@/lib/images/colour';
-import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
+import { NewsletterCta } from '@/components/newsletter-cta';
 import { SocialShare } from '@/components/social-share';
 import { InlineBrand } from '@/components/inline-brand';
 import { TopicTag } from '@/components/topic-tag';
@@ -132,14 +132,14 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
             {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt?.trim() || `Illustrative image for ${cleanDigestText(section.heading)}`} loading="lazy" decoding="async" /><EditorialImageCredit credit={sectionImage.image_credit} /></figure> : null}
-            {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <StreamlinedNewsletterCta id="digest-email-inline" /> : null}</Fragment>)}
+            {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <NewsletterCta id="digest-email-inline" variant="streamlined" /> : null}</Fragment>)}
           </section>;
         })}
         <DigestSources stories={referencedStories.length ? referencedStories : stories} />
       </div>
 
       <TrainingBanner />
-      <WeeklyDigestNewsletterCta id="digest-email" />
+      <NewsletterCta id="digest-email" />
     </div>
 
     <MoreDailyDigests digests={recentDailyDigests} />

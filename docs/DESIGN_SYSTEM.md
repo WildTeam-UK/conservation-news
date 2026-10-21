@@ -173,8 +173,7 @@ Cards display the appropriate topic or digest label above the title. Good News i
 
 ### Calls to action
 
-- `WeeklyDigestNewsletterCta`: full-width purple email panel.
-- `StreamlinedNewsletterCta`: compact in-flow signup treatment.
+- `NewsletterCta`: shared Weekly Digest signup component with `full` and `streamlined` variants. Both variants use the same headline and subscription form; the full variant adds supporting copy while the streamlined variant is the compact in-flow treatment.
 - `TrainingBanner`: full-width editorial training promotion.
 - `CoursePromotion`: course-specific sidebar promotion using the configured course colour.
 

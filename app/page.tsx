@@ -2,7 +2,7 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { AllTopicsNav } from '@/components/all-topics-nav';
-import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
+import { NewsletterCta } from '@/components/newsletter-cta';
 import { SiteFooter } from '@/components/site-footer';
 import { SiteNavigation } from '@/components/site-navigation';
 import { StoryTags } from '@/components/story-tags';
@@ -56,7 +56,7 @@ export default async function Home() {
       </div>
     </section>
 
-    <StreamlinedNewsletterCta id="homepage-digest-email" className="homepage-inline-newsletter shell" />
+    <NewsletterCta id="homepage-digest-email" className="homepage-inline-newsletter shell" variant="streamlined" />
 
     <section className="topic-shelves" aria-label="Stories by topic">
       {shelfTopics.map((topic) => {
@@ -73,7 +73,7 @@ export default async function Home() {
         </section>;
       })}
     </section>
-    <WeeklyDigestNewsletterCta id="homepage-footer-digest-email" className="homepage-newsletter-cta shell" />
+    <NewsletterCta id="homepage-footer-digest-email" className="homepage-newsletter-cta shell" />
     <SiteFooter />
   </main>;
 }

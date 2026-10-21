@@ -5,6 +5,9 @@ import { type SubmitEvent, useState } from 'react';
 import { InlineBrand } from '@/components/inline-brand';
 
 type SignupStatus = 'idle' | 'submitting' | 'success' | 'error';
+type NewsletterCtaVariant = 'full' | 'streamlined';
+
+const NEWSLETTER_HEADLINE = 'One clear conservation briefing, every Friday.';
 
 export function NewsletterSignupForm({ id }: { id: string }) {
   const [status, setStatus] = useState<SignupStatus>('idle');
@@ -43,16 +46,13 @@ export function NewsletterSignupForm({ id }: { id: string }) {
   </form>;
 }
 
-export function WeeklyDigestNewsletterCta({ id, className = '' }: { id: string; className?: string }) {
-  return <section className={`digest-newsletter-cta ${className}`.trim()}>
-    <div><p className="eyebrow"><InlineBrand text="WILDNEWS" /> WEEKLY DIGEST</p><h2>Stay across the week in conservation.</h2><p>Get the essential stories, context and developments in one clear briefing every Friday.</p></div>
-    <NewsletterSignupForm id={id} />
-  </section>;
-}
+export function NewsletterCta({ id, className = '', variant = 'full' }: { id: string; className?: string; variant?: NewsletterCtaVariant }) {
+  const Container = variant === 'streamlined' ? 'aside' : 'section';
+  const Heading = variant === 'streamlined' ? 'h3' : 'h2';
+  const componentClass = variant === 'streamlined' ? 'digest-inline-newsletter' : 'digest-newsletter-cta';
 
-export function StreamlinedNewsletterCta({ id, className = '' }: { id: string; className?: string }) {
-  return <aside className={`digest-inline-newsletter ${className}`.trim()}>
-    <div><p className="eyebrow"><InlineBrand text="WILDNEWS" /> WEEKLY DIGEST</p><h3>One clear conservation briefing, every Friday.</h3></div>
+  return <Container className={`${componentClass} ${className}`.trim()}>
+    <div><p className="eyebrow"><InlineBrand text="WILDNEWS" /> WEEKLY DIGEST</p><Heading>{NEWSLETTER_HEADLINE}</Heading>{variant === 'full' ? <p>Get the essential stories, context and developments in one clear briefing every Friday.</p> : null}</div>
     <NewsletterSignupForm id={id} />
-  </aside>;
+  </Container>;
 }
