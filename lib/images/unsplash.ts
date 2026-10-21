@@ -1,4 +1,5 @@
 import type { UnsplashImageCandidate } from './types';
+import { isHexColour } from '@/lib/validation';
 
 const API_URL = 'https://api.unsplash.com';
 const APP_NAME = 'wildnews';
@@ -100,5 +101,5 @@ export async function getUnsplashImageColour(sourceId: string) {
   const response = await fetch(`${API_URL}/photos/${id}`, { headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' }, cache: 'no-store' });
   if (!response.ok) return null;
   const photo = await response.json() as Pick<UnsplashPhoto, 'color'>;
-  return /^#[0-9a-f]{6}$/i.test(photo.color ?? '') ? photo.color : null;
+  return isHexColour(photo.color) ? photo.color : null;
 }

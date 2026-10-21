@@ -1,3 +1,5 @@
+import { isHexColour } from '@/lib/validation';
+
 export type TrainingCoursePromotion = {
   id: string;
   title: string;
@@ -31,7 +33,7 @@ export function trainingCourseValues(body: Record<string, unknown>) {
   const courseUrl = typeof body.courseUrl === 'string' ? body.courseUrl.trim().slice(0, 500) : '';
   const primaryColour = typeof body.primaryColour === 'string' ? body.primaryColour.trim() : '';
   const url = new URL(courseUrl);
-  if (!title || !['http:', 'https:'].includes(url.protocol) || !/^#[0-9a-f]{6}$/i.test(primaryColour)) throw new Error('Enter a valid title, course URL and colour.');
+  if (!title || !['http:', 'https:'].includes(url.protocol) || !isHexColour(primaryColour)) throw new Error('Enter a valid title, course URL and colour.');
   const required = ['description', 'adHeadline', 'adDescription', 'ctaLabel', 'matchingGuidance'] as const;
   const text = Object.fromEntries(required.map((key) => [key, typeof body[key] === 'string' ? body[key].trim() : ''])) as Record<(typeof required)[number], string>;
   if (required.some((key) => !text[key])) throw new Error('Complete all required course fields.');

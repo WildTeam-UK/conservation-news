@@ -1,3 +1,5 @@
+import { isHexColour } from '@/lib/validation';
+
 export const FALLBACK_HERO_COLOUR = '#6e0f6c';
 
 function channelLuminance(value: number) {
@@ -11,8 +13,8 @@ function contrastWithWhite(red: number, green: number, blue: number) {
 }
 
 export function readableHeroColour(value?: string | null) {
-  if (!/^#[0-9a-f]{6}$/i.test(value ?? '')) return FALLBACK_HERO_COLOUR;
-  const hex = value!.slice(1);
+  if (!isHexColour(value)) return FALLBACK_HERO_COLOUR;
+  const hex = value.slice(1);
   const original = [Number.parseInt(hex.slice(0, 2), 16), Number.parseInt(hex.slice(2, 4), 16), Number.parseInt(hex.slice(4, 6), 16)];
   let factor = 1;
   let colour = original;

@@ -13,6 +13,7 @@ import { applyArticleLinkPlan, articleLinkRows, cleanArticleLinks, countArticleL
 import { slugify } from '@/lib/stories';
 import { clampScore } from '@/lib/scores';
 import { safeHttpUrl } from '@/lib/urls';
+import { isHexColour } from '@/lib/validation';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'draft-v6-conservation-outlook-fallback';
@@ -122,7 +123,7 @@ function cleanImageCredit(value: unknown): EditorialImageCredit | null {
     licence_url: safeImageUrl(credit.licence_url),
     download_location: provider === 'unsplash' ? safeImageUrl(credit.download_location) : '',
     illustrative: Boolean(credit.illustrative),
-    colour: /^#[0-9a-f]{6}$/i.test(credit.colour ?? '') ? credit.colour : undefined,
+    colour: isHexColour(credit.colour) ? credit.colour : undefined,
   };
   return cleaned.creator_name || cleaned.source_name ? cleaned : null;
 }
