@@ -8,7 +8,7 @@ import { RunCollectionButton } from '@/components/run-collection-button';
 import { buildAdminProfile } from '@/lib/admin-profile';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { firstRelation } from '@/lib/supabase/relations';
-import { londonMediumDateTimeFormatter as dateTime } from '@/lib/date-format';
+import { londonMediumDateTimeFormatter as dateTime, londonTimeFormatter as timeOnly } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +30,6 @@ function queueStory(item: QueueOverviewItem) {
   return firstRelation(item.stories);
 }
 
-const timeOnly = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
 const greetings = [
   { text: 'Hey', language: 'English', lang: 'en' },
   { text: 'Bonjour', language: 'French', lang: 'fr' },

@@ -11,12 +11,12 @@ import { SiteFooter } from '@/components/site-footer';
 import { getPublishedDailyDigests, hydrateDigestSourceStories, type DigestContent, type DigestSourceStory } from '@/lib/digests';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { firstRelation } from '@/lib/supabase/relations';
+import { londonCalendarDateFormatter } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Digest preview | WILDNEWS editorial', robots: { index: false, follow: false } };
 
 type LinkedStory = { display_order: number; stories: DigestSourceStory | DigestSourceStory[] | null };
-const londonCalendarDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
 
 export default async function DigestPreviewPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -32,7 +32,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   const moreDigests = content.digest_type === 'daily' ? await getPublishedDailyDigests(7) : [];
   const editionDate = story.slug.replace(`${content.digest_type}-digest-`, '');
   const publicPath = `/${content.digest_type === 'weekly' ? 'weekly-digest' : 'daily-digest'}/${editionDate}`;
-  const historicalPublicationDate = editionDate < londonCalendarDate.format(new Date()) ? editionDate : undefined;
+  const historicalPublicationDate = editionDate < londonCalendarDateFormatter.format(new Date()) ? editionDate : undefined;
 
   return <main className="admin-page digest-preview-page">
     <AdminHeader />

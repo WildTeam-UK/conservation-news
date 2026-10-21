@@ -7,6 +7,7 @@ import { ResearchCandidateButton } from '@/components/research-candidate-button'
 import type { ResearchClaim, ResearchContent } from '@/lib/openai/research-story';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { sourceRelationName } from '@/lib/supabase/relations';
+import { londonMediumDateFormatter } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -200,7 +201,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
                 <article className="candidate-card" id={`candidate-${candidate.id}`} key={candidate.id}>
                   <div className="candidate-rank"><span>Position</span><strong>{index + 1}</strong></div>
                   <div className="candidate-main">
-                    <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span>{!draftId && latestSourceAt > 0 ? <span className="candidate-stale-label"><ClockAlert /> Source dated {new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeZone: 'Europe/London' }).format(new Date(latestSourceAt))} · automation uses 7 days</span> : null}</div>
+                    <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span>{!draftId && latestSourceAt > 0 ? <span className="candidate-stale-label"><ClockAlert /> Source dated {londonMediumDateFormatter.format(new Date(latestSourceAt))} · automation uses 7 days</span> : null}</div>
                     <h2>{candidate.working_title}</h2>
                     {assessment.rationale ? <p>{assessment.rationale}</p> : null}
                     <div className="candidate-sources">

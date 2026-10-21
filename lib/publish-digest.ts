@@ -3,9 +3,9 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { firstRelation } from '@/lib/supabase/relations';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 import { isCalendarDate } from '@/lib/validation';
+import { londonCalendarDateFormatter } from '@/lib/date-format';
 
 const londonDateTime = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
-const londonCalendarDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
 
 function londonPublicationTime(date: string) {
   const [year, month, day] = date.split('-').map(Number);
@@ -36,7 +36,7 @@ export async function publishDigest(storyId: string, { reviewerId, publicationDa
     return { saved: true, alreadyPublished: true, publishedAt: story.published_at, publicPath: `/${type}-digest/${editionDate}` };
   }
   if (story.status !== 'draft') throw new Error('Only a private digest draft can be published.');
-  if (publicationDate && (!isCalendarDate(publicationDate) || publicationDate !== editionDate || publicationDate >= londonCalendarDate.format(new Date()))) {
+  if (publicationDate && (!isCalendarDate(publicationDate) || publicationDate !== editionDate || publicationDate >= londonCalendarDateFormatter.format(new Date()))) {
     throw new Error('A historical digest can only use its own earlier edition date.');
   }
 

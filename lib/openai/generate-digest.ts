@@ -7,6 +7,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 import { readableHeroColour } from '@/lib/images/colour';
 import { getUnsplashImageColour } from '@/lib/images/unsplash';
+import { londonCalendarDateFormatter, londonLongDateFormatter } from '@/lib/date-format';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'digest-v2-linked-editorial';
@@ -47,7 +48,7 @@ function sourceImageAlt(source: DigestSourceStory & { generation_metadata: Sourc
 }
 
 function londonDate(value: Date) {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(value);
+  return londonCalendarDateFormatter.format(value);
 }
 
 const londonDateTime = new Intl.DateTimeFormat('en-GB', {
@@ -87,7 +88,7 @@ function historicalDailyPeriod(date: string) {
 }
 
 function editionLabel(type: DigestType, end: Date) {
-  const date = new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(end);
+  const date = londonLongDateFormatter.format(end);
   return type === 'weekly' ? `The week in conservation · ${date}` : `Today in conservation · ${date}`;
 }
 

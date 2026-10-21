@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, CircleDollarSign, Clock3, FilePenLine, LoaderCircle, Play, RotateCcw, Save, SearchCheck, ShieldCheck } from 'lucide-react';
 import { firstRelation } from '@/lib/supabase/relations';
-import { londonMediumDateTimeFormatter } from '@/lib/date-format';
+import { londonMediumDateTimeFormatter, londonTimeFormatter } from '@/lib/date-format';
 
 type RunItem = {
   id: string;
@@ -164,7 +164,7 @@ export function DailyEditorialRun({
         <div className="daily-run-progress-bar" aria-label={`${snapshot.progressPercent}% complete`}><span style={{ width: `${snapshot.progressPercent}%` }} /></div>
         <div className="daily-run-metrics"><span><SearchCheck /><strong>{snapshot.run.candidates_selected}</strong> selected</span><span><FilePenLine /><strong>{snapshot.run.drafts_created}</strong> drafts</span><span><CheckCircle2 /><strong>{snapshot.run.failures}</strong> failed</span></div>
         {snapshot.items.length ? <ol className="daily-run-items">{snapshot.items.map((item) => <li className={item.status} key={item.id}><span>{item.rank}</span><div><strong>{candidateTitle(item) || 'Story candidate'}</strong><small>{item.status.replace('researched', 'research complete')}</small>{item.error_message ? <em>{item.error_message}</em> : null}</div></li>)}</ol> : null}
-        {snapshot.events.length ? <details className="daily-run-events"><summary>View run record</summary><ol>{snapshot.events.map((event) => <li className={event.level} key={event.id}><span>{event.message}</span><time dateTime={event.created_at}>{new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' }).format(new Date(event.created_at))}</time></li>)}</ol></details> : null}
+        {snapshot.events.length ? <details className="daily-run-events"><summary>View run record</summary><ol>{snapshot.events.map((event) => <li className={event.level} key={event.id}><span>{event.message}</span><time dateTime={event.created_at}>{londonTimeFormatter.format(new Date(event.created_at))}</time></li>)}</ol></details> : null}
       </div> : null}
       {error ? <output className="collection-message failed daily-run-error">{error} The completed progress has been saved; press Resume run to continue.</output> : null}
     </section>
