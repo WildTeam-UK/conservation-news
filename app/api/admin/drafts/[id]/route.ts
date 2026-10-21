@@ -4,14 +4,13 @@ import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { queueReadyDrafts } from '@/lib/publication-queue';
 import { normalizeEditorialTopics } from '@/lib/taxonomy';
 import { articleLinkRows } from '@/lib/article-linking';
+import { isUuid } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!uuidPattern.test(id)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
+  if (!isUuid(id)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
 
   const auth = await requireApiAdmin();
   if ('response' in auth) return auth.response;

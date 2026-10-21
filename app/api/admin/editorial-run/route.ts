@@ -1,10 +1,9 @@
 import { advanceEditorialRun, startEditorialRun } from '@/lib/editorial-runner';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
+import { isUuid } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
-
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
   const auth = await requireApiAdmin();
@@ -25,7 +24,7 @@ export async function POST(request: Request) {
       if (!Number.isFinite(maxNewDrafts) || !Number.isFinite(maxEstimatedCostUsd)) return Response.json({ error: 'Valid run limits are required.' }, { status: 400 });
       return Response.json(await startEditorialRun(user.id, maxNewDrafts, maxEstimatedCostUsd));
     }
-    if (body?.action === 'advance' && body.runId && uuidPattern.test(body.runId)) {
+    if (body?.action === 'advance' && isUuid(body.runId)) {
       return Response.json(await advanceEditorialRun(body.runId, user.id));
     }
     return Response.json({ error: 'A valid run action is required.' }, { status: 400 });

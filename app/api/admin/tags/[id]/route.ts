@@ -1,15 +1,15 @@
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { normalizeTaxonomyKey, tagSlug } from '@/lib/taxonomy-text';
+import { isUuid } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const tagTypes = new Set(['species', 'place', 'habitat', 'theme']);
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!uuidPattern.test(id)) return Response.json({ error: 'A valid tag is required.' }, { status: 400 });
+  if (!isUuid(id)) return Response.json({ error: 'A valid tag is required.' }, { status: 400 });
   const auth = await requireApiAdmin();
   if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
   const body = await request.json().catch(() => null) as { action?: string; name?: string; tagType?: string; description?: string; seoTitle?: string; metaDescription?: string; aliases?: string[]; targetId?: string } | null;
@@ -44,7 +44,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       }
     } else if (body.action === 'merge') {
       const targetId = body.targetId ?? '';
-      if (!uuidPattern.test(targetId) || targetId === id) return Response.json({ error: 'Choose a different tag to keep.' }, { status: 400 });
+      if (!isUuid(targetId) || targetId === id) return Response.json({ error: 'Choose a different tag to keep.' }, { status: 400 });
       const [{ data: source, error: sourceError }, { data: target, error: targetError }] = await Promise.all([
         supabase.from('content_tags').select('id, name').eq('id', id).single(),
         supabase.from('content_tags').select('id').eq('id', targetId).neq('status', 'retired').single(),

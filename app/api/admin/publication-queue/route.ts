@@ -1,9 +1,8 @@
 import { restoreDraftToQueue } from '@/lib/publication-queue';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
+import { isUuid } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
-
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
   const auth = await requireApiAdmin();
@@ -11,7 +10,7 @@ export async function POST(request: Request) {
   const { supabase, user } = auth;
 
   const body = await request.json().catch(() => null) as { storyId?: string } | null;
-  if (!body?.storyId || !uuidPattern.test(body.storyId)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
+  if (!isUuid(body?.storyId)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
 
   try {
     const queue = await restoreDraftToQueue(body.storyId);
