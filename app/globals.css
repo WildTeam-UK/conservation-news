@@ -104,10 +104,8 @@ button svg{width:16px}
 @media(max-width:820px){.article-layout{grid-template-columns:1fr;gap:50px}.article-sidebar{position:static;top:auto;gap:22px}.related-grid{grid-template-columns:1fr}.related-image{height:330px}}
 @media(max-width:560px){.shell{width:min(100% - 30px,1240px)}}
 
-/* Shared WildNews refinements */
+/* Topic ticker controls */
 .topic-nav::-webkit-scrollbar{display:none}.topic-nav svg{width:16px;height:16px;stroke-width:2;pointer-events:none}.topic-nav span{pointer-events:none}
-.read-more-button,.action-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 20px;border:0;border-radius:var(--radius-pill);box-shadow:none;font:900 12px/1 var(--font-family),sans-serif;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}.read-more-button{margin-top:26px}.read-more-button svg,.action-button svg{width:16px}
-
 
 /* Shared editorial archives */
 .archive-page .topic-page-hero{padding-top:30px;padding-bottom:56px;border-bottom:3px solid var(--ink)}
@@ -257,7 +255,6 @@ p{margin-top:0;margin-bottom:1.25em}p:last-child{margin-bottom:0}p+p{margin-top:
 .site-navigation-button.good-news:hover{border-color:var(--brand-purple);background:var(--brand-purple);box-shadow:none;color:var(--paper)}
 .site-menu-toggle{display:none;margin-left:auto;padding:0;border:0;background:transparent;color:var(--ink);cursor:pointer}
 .site-menu-toggle svg{width:28px;height:28px;stroke-width:2.5}
-.read-more-button,.action-button{border-radius:var(--public-button-radius)}
 
 @keyframes good-news-shine{0%,72%{left:-45%;opacity:0}76%{opacity:1}90%{left:125%;opacity:1}91%,100%{left:125%;opacity:0}}
 @media(prefers-reduced-motion:reduce){.site-navigation-button.good-news:after{display:none}}
@@ -581,7 +578,10 @@ img{border-radius:var(--radius-card)}
 .digest-archive-type-tags{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.digest-archive-type-tags .digest-tag{margin:0}.digest-archive-subscribe-link{display:inline-flex;align-items:baseline;gap:5px;margin-left:5px;color:var(--brand-purple);font-size:inherit;font-weight:950}.digest-archive-subscribe-link:hover{color:var(--brand-pink)}.digest-archive-subscribe-link svg{width:17px;align-self:center}.archive-newsletter-anchor{scroll-margin-top:110px}.digest-archive-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px}.digest-archive-meta .digest-tag{display:inline-flex;align-items:center;margin:0;line-height:1}.digest-archive-page .topic-story time{display:inline-flex;align-items:center;color:var(--muted);font-size:9px;font-weight:900;line-height:1;text-transform:uppercase;letter-spacing:.05em}.digest-archive-page .wildteam-footer{margin-top:10px}
 @media(min-width:821px){.digest-archive-page .topic-story-featured .topic-story-image{height:auto;align-self:stretch}}
 
-/* Public CTA colour system */
+/* Public CTA system */
+.read-more-button,.action-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 20px;border:0;border-radius:var(--public-button-radius);box-shadow:none;font:900 12px/1 var(--font-family),sans-serif;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.read-more-button{margin-top:26px}
+.read-more-button svg,.action-button svg{width:16px}
 .read-more-button,
 .action-button,
 .action-button-dark,
