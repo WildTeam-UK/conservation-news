@@ -1,4 +1,5 @@
 import { publishDigest } from '@/lib/publish-digest';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { isUuid } from '@/lib/validation';
 
@@ -13,6 +14,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   try {
     return Response.json(await publishDigest(id, { reviewerId: auth.user.id, publicationDate: body.publicationDate }));
   } catch (error) {
-    return Response.json({ error: error instanceof Error ? error.message : 'The digest could not be published.' }, { status: 500 });
+    return unexpectedErrorResponse('Digest publication failed', error, 'The digest could not be published.');
   }
 }

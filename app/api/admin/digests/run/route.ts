@@ -1,4 +1,5 @@
 import { generateDigest } from '@/lib/openai/generate-digest';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { isCalendarDate } from '@/lib/validation';
 
@@ -15,8 +16,7 @@ export async function POST(request: Request) {
   try {
     return Response.json(await generateDigest(body.digestType, user.id, { targetDate: body.targetDate }));
   } catch (error) {
-    console.error('Digest generation failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'The digest could not be generated.' }, { status: 500 });
+    return unexpectedErrorResponse('Digest generation failed', error, 'The digest could not be generated.');
   }
 }
 

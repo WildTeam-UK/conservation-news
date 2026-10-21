@@ -1,4 +1,5 @@
 import { searchUnsplashImages, unsplashIsConfigured } from '@/lib/images/unsplash';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 
 export const dynamic = 'force-dynamic';
@@ -12,7 +13,6 @@ export async function GET(request: Request) {
   try {
     return Response.json({ images: await searchUnsplashImages(query, 6) });
   } catch (error) {
-    console.error('Unsplash image search failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'Image search failed.' }, { status: 502 });
+    return unexpectedErrorResponse('Unsplash image search failed', error, 'Image search failed.', 502);
   }
 }

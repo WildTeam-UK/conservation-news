@@ -1,4 +1,5 @@
 import { recalculateStoryCoverage } from '@/lib/openai/draft-story';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { isUuid } from '@/lib/validation';
 
@@ -14,7 +15,6 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
   try {
     return Response.json(await recalculateStoryCoverage(id, user.id));
   } catch (error) {
-    console.error('Coverage recalculation failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'Coverage analysis could not be recalculated.' }, { status: 500 });
+    return unexpectedErrorResponse('Coverage recalculation failed', error, 'Coverage analysis could not be recalculated.');
   }
 }

@@ -1,4 +1,5 @@
 import { generateStoryDraft } from '@/lib/openai/draft-story';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { queueReadyDrafts } from '@/lib/publication-queue';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { isUuid } from '@/lib/validation';
@@ -24,7 +25,6 @@ export async function POST(request: Request) {
       return Response.json({ ...result, queueWarning });
     }
   } catch (error) {
-    console.error('Story drafting failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'The article draft could not be created.' }, { status: 500 });
+    return unexpectedErrorResponse('Story drafting failed', error, 'The article draft could not be created.');
   }
 }

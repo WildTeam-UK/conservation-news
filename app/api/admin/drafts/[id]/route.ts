@@ -1,4 +1,5 @@
 import { cleanDraftContent, type StoryDraftContent } from '@/lib/openai/draft-story';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { recordUnsplashSelection } from '@/lib/images/unsplash';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { queueReadyDrafts } from '@/lib/publication-queue';
@@ -86,7 +87,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return Response.json({ saved: true, queueWarning });
     }
   } catch (error) {
-    console.error('Draft save failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'The draft could not be saved.' }, { status: 500 });
+    return unexpectedErrorResponse('Draft save failed', error, 'The draft could not be saved.');
   }
 }

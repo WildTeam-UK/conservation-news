@@ -1,4 +1,5 @@
 import { advanceEditorialRun, startEditorialRun } from '@/lib/editorial-runner';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { isUuid } from '@/lib/validation';
 
@@ -29,7 +30,6 @@ export async function POST(request: Request) {
     }
     return Response.json({ error: 'A valid run action is required.' }, { status: 400 });
   } catch (error) {
-    console.error('Editorial run request failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'The editorial run could not continue.' }, { status: 500 });
+    return unexpectedErrorResponse('Editorial run request failed', error, 'The editorial run could not continue.');
   }
 }

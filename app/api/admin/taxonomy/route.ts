@@ -1,4 +1,5 @@
 import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 
@@ -12,8 +13,7 @@ export async function POST() {
     const result = await runTaxonomyGovernance({ force: true, maxEntities: 30 });
     return Response.json(result);
   } catch (error) {
-    console.error('Taxonomy governance failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'Taxonomy governance could not be completed.' }, { status: 500 });
+    return unexpectedErrorResponse('Taxonomy governance failed', error, 'Taxonomy governance could not be completed.');
   }
 }
 

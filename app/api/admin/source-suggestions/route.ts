@@ -1,4 +1,5 @@
 import { enrichSourceSuggestionDescriptions, rebuildSourceSuggestionsFromResearch, scanBestSourceSuggestions } from '@/lib/source-discovery';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 
 export const dynamic = 'force-dynamic';
@@ -13,7 +14,6 @@ export async function POST() {
     const scanned = await scanBestSourceSuggestions(8);
     return Response.json({ ...rebuilt, ...enriched, ...scanned });
   } catch (error) {
-    console.error('Source recommendation refresh failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'Source recommendations could not be refreshed.' }, { status: 500 });
+    return unexpectedErrorResponse('Source recommendation refresh failed', error, 'Source recommendations could not be refreshed.');
   }
 }

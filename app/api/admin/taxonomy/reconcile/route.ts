@@ -1,4 +1,5 @@
 import { reconcileExistingTaxonomy } from '@/lib/taxonomy-reconciliation';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { queueReadyDrafts } from '@/lib/publication-queue';
 
@@ -13,7 +14,6 @@ export async function POST() {
     if (result.processed) await queueReadyDrafts(null, null, true);
     return Response.json(result);
   } catch (error) {
-    console.error('Taxonomy reconciliation failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'Existing articles could not be reconciled.' }, { status: 500 });
+    return unexpectedErrorResponse('Taxonomy reconciliation failed', error, 'Existing articles could not be reconciled.');
   }
 }
