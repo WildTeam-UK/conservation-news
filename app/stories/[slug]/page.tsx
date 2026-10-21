@@ -2,11 +2,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { ArticleTemplate } from '@/components/article-template';
+import { EditorialPageEnd } from '@/components/editorial-page-end';
 import { InteriorHeader } from '@/components/interior-header';
 import { JsonLd } from '@/components/json-ld';
-import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
-import { SimilarStories } from '@/components/similar-stories';
-import { SiteFooter } from '@/components/site-footer';
 import { getGoodNewsSettings, getPublishedStories, getPublishedStory, publishedStoryToArticle, publishedStoryToListing, publishedTopics, relatedPublishedStories } from '@/lib/published-stories';
 import { articleMetadata, newsArticleJsonLd } from '@/lib/seo';
 
@@ -37,8 +35,6 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
     <InteriorHeader />
     <JsonLd data={structuredData} />
     <ArticleTemplate article={article} sharePath={`/stories/${published.slug}`} />
-    <WeeklyDigestNewsletterCta id="article-digest-email" className="editorial-newsletter-cta shell" />
-    <SimilarStories stories={related} description="Keep exploring this topic." />
-    <SiteFooter />
+    <EditorialPageEnd newsletterId="article-digest-email" stories={related} description="Keep exploring this topic." />
   </main>;
 }

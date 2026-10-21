@@ -2,10 +2,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { EditorialArchiveCard } from '@/components/editorial-archive-card';
+import { EditorialPageEnd } from '@/components/editorial-page-end';
 import { InteriorHeader } from '@/components/interior-header';
-import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
-import { SimilarStories } from '@/components/similar-stories';
-import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { StoryTags } from '@/components/story-tags';
 import { getGoodNewsSettings, getPublishedStories, getPublicTopic, publishedStoryToListing, publishedTopics, relatedPublishedStories } from '@/lib/published-stories';
@@ -61,8 +59,6 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
         key={story.slug}
       />)}
     </section>
-    <WeeklyDigestNewsletterCta id={`topic-${slug}-digest-email`} className="editorial-newsletter-cta shell" />
-    <SimilarStories stories={related} />
-    <SiteFooter />
+    <EditorialPageEnd newsletterId={`topic-${slug}-digest-email`} stories={related} />
   </main>;
 }

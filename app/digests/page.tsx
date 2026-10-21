@@ -2,10 +2,8 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { EditorialArchiveCard } from '@/components/editorial-archive-card';
+import { EditorialPageEnd } from '@/components/editorial-page-end';
 import { InteriorHeader } from '@/components/interior-header';
-import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
-import { SimilarStories } from '@/components/similar-stories';
-import { SiteFooter } from '@/components/site-footer';
 import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedWeeklyDigests, type DigestStoryRecord, type DigestType } from '@/lib/digests';
 import { getGoodNewsSettings, getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
 import { InlineBrand } from '@/components/inline-brand';
@@ -56,8 +54,6 @@ export default async function DigestArchive() {
         />;
       })}
     </section> : <div className="digest-archive-empty shell"><h3>No digest editions yet</h3><p>The first published digest will appear here.</p></div>}
-    <div id="digest-archive-newsletter" className="archive-newsletter-anchor"><WeeklyDigestNewsletterCta id="digest-archive-email" className="editorial-newsletter-cta shell" /></div>
-    <SimilarStories stories={latestStories} description="Explore the latest reporting behind the briefings." />
-    <SiteFooter />
+    <EditorialPageEnd newsletterId="digest-archive-email" newsletterAnchorId="digest-archive-newsletter" stories={latestStories} description="Explore the latest reporting behind the briefings." />
   </main>;
 }

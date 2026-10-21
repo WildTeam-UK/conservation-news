@@ -2,10 +2,8 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { EditorialArchiveCard } from '@/components/editorial-archive-card';
+import { EditorialPageEnd } from '@/components/editorial-page-end';
 import { InteriorHeader } from '@/components/interior-header';
-import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
-import { SimilarStories } from '@/components/similar-stories';
-import { SiteFooter } from '@/components/site-footer';
 import { StoryTags } from '@/components/story-tags';
 import { getGoodNewsSettings, getPublishedStories, getPublicTag, publishedStoryToListing, publishedTags, relatedPublishedStories } from '@/lib/published-stories';
 import { cleanCopy, storyHref, storyImage } from '@/lib/stories';
@@ -46,8 +44,6 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
       linkLabel="Read story"
       key={story.slug}
     />)}</section>
-    <WeeklyDigestNewsletterCta id={`tag-${slug}-digest-email`} className="editorial-newsletter-cta shell" />
-    <SimilarStories stories={related} />
-    <SiteFooter />
+    <EditorialPageEnd newsletterId={`tag-${slug}-digest-email`} stories={related} />
   </main>;
 }

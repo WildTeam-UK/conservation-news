@@ -2,10 +2,8 @@
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { EditorialArchiveCard } from '@/components/editorial-archive-card';
+import { EditorialPageEnd } from '@/components/editorial-page-end';
 import { InteriorHeader } from '@/components/interior-header';
-import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
-import { SimilarStories } from '@/components/similar-stories';
-import { SiteFooter } from '@/components/site-footer';
 import { TopicTag } from '@/components/topic-tag';
 import { getGoodNewsSettings, getPublishedStories, publishedConservationOutlook, publishedStoryToListing, relatedPublishedStories } from '@/lib/published-stories';
 import { cleanCopy, storyHref, storyImage } from '@/lib/stories';
@@ -49,8 +47,6 @@ export default async function GoodNewsPage() {
         key={story.slug}
       />)}
     </section> : <section className="good-news-empty shell"><h2>The threshold is doing its job.</h2><p>No published story currently has enough evidence to qualify. New stories will appear here automatically when they meet the standard.</p></section>}
-    <WeeklyDigestNewsletterCta id="good-news-digest-email" className="editorial-newsletter-cta shell" />
-    <SimilarStories stories={related} description="Keep exploring the latest conservation coverage." />
-    <SiteFooter />
+    <EditorialPageEnd newsletterId="good-news-digest-email" stories={related} description="Keep exploring the latest conservation coverage." />
   </main>;
 }
