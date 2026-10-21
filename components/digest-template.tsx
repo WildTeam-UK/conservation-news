@@ -95,7 +95,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
   const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
   const resolvedImageUrl = imageUrl ?? heroStory?.image_url ?? null;
-  const resolvedImageAlt = imageAlt ?? heroStory?.image_alt ?? '';
+  const resolvedImageAlt = imageAlt?.trim() || heroStory?.image_alt?.trim() || `Illustrative image for ${cleanDigestText(content.headline)}`;
   const sourceTopics = stories.flatMap((story) => story.topics ?? []);
   const displayTopics = (content.topics?.length ? content.topics : [...new Set(sourceTopics)]).slice(0, 3);
   const currentDate = londonCalendarDateFormatter.format(new Date(periodEnd));
@@ -131,7 +131,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           if (sectionImage?.image_url) usedImages.add(sectionImage.image_url);
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
-            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><EditorialImageCredit credit={sectionImage.image_credit} /></figure> : null}
+            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt?.trim() || `Illustrative image for ${cleanDigestText(section.heading)}`} /><EditorialImageCredit credit={sectionImage.image_credit} /></figure> : null}
             {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <StreamlinedNewsletterCta id="digest-email-inline" /> : null}</Fragment>)}
           </section>;
         })}
