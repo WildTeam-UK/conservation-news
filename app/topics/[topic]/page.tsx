@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { EditorialArchiveCard } from '@/components/editorial-archive-card';
 import { EditorialPageEnd } from '@/components/editorial-page-end';
+import { ArchiveHero } from '@/components/archive-hero';
 import { InteriorHeader } from '@/components/interior-header';
 import { TopicTag } from '@/components/topic-tag';
 import { StoryTags } from '@/components/story-tags';
@@ -40,12 +41,12 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
 
   return <main className="archive-page">
     <InteriorHeader />
-    <section className="topic-page-hero shell">
-      <TopicTag topic={topic} />
-      <h1>{topic}</h1>
-      <p><InlineBrand text={archive.description ?? `The latest reporting, analysis and practical ideas shaping ${topic.toLowerCase()} conservation.`} /></p>
-      <span>{topicStories.length} {topicStories.length === 1 ? 'story' : 'stories'}</span>
-    </section>
+    <ArchiveHero
+      label={<TopicTag topic={topic} />}
+      title={topic}
+      description={<InlineBrand text={archive.description ?? `The latest reporting, analysis and practical ideas shaping ${topic.toLowerCase()} conservation.`} />}
+      meta={`${topicStories.length} ${topicStories.length === 1 ? 'story' : 'stories'}`}
+    />
     <section className="topic-page-grid shell">
       {topicStories.map((story, index) => <EditorialArchiveCard
         featured={index === 0}

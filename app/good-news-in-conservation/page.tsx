@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { EditorialArchiveCard } from '@/components/editorial-archive-card';
 import { EditorialPageEnd } from '@/components/editorial-page-end';
+import { ArchiveHero } from '@/components/archive-hero';
 import { InteriorHeader } from '@/components/interior-header';
 import { TopicTag } from '@/components/topic-tag';
 import { getGoodNewsSettings, getPublishedStories, publishedConservationOutlook, publishedStoryToListing, relatedPublishedStories } from '@/lib/published-stories';
@@ -28,12 +29,12 @@ export default async function GoodNewsPage() {
 
   return <main className="archive-page good-news-page">
     <InteriorHeader />
-    <section className="topic-page-hero shell">
-      <GoodNewsBadge />
-      <h1>Progress worth following.</h1>
-      <p>Conservation can be difficult work, so there is always room for some good news. Here you will find evidence-led stories showing clear progress for nature and conservation practice. <a className="good-news-method-link" href="/how-we-classify-good-news">See how <InlineBrand text="WILDNEWS" /> classifies good news <ArrowRight /></a></p>
-      <span>{stories.length} {stories.length === 1 ? 'story' : 'stories'}</span>
-    </section>
+    <ArchiveHero
+      label={<GoodNewsBadge />}
+      title="Progress worth following."
+      description={<>Conservation can be difficult work, so there is always room for some good news. Here you will find evidence-led stories showing clear progress for nature and conservation practice. <a className="good-news-method-link" href="/how-we-classify-good-news">See how <InlineBrand text="WILDNEWS" /> classifies good news <ArrowRight /></a></>}
+      meta={`${stories.length} ${stories.length === 1 ? 'story' : 'stories'}`}
+    />
     {stories.length ? <section className="topic-page-grid shell">
       {stories.map((story, index) => <EditorialArchiveCard
         featured={index === 0}

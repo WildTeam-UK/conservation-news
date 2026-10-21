@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
 import { EditorialArchiveCard } from '@/components/editorial-archive-card';
 import { EditorialPageEnd } from '@/components/editorial-page-end';
+import { ArchiveHero } from '@/components/archive-hero';
 import { InteriorHeader } from '@/components/interior-header';
 import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedWeeklyDigests, type DigestStoryRecord, type DigestType } from '@/lib/digests';
 import { getGoodNewsSettings, getPublishedStories, publishedStoryToListing } from '@/lib/published-stories';
@@ -29,12 +30,12 @@ export default async function DigestArchive() {
 
   return <main className="archive-page digest-archive-page">
     <InteriorHeader />
-    <section className="topic-page-hero shell">
-      <div className="digest-archive-type-tags"><DigestTag type="daily" /><DigestTag type="weekly" /></div>
-      <h1><InlineBrand text="WILDNEWS" /> digests</h1>
-      <p>Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week. <a className="digest-archive-subscribe-link" href="#digest-archive-newsletter">Subscribe to the <InlineBrand text="WILDNEWS" /> weekly <ArrowRight /></a></p>
-      <span>{digests.length} {digests.length === 1 ? 'edition' : 'editions'}</span>
-    </section>
+    <ArchiveHero
+      label={<div className="digest-archive-type-tags"><DigestTag type="daily" /><DigestTag type="weekly" /></div>}
+      title={<><InlineBrand text="WILDNEWS" /> digests</>}
+      description={<>Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week. <a className="digest-archive-subscribe-link" href="#digest-archive-newsletter">Subscribe to the <InlineBrand text="WILDNEWS" /> weekly <ArrowRight /></a></>}
+      meta={`${digests.length} ${digests.length === 1 ? 'edition' : 'editions'}`}
+    />
     {digests.length ? <section className="topic-page-grid shell">
       {digests.map((digest, index) => {
         const type = digestType(digest);

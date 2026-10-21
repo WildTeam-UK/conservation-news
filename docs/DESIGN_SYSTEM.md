@@ -202,7 +202,7 @@ Friday produces a weekly edition instead of a daily edition.
 
 ### Archives
 
-Topic, approved-tag, Good News and digest archives use a shared visual language: a full-width header, description and count, followed by one featured story and standard listing cards. Newsletter and related-story sections sit beneath the archive results where configured.
+Topic, approved-tag, Good News and digest archives use the shared `ArchiveHero` component for their label, full-width title, description and result count. Its label row normalises spacing across differently sized topic, tag, Good News and digest pills. Archives then show one featured story followed by standard listing cards. Newsletter and related-story sections sit beneath the archive results where configured.
 
 ## Admin workspace
 
