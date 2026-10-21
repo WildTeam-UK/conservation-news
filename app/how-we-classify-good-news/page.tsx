@@ -39,7 +39,7 @@ export default function GoodNewsMethodPage() {
         <section><p className="eyebrow">AI-assisted, openly stated</p><h2>A useful signal, not a verdict</h2><p>AI applies the same editorial rubric to each source-backed article. It can still miss context or make mistakes, so the label should help discovery rather than replace the original evidence.</p><p>Every briefing retains its source links so readers can check the reporting behind the classification.</p></section>
       </div>
 
-      <section className="ai-next-step"><div><p className="eyebrow">See the results</p><h2>Find progress worth following.</h2></div><p>Explore the conservation stories that currently meet the <InlineBrand text="WILDNEWS" /> evidence and confidence thresholds.</p><Link className="action-button" href="/good-news-in-conservation">Read Good News <ArrowRight /></Link></section>
+      <section className="ai-next-step"><div><p className="eyebrow">See the results</p><h2>Find progress worth following.</h2></div><p>Explore the conservation stories that currently meet the <InlineBrand text="WILDNEWS" /> evidence and confidence thresholds.</p><Link className="action-button" href="/good-news-in-conservation" prefetch={false}>Read Good News <ArrowRight /></Link></section>
     </article>
     <SiteFooter />
   </main>;

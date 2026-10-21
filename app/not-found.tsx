@@ -10,7 +10,7 @@ export default function NotFound() {
       <p className="eyebrow">404</p>
       <h1>We could not find that page.</h1>
       <p>The story, digest or archive may have moved, or it may no longer be available.</p>
-      <Link className="action-button" href="/">Explore the latest stories <ArrowRight /></Link>
+      <Link className="action-button" href="/" prefetch={false}>Explore the latest stories <ArrowRight /></Link>
     </section>
     <SiteFooter />
   </main>;

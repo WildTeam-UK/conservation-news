@@ -111,7 +111,7 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
       <div className="article-topics">{article.goodNews ? <GoodNewsBadge href="/good-news-in-conservation" /> : null}{article.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
       <h1>{article.headline}</h1>
       <div className="article-coverage-summary" aria-label="Coverage analysis summary">
-        <div className="coverage-summary-heading"><span>Coverage mix</span><Link className="analysis-help" href="/how-coverage-analysis-works" aria-label="Learn how our coverage analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">A quick view of the ecological, evidence and consensus signals found across current coverage. Click to learn how it works.</span></Link></div>
+        <div className="coverage-summary-heading"><span>Coverage mix</span><Link className="analysis-help" href="/how-coverage-analysis-works" aria-label="Learn how our coverage analysis works" prefetch={false}><CircleHelp /><span className="analysis-tooltip" role="tooltip">A quick view of the ecological, evidence and consensus signals found across current coverage. Click to learn how it works.</span></Link></div>
         <div className="article-coverage-track">
           <CoverageSummaryBinary title="Ecological / Economic" firstLabel="Ecological" firstValue={coverage.ecological} secondLabel="Economic" tone="ecology-signal" />
           <CoverageSummaryBinary title="Evidence / Opinion" firstLabel="Evidence" firstValue={coverage.evidence} secondLabel="Opinion" tone="evidence-signal" />
@@ -143,7 +143,7 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
         <BinaryAnalysis title="Evidence-led / Opinion-led" firstLabel="Evidence-led" firstValue={coverage.evidence} secondLabel="Opinion-led" tone="evidence-signal" tooltip="Shows how strongly the coverage relies on research, data and attributable evidence versus commentary, interpretation or argument." />
         <BinaryAnalysis title="Consensus / Contested" firstLabel="Consensus" firstValue={coverage.consensus} secondLabel="Contested" tone="consensus-signal" tooltip="Shows how much agreement exists across the sources and viewpoints represented in current coverage. This refers to coverage consensus, not scientific consensus." />
         <small>Coverage analysis reflects the sources, framing and viewpoints currently represented in this story. These signals are not judgements of factual accuracy and may change as new reporting and sources are added.</small>
-        <Link className="analysis-link" href="/how-coverage-analysis-works">How our coverage analysis works <ArrowRight /></Link>
+        <Link className="analysis-link" href="/how-coverage-analysis-works" prefetch={false}>How our coverage analysis works <ArrowRight /></Link>
       </aside><CoursePromotion course={article.coursePromotion ?? GENERAL_TRAINING_PROMOTION} /></div>
     </div>
   </article>;

@@ -42,7 +42,7 @@ export default function AiTransparencyPage() {
         <section><p className="eyebrow">Our publishing standard</p><h2>Source links stay visible</h2><p>Every article page keeps the original source links close to the summary. Readers can compare the briefing with the primary material, check other coverage and form their own view.</p><p>Where a briefing is wrong or misleading, it should be corrected clearly. AI assistance is never a reason to hide responsibility for what appears on the site.</p></section>
       </div>
 
-      <section className="ai-next-step"><div><p className="eyebrow">Keep reading critically</p><h2>Go to the evidence.</h2></div><p>Use <InlineBrand text="WILDNEWS" /> to discover what is happening, then follow the source links for the detail, uncertainty and reporting behind each story.</p><Link className="action-button" href="/">Explore the stories <ArrowRight /></Link></section>
+      <section className="ai-next-step"><div><p className="eyebrow">Keep reading critically</p><h2>Go to the evidence.</h2></div><p>Use <InlineBrand text="WILDNEWS" /> to discover what is happening, then follow the source links for the detail, uncertainty and reporting behind each story.</p><Link className="action-button" href="/" prefetch={false}>Explore the stories <ArrowRight /></Link></section>
     </article>
 
     <SiteFooter />

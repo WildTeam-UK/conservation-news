@@ -13,7 +13,7 @@ export default function AdminError({ reset }: { error: Error & { digest?: string
       <p className="admin-login-intro">The request failed before the editorial page was ready. Retry it now. If the problem continues, check the latest deployment and server logs before changing any content.</p>
       <div className="admin-error-actions">
         <button className="admin-primary-button" type="button" onClick={reset}><RotateCcw aria-hidden="true" /> Retry this view</button>
-        <Link href="/admin">Return to overview</Link>
+        <Link href="/admin" prefetch={false}>Return to overview</Link>
       </div>
     </section>
   </main>;
