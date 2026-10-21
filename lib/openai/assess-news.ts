@@ -3,6 +3,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { estimateLunaTokenCost } from './pricing';
 import { EDITORIAL_TOPICS, type EditorialTopicName } from '@/lib/taxonomy';
 import { aiInstructions, parseAiJson } from './house-style';
+import { sourceRelationName } from '@/lib/source-relations';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'assessment-v2-recent-event-matching';
@@ -82,11 +83,6 @@ const emptyResult = (overrides: Partial<AssessmentResult> = {}): AssessmentResul
   selectedClusterIds: [],
   ...overrides,
 });
-
-function sourceName(source: SourceItem['sources']) {
-  if (Array.isArray(source)) return source[0]?.name ?? 'Unknown';
-  return source?.name ?? 'Unknown';
-}
 
 const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 const maxScore = (existing: number | null, incoming: number) => Math.max(existing ?? 0, incoming);
@@ -178,7 +174,7 @@ export async function assessUnprocessedItems(): Promise<AssessmentResult> {
   const completedResearchClusters = new Set((completedPackRows ?? []).map((pack) => pack.cluster_id));
 
   const input = {
-    new_items: items.map((item) => ({ id: item.id, source: sourceName(item.sources), title: item.title, summary: item.summary?.slice(0, 3000) ?? '', published_at: item.published_at })),
+    new_items: items.map((item) => ({ id: item.id, source: sourceRelationName(item.sources, 'Unknown'), title: item.title, summary: item.summary?.slice(0, 3000) ?? '', published_at: item.published_at })),
     recent_story_clusters: recentClusters.map((cluster) => ({
       id: cluster.id,
       working_title: cluster.working_title,

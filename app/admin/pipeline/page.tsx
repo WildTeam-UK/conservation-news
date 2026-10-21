@@ -6,6 +6,7 @@ import { AdminNav } from '@/components/admin-nav';
 import { RunAssessmentButton } from '@/components/run-assessment-button';
 import { RunCollectionButton } from '@/components/run-collection-button';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { sourceRelationName } from '@/lib/source-relations';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,11 +32,6 @@ type TopCandidate = {
   evidence_score: number | null;
   assessment: { primary_topic?: string } | null;
 };
-
-function sourceName(source: RecentItem['sources']) {
-  if (Array.isArray(source)) return source[0]?.name ?? 'Unknown source';
-  return source?.name ?? 'Unknown source';
-}
 
 const dateTime = new Intl.DateTimeFormat('en-GB', {
   dateStyle: 'medium',
@@ -101,7 +97,7 @@ export default async function PipelinePage() {
         <div className="pipeline-columns">
           <section className="pipeline-panel">
             <div className="overview-section-heading"><div><p className="eyebrow">Latest arrivals</p><h2>Recently collected</h2></div><a href="/admin/collected">Open inbox <ArrowRight /></a></div>
-            {recentItems.length ? <div className="pipeline-recent-list">{recentItems.map((item) => <article key={item.id}><div><span>{sourceName(item.sources)}</span><time dateTime={item.published_at ?? item.discovered_at}>{dateTime.format(new Date(item.published_at ?? item.discovered_at))}</time></div><a href={item.url} target="_blank" rel="noreferrer">{item.title} <ExternalLink /></a><strong className={`assessment-status ${item.assessment_status}`}>{item.assessment_status}</strong></article>)}</div> : <div className="overview-calm-state"><Inbox /><p>No source items have been collected yet.</p></div>}
+            {recentItems.length ? <div className="pipeline-recent-list">{recentItems.map((item) => <article key={item.id}><div><span>{sourceRelationName(item.sources)}</span><time dateTime={item.published_at ?? item.discovered_at}>{dateTime.format(new Date(item.published_at ?? item.discovered_at))}</time></div><a href={item.url} target="_blank" rel="noreferrer">{item.title} <ExternalLink /></a><strong className={`assessment-status ${item.assessment_status}`}>{item.assessment_status}</strong></article>)}</div> : <div className="overview-calm-state"><Inbox /><p>No source items have been collected yet.</p></div>}
           </section>
 
           <section className="pipeline-panel">

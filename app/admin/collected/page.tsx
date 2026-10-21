@@ -4,6 +4,7 @@ import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
 import { RunAssessmentButton } from '@/components/run-assessment-button';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { sourceRelationName } from '@/lib/source-relations';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,11 +25,6 @@ type CollectedItem = {
   assessment_error: string | null;
   sources: { name: string } | { name: string }[] | null;
 };
-
-function sourceName(source: CollectedItem['sources']) {
-  if (Array.isArray(source)) return source[0]?.name ?? 'Unknown source';
-  return source?.name ?? 'Unknown source';
-}
 
 export default async function CollectedItemsPage() {
   const { supabase } = await requireContentAdmin();
@@ -64,7 +60,7 @@ export default async function CollectedItemsPage() {
           <section className="collected-list" aria-label="Latest collected source items">
             {items.map((item) => (
               <article className="collected-item" key={item.id}>
-                <div className="collected-item-meta"><span>{sourceName(item.sources)}</span><time dateTime={item.published_at ?? item.discovered_at}>{dateFormatter.format(new Date(item.published_at ?? item.discovered_at))}</time><strong className={`assessment-status ${item.assessment_status}`}>{item.assessment_status.replace('_', ' ')}</strong></div>
+                <div className="collected-item-meta"><span>{sourceRelationName(item.sources)}</span><time dateTime={item.published_at ?? item.discovered_at}>{dateFormatter.format(new Date(item.published_at ?? item.discovered_at))}</time><strong className={`assessment-status ${item.assessment_status}`}>{item.assessment_status.replace('_', ' ')}</strong></div>
                 <h2><a href={item.url} target="_blank" rel="noreferrer">{item.title} <ExternalLink /></a></h2>
                 {item.summary ? <p>{item.summary}</p> : null}
                 {item.assessment_status === 'failed' && item.assessment_error ? <small className="assessment-error">Assessment will retry automatically: {item.assessment_error}</small> : null}

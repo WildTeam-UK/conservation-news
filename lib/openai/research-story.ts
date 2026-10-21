@@ -4,6 +4,7 @@ import { estimateLunaTokenCost } from './pricing';
 import { PRIMARY_TOPICS, SECONDARY_TOPICS, TAXONOMY_REVIEW_TOPIC } from '@/lib/taxonomy';
 import { recordResearchSourceSuggestions } from '@/lib/source-discovery';
 import { aiInstructions, parseAiJson } from './house-style';
+import { sourceRelationName } from '@/lib/source-relations';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'research-v3-conservation-outlook';
@@ -68,11 +69,6 @@ export type ResearchResult = {
   estimatedTokenCostUsd: number;
   alreadyCompleted: boolean;
 };
-
-function sourceName(source: OriginalSource['sources']) {
-  if (Array.isArray(source)) return source[0]?.name ?? 'Unknown source';
-  return source?.name ?? 'Unknown source';
-}
 
 function safeUrl(value: string) {
   try {
@@ -250,7 +246,7 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
           assessment: cluster.assessment,
           original_sources: originalSources.map((item) => ({
             title: item.title,
-            publisher: sourceName(item.sources),
+            publisher: sourceRelationName(item.sources),
             url: item.url,
             summary: item.summary?.slice(0, 4000) ?? '',
             published_at: item.published_at,
@@ -377,7 +373,7 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
       const safe = safeUrl(original.url);
       if (!safe) continue;
       validSourceUrls.add(comparable);
-      sources.push({ title: original.title, publisher: sourceName(original.sources), url: safe, source_type: 'news', why_relevant: 'Original collected reporting used to identify this candidate.' });
+      sources.push({ title: original.title, publisher: sourceRelationName(original.sources), url: safe, source_type: 'news', why_relevant: 'Original collected reporting used to identify this candidate.' });
     }
 
     const cleanClaims = (claims: ResearchClaim[]) => claims.map((claim) => ({

@@ -6,6 +6,7 @@ import { GenerateDraftButton } from '@/components/generate-draft-button';
 import { ResearchCandidateButton } from '@/components/research-candidate-button';
 import type { ResearchClaim, ResearchContent } from '@/lib/openai/research-story';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { sourceRelationName } from '@/lib/source-relations';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,11 +61,6 @@ type ResearchPack = {
   web_search_actions: number;
   error_message: string | null;
 };
-
-function sourceName(source: CandidateSource['sources']) {
-  if (Array.isArray(source)) return source[0]?.name ?? 'Unknown source';
-  return source?.name ?? 'Unknown source';
-}
 
 function ResearchClaims({ claims, sourceNumbers }: { claims: ResearchClaim[]; sourceNumbers: Map<string, number> }) {
   if (!claims.length) return <p className="research-none">Nothing material was identified.</p>;
@@ -209,7 +205,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
                     {assessment.rationale ? <p>{assessment.rationale}</p> : null}
                     <div className="candidate-sources">
                       <h3><Newspaper /> Source {sources.length === 1 ? 'story' : 'stories'}</h3>
-                      {sources.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.id}><span>{sourceName(source.sources)}</span>{source.title}<ExternalLink /></a>)}
+                      {sources.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.id}><span>{sourceRelationName(source.sources)}</span>{source.title}<ExternalLink /></a>)}
                     </div>
                     {research?.status === 'completed' ? <><p className="research-complete-label"><ShieldCheck /> Research complete</p>{draftId ? <a className="candidate-edit-draft" href={`/admin/drafts/${draftId}`}>Edit draft</a> : <GenerateDraftButton clusterId={candidate.id} />}</> : research?.status === 'researching' ? <p className="research-progress-label">Research is in progress. Refresh shortly.</p> : <ResearchCandidateButton clusterId={candidate.id} retry={research?.status === 'failed'} />}
                     {research?.status === 'failed' && research.error_message ? <p className="research-error-detail">The previous attempt failed and can be retried.</p> : null}
