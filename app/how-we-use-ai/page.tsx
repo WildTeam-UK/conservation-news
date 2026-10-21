@@ -38,7 +38,7 @@ export default function AiTransparencyPage() {
       </section>
 
       <div className="ai-editorial-grid">
-        <section><p className="eyebrow">What this prototype is</p><h2>Aggregation, not original reporting</h2><p>The current <InlineBrand text="WILDNEWS" /> site is an editorial prototype built with AI assistance. Article briefings are generated from publicly available reporting and linked source material. They should not be quoted as eyewitness reporting or treated as a replacement for the organisations and journalists who gathered the facts.</p><p>Names, presentation and sample editorial analysis are used to demonstrate how the finished service could work.</p></section>
+        <section><p className="eyebrow">What this service is</p><h2>Aggregation, not original reporting</h2><p><InlineBrand text="WILDNEWS" /> uses AI assistance to create article briefings from publicly available reporting and linked source material. They should not be quoted as eyewitness reporting or treated as a replacement for the organisations and journalists who gathered the facts.</p><p>Each briefing is designed to help readers understand a story quickly, compare the available coverage and find the underlying reporting.</p></section>
         <section><p className="eyebrow">Our publishing standard</p><h2>Source links stay visible</h2><p>Every article page keeps the original source links close to the summary. Readers can compare the briefing with the primary material, check other coverage and form their own view.</p><p>Where a briefing is wrong or misleading, it should be corrected clearly. AI assistance is never a reason to hide responsibility for what appears on the site.</p></section>
       </div>
 
