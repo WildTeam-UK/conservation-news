@@ -130,7 +130,7 @@ The admin surface standardises card borders and shadows through `--admin-card-bo
 
 Use existing button classes or component-owned styles:
 
-- Primary: `.site-navigation-button.primary`, `.read-more-button`, `.action-button` and CTA buttons.
+- Primary: `.read-more-button`, `.action-button` and CTA buttons.
 - Secondary outline: `.site-navigation-button.secondary`.
 - Compact admin actions remain component-specific but share grey borders, 8–10px radii and uppercase labels.
 

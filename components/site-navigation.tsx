@@ -20,7 +20,7 @@ export function SiteNavigation() {
   const [open, setOpen] = useState(false);
   const closeMenu = () => setOpen(false);
 
-  return <div className="masthead site-masthead">
+  return <div className="site-masthead">
     <Brand />
     <button className="site-menu-toggle" type="button" aria-expanded={open} aria-controls="site-navigation" aria-label={open ? 'Close navigation menu' : 'Open navigation menu'} onClick={() => setOpen((current) => !current)}>
       {open ? <X aria-hidden="true" /> : <Menu aria-hidden="true" />}
