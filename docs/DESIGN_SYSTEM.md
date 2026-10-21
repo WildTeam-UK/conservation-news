@@ -18,6 +18,8 @@ The public application defines its core tokens in `app/globals.css`.
 | `--paper` / `--background` | `#ffffff` | Page and card surfaces |
 | `--rule` / `--border` | `#d6d1d3` | Standard dividers and quiet borders |
 | `--muted` | `#5d5d61` | Secondary copy, dates and metadata |
+| `--footer-surface` | `#2a2f34` | Shared WildTeam footer background |
+| `--footer-muted` | `#f5f5f5` | Secondary footer links and legal copy |
 | `--accent-coral` | `#e84a43` | Contested coverage signal |
 | `--accent-orange` | `#ff8044` | Economic coverage signal, warning progress and retained accent treatments |
 | `--status-success-text` / `--status-success-surface` | `#17602d` / `#e7f5e9` | Successful admin states and confirmation messages |
