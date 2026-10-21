@@ -8,6 +8,7 @@ import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 import { readableHeroColour } from '@/lib/images/colour';
 import { getUnsplashImageColour } from '@/lib/images/unsplash';
 import { londonCalendarDateFormatter, londonLongDateFormatter } from '@/lib/date-format';
+import { londonLocalDateTimeToUtc } from '@/lib/london-time';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'digest-v2-linked-editorial';
@@ -51,27 +52,9 @@ function londonDate(value: Date) {
   return londonCalendarDateFormatter.format(value);
 }
 
-const londonDateTime = new Intl.DateTimeFormat('en-GB', {
-  timeZone: 'Europe/London',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hourCycle: 'h23',
-});
-
 function londonMidnight(date: string) {
   const [year, month, day] = date.split('-').map(Number);
-  const target = Date.UTC(year, month - 1, day);
-  let guess = target;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const parts = Object.fromEntries(londonDateTime.formatToParts(new Date(guess)).map((part) => [part.type, part.value]));
-    const represented = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
-    guess += target - represented;
-  }
-  return new Date(guess);
+  return new Date(londonLocalDateTimeToUtc(year, month, day));
 }
 
 function addCalendarDay(date: string) {

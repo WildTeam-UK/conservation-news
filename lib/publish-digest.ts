@@ -4,19 +4,11 @@ import { firstRelation } from '@/lib/supabase/relations';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 import { isCalendarDate } from '@/lib/validation';
 import { londonCalendarDateFormatter } from '@/lib/date-format';
-
-const londonDateTime = new Intl.DateTimeFormat('en-GB', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' });
+import { londonLocalDateTimeToUtc } from '@/lib/london-time';
 
 function londonPublicationTime(date: string) {
   const [year, month, day] = date.split('-').map(Number);
-  const target = Date.UTC(year, month - 1, day, 14);
-  let guess = target;
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const parts = Object.fromEntries(londonDateTime.formatToParts(new Date(guess)).map((part) => [part.type, part.value]));
-    const represented = Date.UTC(Number(parts.year), Number(parts.month) - 1, Number(parts.day), Number(parts.hour), Number(parts.minute), Number(parts.second));
-    guess += target - represented;
-  }
-  return new Date(guess);
+  return new Date(londonLocalDateTimeToUtc(year, month, day, 14));
 }
 
 export async function publishDigest(storyId: string, { reviewerId, publicationDate, automated = false }: { reviewerId: string | null; publicationDate?: string; automated?: boolean }) {
