@@ -28,7 +28,7 @@ export function EditorialArchiveCard({
 }: EditorialArchiveCardProps) {
   return <article className={featured ? 'topic-story topic-story-featured' : 'topic-story'}>
     <a className="topic-story-image" href={href} aria-label={`Read: ${title}`}>
-      {image ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={image} alt={imageAlt} /></> : null}
+      {image ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={image} alt={imageAlt} loading={featured ? 'eager' : 'lazy'} fetchPriority={featured ? 'high' : undefined} decoding="async" /></> : null}
       {goodNews ? <GoodNewsBadge overlay /> : null}
     </a>
     <div>

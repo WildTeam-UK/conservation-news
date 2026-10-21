@@ -119,7 +119,7 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
         </div>
       </div>
     </header>
-    <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt?.trim() || `Illustrative image for ${article.headline}`} />{article.goodNews ? <GoodNewsBadge overlay /> : null}<EditorialImageCredit credit={article.imageCredit} /></> : <span>Lead image to be selected</span>}</figure>
+    <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt?.trim() || `Illustrative image for ${article.headline}`} loading="eager" fetchPriority="high" decoding="async" />{article.goodNews ? <GoodNewsBadge overlay /> : null}<EditorialImageCredit credit={article.imageCredit} /></> : <span>Lead image to be selected</span>}</figure>
     <section className="article-overview shell">
       <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}<p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
       <h2>The story at a glance</h2>

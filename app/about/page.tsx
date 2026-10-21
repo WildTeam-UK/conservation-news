@@ -20,7 +20,7 @@ export default function About() {
       <h1>We tell the whole story of a changing natural world.</h1>
       <p className="about-intro"><InlineBrand text="WILDNEWS" /> is an independent, nonprofit newsroom covering the people, places and ideas shaping conservation, with curiosity, rigour and a stubborn belief that progress deserves attention.</p>
     </section>
-    <section className="about-image"><img src="https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1800&q=85" alt="Sunlight filtering through a dense green forest" /></section>
+    <section className="about-image"><img src="https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1800&q=85" alt="Sunlight filtering through a dense green forest" loading="eager" fetchPriority="high" decoding="async" /></section>
     <section className="about-values shell">
       <div><p className="eyebrow">Why we exist</p><h2>Nature is not a niche.</h2></div>
       <div className="about-body"><p>Conservation connects to almost everything: food, health, livelihoods, culture, climate and justice. Yet the stories behind it are often fragmented, buried in specialist journals, or reduced to crisis.</p><p>We bring those threads together. Our journalists follow the science, listen to communities on the front line, and look closely at what is working, as well as what is not.</p></div>

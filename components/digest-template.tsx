@@ -70,7 +70,7 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
     <div className="digest-more-grid">{digests.map((digest) => {
       const date = digest.slug.replace('daily-digest-', '');
       return <article key={digest.id}>
-        <a className="digest-more-image" href={`/daily-digest/${date}`} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt="" /></> : null}</a>
+        <a className="digest-more-image" href={`/daily-digest/${date}`} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt="" loading="lazy" decoding="async" /></> : null}</a>
         <time dateTime={digest.digest_period_end}>{longDate(digest.digest_period_end)}</time>
         <h3><a href={`/daily-digest/${date}`}>{cleanDigestText(digest.headline)}</a></h3>
       </article>;
@@ -131,7 +131,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           if (sectionImage?.image_url) usedImages.add(sectionImage.image_url);
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
-            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt?.trim() || `Illustrative image for ${cleanDigestText(section.heading)}`} /><EditorialImageCredit credit={sectionImage.image_credit} /></figure> : null}
+            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt?.trim() || `Illustrative image for ${cleanDigestText(section.heading)}`} loading="lazy" decoding="async" /><EditorialImageCredit credit={sectionImage.image_credit} /></figure> : null}
             {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <StreamlinedNewsletterCta id="digest-email-inline" /> : null}</Fragment>)}
           </section>;
         })}

@@ -79,7 +79,7 @@ export function SiteFooter() {
           </div>
           <a className="wildteam-cpd-link" href="https://training.wildteam.org.uk/cpd-certification" target="_blank" rel="noopener noreferrer">
             {/* oxlint-disable-next-line next/no-img-element -- shared WildTeam certification asset */}
-            <img src="https://lwfiles.mycourse.app/6874ec826e31c5cf606cc001-public/24d306bb870071d95fb156827191ca00.png" alt="CPD Member certification" />
+            <img src="https://lwfiles.mycourse.app/6874ec826e31c5cf606cc001-public/24d306bb870071d95fb156827191ca00.png" alt="CPD Member certification" loading="lazy" decoding="async" />
           </a>
         </section>
       </div>
