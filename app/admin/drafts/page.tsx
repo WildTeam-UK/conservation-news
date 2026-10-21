@@ -37,7 +37,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
   const search = (filters.q ?? '').trim();
   const { supabase } = await requireContentAdmin();
   const { data: stories, error } = await supabase.from('stories').select('id, cluster_id, headline, standfirst, status, updated_at, published_at, generation_metadata').eq('content_type', 'news').in('status', ['draft', 'published']).order('updated_at', { ascending: false });
-  if (error) throw new Error('Unable to load article drafts.');
+  if (error) throw new Error('Unable to load articles.');
   const clusterIds = (stories ?? []).flatMap((story) => story.cluster_id ? [story.cluster_id] : []);
   const { data: updateRows } = clusterIds.length ? await supabase.from('story_cluster_updates').select('cluster_id').in('cluster_id', clusterIds).eq('status', 'pending_review') : { data: [] };
   const updateCounts = new Map<string, number>();
