@@ -10,7 +10,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   const { id } = await params;
   if (!isUuid(id)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   const { user } = auth;
   const supabase = getSupabaseAdminClient();
   const [{ data: story, error: storyError }, { count: sourceCount, error: sourcesError }] = await Promise.all([
@@ -44,7 +44,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   const { id } = await params;
   if (!isUuid(id)) return Response.json({ error: 'A valid article is required.' }, { status: 400 });
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   const { user } = auth;
   const supabase = getSupabaseAdminClient();
   const { error } = await supabase.from('stories').update({ status: 'draft', published_at: null, reviewer_id: user.id }).eq('id', id).eq('status', 'published');

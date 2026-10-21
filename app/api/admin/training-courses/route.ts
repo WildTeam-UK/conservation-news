@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   const body = await request.json().catch(() => null) as Record<string, unknown> | null;
   if (!body) return Response.json({ error: 'Enter valid course details.' }, { status: 400 });
   try {

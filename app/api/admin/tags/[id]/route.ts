@@ -11,7 +11,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   const { id } = await params;
   if (!isUuid(id)) return Response.json({ error: 'A valid tag is required.' }, { status: 400 });
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   const body = await request.json().catch(() => null) as { action?: string; name?: string; tagType?: string; description?: string; seoTitle?: string; metaDescription?: string; aliases?: string[]; targetId?: string } | null;
   if (!body?.action) return Response.json({ error: 'Choose a tag action.' }, { status: 400 });
   const supabase = getSupabaseAdminClient();

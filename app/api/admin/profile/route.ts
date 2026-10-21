@@ -16,7 +16,7 @@ function profileName(value: unknown, label: string) {
 
 export async function PUT(request: Request) {
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   try {
     const body = await request.json() as { firstName?: unknown; lastName?: unknown };
     const firstName = profileName(body.firstName, 'First name');
@@ -31,7 +31,7 @@ export async function PUT(request: Request) {
 
 export async function POST(request: Request) {
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   try {
     const formData = await request.formData();
     const avatar = formData.get('avatar');
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
 
 export async function DELETE() {
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   try {
     const avatarPath = typeof auth.user.user_metadata.avatar_path === 'string' ? auth.user.user_metadata.avatar_path : '';
     if (avatarPath) {

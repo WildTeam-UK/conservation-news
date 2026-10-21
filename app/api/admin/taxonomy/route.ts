@@ -8,7 +8,7 @@ export const maxDuration = 60;
 
 export async function POST() {
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   try {
     const result = await runTaxonomyGovernance({ force: true, maxEntities: 30 });
     return Response.json(result);
@@ -19,7 +19,7 @@ export async function POST() {
 
 export async function PATCH(request: Request) {
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   const body = await request.json().catch(() => null) as { automationEnabled?: boolean; minPublishedStories?: number } | null;
   if (!body) return Response.json({ error: 'Enter valid taxonomy settings.' }, { status: 400 });
   const minimum = Math.round(Number(body.minPublishedStories));

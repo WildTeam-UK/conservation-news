@@ -7,7 +7,7 @@ export const maxDuration = 60;
 
 export async function POST() {
   const auth = await requireApiAdmin();
-  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if ('response' in auth) return auth.response;
   try {
     const rebuilt = await rebuildSourceSuggestionsFromResearch();
     const enriched = await enrichSourceSuggestionDescriptions();
