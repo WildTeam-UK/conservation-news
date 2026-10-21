@@ -258,7 +258,7 @@ The default social image is a 1200×630 WildNews-branded graphic. Public metadat
 
 ## Legacy Sites remnants
 
-The repository began from a ChatGPT Sites-oriented starter. Its Sites hosting manifest, Vite plugin, plugin configuration, package name and SVG favicon were removed during pre-launch cleanup. The application does not use Sites authentication, connectors, D1, R2 or deployment.
+The repository began from a ChatGPT Sites-oriented starter. Its Sites hosting manifest, Vite plugin, plugin configuration, package name, SVG favicon and unused Cloudflare-oriented package allowances were removed during pre-launch cleanup. The application does not use Sites authentication, connectors, D1, R2 or deployment.
 
 Vinext, Vite and Nitro remain active framework dependencies and produce the Vercel deployment.
 
