@@ -8,8 +8,6 @@ export type Story = {
   title: string;
   summary: string;
   image: string;
-  bullets: string[];
-  sources: { name: string; url: string; primary?: boolean }[];
   goodNews?: boolean;
   digestType?: 'daily' | 'weekly';
 };

@@ -151,7 +151,6 @@ export function publishedStoryToArticle(story: PublishedStory, goodNewsSettings?
 export function publishedStoryToListing(story: PublishedStory, goodNewsSettings?: GoodNewsSettings): Story {
   const topics = publishedTopics(story);
   if (story.content_type !== 'news') {
-    const content = story.generation_metadata.digest_content as DigestContent;
     const sourceStories = (story.generation_metadata.digest_source_stories ?? []) as DigestSourceStory[];
     const type = story.content_type === 'weekly_digest' ? 'weekly' : 'daily';
     const date = story.slug.replace(`${type}-digest-`, '');
@@ -163,8 +162,6 @@ export function publishedStoryToListing(story: PublishedStory, goodNewsSettings?
       title: story.headline,
       summary: stripSourceMarkers(story.standfirst),
       image: story.image_url ?? sourceStories.find((source) => source.image_url)?.image_url ?? '',
-      bullets: content?.what_to_watch ?? [],
-      sources: [],
       goodNews: false,
       digestType: type,
     };
@@ -178,8 +175,6 @@ export function publishedStoryToListing(story: PublishedStory, goodNewsSettings?
     title: story.headline,
     summary: stripSourceMarkers(story.standfirst),
     image: story.image_url ?? content.image_url,
-    bullets: content.key_takeaways.map((item) => item.text),
-    sources: story.story_sources.map((source) => ({ name: source.source_name, url: source.source_url, primary: source.source_role === 'primary' })),
     goodNews: isPublishedGoodNews(story, goodNewsSettings),
   };
 }
