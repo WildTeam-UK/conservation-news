@@ -211,6 +211,10 @@ Friday produces a weekly edition instead of a daily edition.
 
 Topic, approved-tag, Good News and digest archives use the shared `ArchiveHero` component for their label, full-width title, description and result count. Its label row normalises spacing across differently sized topic, tag, Good News and digest pills. Archives then show one featured story followed by standard listing cards. Newsletter and related-story sections sit beneath the archive results where configured.
 
+### Methodology pages
+
+Coverage-analysis dimensions use three equal editorial columns on desktop, separated by the standard grey rule. At the shared tablet breakpoint they stack into a single column and replace vertical dividers with the existing horizontal section rules.
+
 ## Admin workspace
 
 The admin uses the same font and core palette with denser typography. Desktop has an expanded left navigation; mobile uses a hamburger-controlled menu. Grouped navigation sections preserve their open state when the active child belongs to that group.
