@@ -16,11 +16,15 @@ export function TopicNav({ topics }: { topics: string[] }) {
   useEffect(() => {
     let animationFrame = 0;
     let previousTime = performance.now();
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const animate = (time: number) => {
       const groupWidth = groupRef.current?.offsetWidth ?? 0;
       const nav = navRef.current;
-      const shouldPause = draggingRef.current || nav?.matches(':hover, :focus-within');
+      const shouldPause =
+        reducedMotion.matches ||
+        draggingRef.current ||
+        nav?.matches(':hover, :focus-within');
 
       if (!shouldPause && groupWidth) {
         positionRef.current = (positionRef.current + ((time - previousTime) * 0.018)) % groupWidth;
