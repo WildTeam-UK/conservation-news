@@ -47,7 +47,7 @@ The public application reads published records with the Supabase publishable key
 
 Preview deployments are marked `noindex`. Production metadata permits indexing of public pages while `robots.txt` excludes `/admin/` and `/api/`.
 
-Vercel applies baseline browser-security headers to every route: MIME sniffing is disabled, framing is denied, cross-origin referrers are limited to their origin, and unused camera, geolocation, microphone, payment and USB capabilities are disabled. A Content Security Policy is not currently declared because the Vinext runtime and existing inline styles require a tested policy rather than a permissive placeholder.
+Vercel applies browser-security headers to every route: MIME sniffing is disabled, framing is denied, cross-origin referrers are limited to their origin, and unused camera, geolocation, microphone, payment and USB capabilities are disabled. The Content Security Policy restricts pages to same-origin code and fonts, permits the inline hydration and style output required by the current Vinext/React implementation, permits browser connections only to WildNews and Supabase, and permits HTTPS editorial images because administrators may supply attributed images outside Unsplash or Supabase Storage.
 
 ## Framework and principal dependencies
 
