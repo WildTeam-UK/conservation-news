@@ -1,4 +1,5 @@
 import type { UnsplashImageCandidate } from './types';
+import { environmentValue } from '@/lib/environment';
 import { isHexColour } from '@/lib/validation';
 
 const API_URL = 'https://api.unsplash.com';
@@ -17,7 +18,7 @@ type UnsplashPhoto = {
 };
 
 function accessKey() {
-  return process.env.UNSPLASH_ACCESS_KEY?.trim() ?? '';
+  return environmentValue(process.env.UNSPLASH_ACCESS_KEY);
 }
 
 function withAttributionTracking(value: string) {

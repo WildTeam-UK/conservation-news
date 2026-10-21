@@ -1,9 +1,10 @@
+import { positiveIntegerEnvironmentValue, requireEnvironmentValue } from '@/lib/environment';
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function configuration() {
-  const apiKey = process.env.BREVO_API_KEY?.trim();
-  const listId = Number.parseInt(process.env.BREVO_LIST_ID ?? '', 10);
-  if (!apiKey || !Number.isInteger(listId) || listId < 1) throw new Error('Newsletter configuration is incomplete.');
+  const apiKey = requireEnvironmentValue('BREVO_API_KEY', process.env.BREVO_API_KEY);
+  const listId = positiveIntegerEnvironmentValue('BREVO_LIST_ID', process.env.BREVO_LIST_ID);
   return { apiKey, listId };
 }
 

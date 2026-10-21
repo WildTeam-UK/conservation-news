@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
+import { environmentValue } from '@/lib/environment';
 import { advanceEditorialRun } from '@/lib/editorial-runner';
 import { collectEnabledSources } from '@/lib/ingestion/rss';
 import { generateDigest } from '@/lib/openai/generate-digest';
@@ -10,7 +11,7 @@ export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 function isAuthorized(request: Request) {
-  const expected = process.env.AUTOMATION_SECRET;
+  const expected = environmentValue(process.env.AUTOMATION_SECRET);
   const authorization = request.headers.get('authorization') ?? '';
   const provided = authorization.startsWith('Bearer ') ? authorization.slice(7) : '';
   if (!expected || !provided || expected.length !== provided.length) return false;

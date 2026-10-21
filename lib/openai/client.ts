@@ -1,11 +1,11 @@
 import OpenAI from 'openai';
+import { requireEnvironmentValue } from '@/lib/environment';
 
 let client: OpenAI | undefined;
 
 export function getOpenAIClient() {
   if (!client) {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) throw new Error('Missing required environment variable: OPENAI_API_KEY');
+    const apiKey = requireEnvironmentValue('OPENAI_API_KEY', process.env.OPENAI_API_KEY);
     client = new OpenAI({ apiKey });
   }
   return client;
