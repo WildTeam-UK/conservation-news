@@ -50,7 +50,7 @@ export default async function Home() {
       <div className="latest-columns">
         <div className="latest-primary">{primaryLatest.map((story) => <article className="story-card" key={story.slug}><a href={storyHref(story)} className="story-image" aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a><div className="story-copy"><StoryTags story={story} /><h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3><p>{cleanCopy(story.summary)}</p></div></article>)}</div>
         <aside className="latest-compact" aria-label="More latest stories">{compactLatest.map((story) => <article className="compact-story" key={story.slug}>
-          <a className="compact-story-image" href={storyHref(story)}><img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
+          <a className="compact-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
           <div><StoryTags story={story} /><h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3></div>
         </article>)}</aside>
       </div>
@@ -65,7 +65,7 @@ export default async function Home() {
         return <section className="topic-shelf shell" key={topic}>
           <div className="shelf-heading"><div><h2><a href={`/topics/${topicSlug(topic)}`}>{topic}</a></h2></div><a href={`/topics/${topicSlug(topic)}`}>See all {topic.toLowerCase()} <ArrowRight /></a></div>
           <div className="topic-track">{topicStories.map((story) => <article className="carousel-card" key={story.slug}>
-            <a className="carousel-image" href={storyHref(story)}><img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
+            <a className="carousel-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}><img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
             <StoryTags story={story} />
             <h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3>
             <a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a>
