@@ -1,13 +1,11 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
 import { getGoodNewsStatus } from '@/lib/good-news-status';
 import { clampScore } from '@/lib/scores';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 
 export async function PATCH(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: 'Authentication required.' }, { status: 401 });
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  if (!admin) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
+  const { supabase } = auth;
   const body = await request.json() as { minimumScore?: number; minimumConfidence?: number };
   const minimumScore = clampScore(body.minimumScore);
   const minimumConfidence = clampScore(body.minimumConfidence);

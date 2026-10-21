@@ -1,15 +1,13 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 
 export const dynamic = 'force-dynamic';
 
 const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export async function PATCH(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: 'Authentication required.' }, { status: 401 });
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  if (!admin) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
+  const { supabase, user } = auth;
 
   const body = await request.json().catch(() => null) as {
     runTime?: string;
