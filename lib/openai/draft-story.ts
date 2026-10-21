@@ -10,6 +10,7 @@ import { aiInstructions, parseAiJson } from './house-style';
 import type { TrainingCoursePromotion } from '@/lib/training-courses';
 import { buildArticleLinkTargets } from '@/lib/article-link-candidates';
 import { applyArticleLinkPlan, articleLinkRows, cleanArticleLinks, countArticleLinks, type ArticleContextualLink, type ArticleLinkPlanItem } from '@/lib/article-linking';
+import { slugify } from '@/lib/stories';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'draft-v6-conservation-outlook-fallback';
@@ -91,10 +92,6 @@ function normalizedCoverage(value?: Partial<DraftCoverageAnalysis>): DraftCovera
     evidence: clampScore(value?.evidence ?? 70),
     consensus: clampScore(value?.consensus ?? 60),
   };
-}
-
-function slugify(value: string) {
-  return value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || 'story';
 }
 
 function claimWithIds(claim: ResearchClaim, sourceIdByUrl: Map<string, string>) {
@@ -230,7 +227,7 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
 
 async function uniqueSlug(headline: string) {
   const supabase = getSupabaseAdminClient();
-  const base = slugify(headline).slice(0, 80);
+  const base = slugify(headline).slice(0, 80) || 'story';
   for (let suffix = 0; suffix < 100; suffix += 1) {
     const candidate = suffix ? `${base}-${suffix + 1}` : base;
     const { data, error } = await supabase.from('stories').select('id').eq('slug', candidate).maybeSingle();
