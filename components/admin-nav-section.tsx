@@ -21,7 +21,7 @@ export function AdminNavSection({ icon, label, description, active, items }: { i
       <ChevronDown className="admin-nav-chevron" />
     </button>
     <div className="admin-nav-subitems" id={submenuId} aria-label={`${label} views`}>
-      {items.map((item) => <a className={item.active ? 'active' : ''} href={item.href} key={item.href}>{item.label}</a>)}
+      {items.map((item) => <a className={item.active ? 'active' : ''} href={item.href} aria-current={item.active ? 'page' : undefined} key={item.href}>{item.label}</a>)}
     </div>
   </div>;
 }
