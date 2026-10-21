@@ -10,13 +10,13 @@ The public application defines its core tokens in `app/globals.css`.
 
 | Token | Value | Implemented use |
 | --- | --- | --- |
-| `--ink` / `--foreground` | `#080808` | Primary text, strong rules and dark surfaces |
-| `--brand-purple` / `--primary` | `#6e0f6c` | WildTeam purple, headings, links and primary hover states |
+| `--ink` | `#080808` | Primary text, strong rules and dark surfaces |
+| `--brand-purple` | `#6e0f6c` | WildTeam purple, headings, links and primary hover states |
 | `--brand-gradient-middle` | `#b41e8e` | Middle stop in branded gradient treatments |
 | `--brand-pink` | `#e60088` | WildTeam pink, primary actions, accents and focus states |
 | `--cream` | `#fef3e5` | Warm neutral panels, topic pills and supporting surfaces |
-| `--paper` / `--background` | `#ffffff` | Page and card surfaces |
-| `--rule` / `--border` | `#d6d1d3` | Standard dividers and quiet borders |
+| `--paper` | `#ffffff` | Page and card surfaces |
+| `--rule` | `#d6d1d3` | Standard dividers and quiet borders |
 | `--muted` | `#5d5d61` | Secondary copy, dates and metadata |
 | `--footer-surface` | `#2a2f34` | Shared WildTeam footer background |
 | `--footer-muted` | `#f5f5f5` | Secondary footer links and legal copy |
