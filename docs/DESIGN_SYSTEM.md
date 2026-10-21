@@ -137,6 +137,10 @@ The closing editorial action panel used by the AI-transparency and Good News met
 
 The About page introduces related methodology pages through a three-column editorial guide grid. Each entry uses the established eyebrow, heading, body-copy and `text-link` patterns; it does not introduce a separate card treatment.
 
+### Error pages
+
+The public 404 page uses the WildTeam sloth illustration and friendly Training-site recovery copy in a centred layout. It retains the WildNews navigation, footer, typography and primary `.action-button` treatment. Runtime errors continue to use the more functional retry and homepage actions.
+
 ### Buttons
 
 Use existing button classes or component-owned styles:
