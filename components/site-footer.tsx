@@ -73,7 +73,7 @@ export function SiteFooter() {
     <div className="shell wildteam-footer-inner">
       <div className="wildteam-footer-grid">
         {footerColumns.map((column) => <FooterColumn {...column} key={column.title} />)}
-        <section className="wildteam-footer-column wildteam-socials">
+        <section className="wildteam-footer-column">
           <h2>Join the conversation</h2>
           <div className="wildteam-social-links">
             {socialLinks.map(({ label, href, network }) => <a href={href} target="_blank" rel="noreferrer" aria-label={label} key={label}><SocialIcon network={network} /></a>)}
