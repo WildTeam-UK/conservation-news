@@ -1,24 +1,17 @@
 import { discoverSuggestionFeed } from '@/lib/source-discovery';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-async function requireAdmin() {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  return Boolean(admin);
-}
-
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!uuidPattern.test(id)) return Response.json({ error: 'A valid source suggestion is required.' }, { status: 400 });
-  if (!await requireAdmin()) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
   const body = await request.json().catch(() => null) as { action?: string } | null;
   if (!body?.action) return Response.json({ error: 'Choose a source action.' }, { status: 400 });
   const supabase = getSupabaseAdminClient();
