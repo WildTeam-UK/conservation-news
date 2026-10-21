@@ -37,7 +37,7 @@ The application uses **VAG Rounded** throughout. Local files live under `public/
 - Bold: `vag-rounded-bold.woff`, weights 501–800
 - Black: `vag-rounded-black.woff`, weights 801–950
 
-`--font-rounded`, `--font-sans`, `--font-ui` and `--font-serif` currently resolve to the same family. There is no active serif typeface despite the legacy variable name.
+`--font-family` is the single application font-family token. All public, editorial and admin interfaces use it with a sans-serif fallback; there is no secondary UI family or active serif typeface.
 
 Implemented hierarchy:
 
