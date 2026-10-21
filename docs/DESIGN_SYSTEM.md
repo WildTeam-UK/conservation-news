@@ -133,6 +133,8 @@ The admin surface standardises card borders and shadows through `--admin-card-bo
 
 `ArchiveHero` and `PageHero` share the `editorial-hero` foundation. Both use the same shell width, vertical spacing, divider, title scale and full-width description. Archive heroes begin with a taxonomy or editorial pill and may include archive metadata; general-page heroes begin with an eyebrow. New public informational pages should use `PageHero` rather than defining page-specific hero spacing or typography.
 
+The About page introduces related methodology pages through a three-column editorial guide grid. Each entry uses the established eyebrow, heading, body-copy and `text-link` patterns; it does not introduce a separate card treatment.
+
 ### Buttons
 
 Use existing button classes or component-owned styles:
