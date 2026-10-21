@@ -48,6 +48,7 @@ export type DigestStoryRecord = {
   image_url: string | null;
   image_alt: string | null;
   published_at: string | null;
+  updated_at: string;
   digest_period_start: string;
   digest_period_end: string;
   generation_metadata: { digest_content?: DigestContent; digest_source_stories?: DigestSourceStory[] };
@@ -92,7 +93,7 @@ export async function hydrateDigestSourceStories(stories: DigestSourceStory[]) {
 
 export async function getPublishedDigest(type: DigestType, date: string) {
   const { data, error } = await getSupabasePublicClient().from('stories')
-    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, digest_period_start, digest_period_end, generation_metadata')
+    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, updated_at, digest_period_start, digest_period_end, generation_metadata')
     .eq('slug', `${type}-digest-${date}`)
     .eq('content_type', `${type}_digest`)
     .eq('status', 'published')
@@ -113,7 +114,7 @@ export async function getPublishedDigest(type: DigestType, date: string) {
 
 async function getPublishedDigests(type: DigestType, limit: number) {
   const { data, error } = await getSupabasePublicClient().from('stories')
-    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, digest_period_start, digest_period_end, generation_metadata')
+    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, updated_at, digest_period_start, digest_period_end, generation_metadata')
     .eq('content_type', `${type}_digest`)
     .eq('status', 'published')
     .lte('published_at', new Date().toISOString())

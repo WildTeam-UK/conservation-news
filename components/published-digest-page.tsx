@@ -22,6 +22,7 @@ export async function publishedDigestMetadata(type: DigestType, date: string): P
     image: digest.image_url,
     imageAlt: digest.image_alt,
     publishedTime: digest.published_at,
+    modifiedTime: digest.updated_at,
   });
 }
 
@@ -40,6 +41,7 @@ export async function PublishedDigestPage({ type, date }: { type: DigestType; da
     path,
     image: digest.image_url,
     publishedTime: digest.published_at,
+    modifiedTime: digest.updated_at,
     sections: content.topics,
   });
 
