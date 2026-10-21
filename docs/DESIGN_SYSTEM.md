@@ -103,7 +103,7 @@ Do not introduce another breakpoint without confirming that an existing tier can
 - Strong section dividers: 3px `--ink`.
 - Public components are generally flat. Repeated black offset shadows use the `--shadow-offset-sm` through `--shadow-offset-xl` scale; muted legacy cards use `--shadow-card-soft`.
 - Admin cards use a quiet grey border and a scoped `3px 3px` neutral shadow.
-- Image attributions use a white 99px-radius capsule, small muted text and a subtle shadow.
+- Image attributions use a white 99px-radius capsule, 10px muted text and a subtle shadow.
 
 The admin surface standardises card borders and shadows through `--admin-card-border` and `--admin-card-shadow` in `app/admin-workspace.css`.
 
