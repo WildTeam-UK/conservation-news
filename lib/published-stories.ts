@@ -8,6 +8,7 @@ import { getPublicSupabaseConfig } from '@/lib/supabase/config';
 import { normalizeEditorialTopics } from '@/lib/taxonomy';
 import type { TrainingCoursePromotion } from '@/lib/training-courses';
 import { attachStoredArticleLinks, type ArticleLinkSection, type ArticleLinkType } from '@/lib/article-linking';
+import { firstRelation } from '@/lib/supabase/relations';
 
 type PublishedSource = { source_name: string; source_title: string; source_url: string; source_role: string; display_order: number };
 type PublishedTopicLink = { topics: { name: string; slug: string } | { name: string; slug: string }[] | null };
@@ -49,26 +50,22 @@ function publicClient() {
 const storyListingSelect = 'id, slug, headline, standfirst, image_url, image_alt, published_at, updated_at, content_type, digest_period_end, generation_metadata, story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_conservation_outlooks(classification, score, confidence, rationale)';
 const storyDetailSelect = `${storyListingSelect}, story_sources(source_name, source_title, source_url, source_role, display_order), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale)`;
 
-function one<T>(value: T | T[] | null): T | null {
-  return Array.isArray(value) ? value[0] ?? null : value;
-}
-
 export function publishedTopics(story: PublishedStory) {
   const article = (story.generation_metadata.article_content ?? {}) as Partial<StoryDraftContent>;
   const digest = (story.generation_metadata.digest_content ?? {}) as Partial<DigestContent>;
-  const linked = story.story_topics.flatMap((link) => one(link.topics)?.name ?? []);
+  const linked = story.story_topics.flatMap((link) => firstRelation(link.topics)?.name ?? []);
   return normalizeEditorialTopics([...(article.topics ?? []), ...(digest.topics ?? []), ...linked].filter(Boolean));
 }
 
 export function publishedTags(story: PublishedStory) {
   return story.story_tags.flatMap((link) => {
-    const tag = one(link.content_tags);
+    const tag = firstRelation(link.content_tags);
     return tag?.status === 'approved' ? [{ name: tag.name, slug: tag.slug, confidence: link.confidence ?? 0 }] : [];
   }).sort((a, b) => b.confidence - a.confidence || a.name.localeCompare(b.name));
 }
 
 export function publishedConservationOutlook(story: PublishedStory) {
-  return one(story.story_conservation_outlooks);
+  return firstRelation(story.story_conservation_outlooks);
 }
 
 export async function getGoodNewsSettings() {
@@ -130,7 +127,7 @@ export function publishedStoryToArticle(story: PublishedStoryDetail, goodNewsSet
   const content = attachStoredArticleLinks(migrateDraftContent(structuredClone(story.generation_metadata.article_content)), story.story_contextual_links.map((link) => ({ type: link.link_type, target_id: link.target_id, href: link.href, anchor_text: link.anchor_text, section_key: link.section_key, item_index: link.item_index, external: link.external, confidence: link.confidence, rationale: link.rationale ?? '' })));
   const sources = [...story.story_sources].sort((a, b) => a.display_order - b.display_order);
   const featuredRecommendation = story.story_course_recommendations?.find((recommendation) => recommendation.placement === 'featured');
-  const coursePromotion = featuredRecommendation ? one(featuredRecommendation.training_courses) : null;
+  const coursePromotion = featuredRecommendation ? firstRelation(featuredRecommendation.training_courses) : null;
   return {
     topics: publishedTopics(story),
     discoveryTags: publishedTags(story).slice(0, 3),

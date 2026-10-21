@@ -6,7 +6,7 @@ import { GenerateDraftButton } from '@/components/generate-draft-button';
 import { ResearchCandidateButton } from '@/components/research-candidate-button';
 import type { ResearchClaim, ResearchContent } from '@/lib/openai/research-story';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
-import { sourceRelationName } from '@/lib/source-relations';
+import { sourceRelationName } from '@/lib/supabase/relations';
 
 export const dynamic = 'force-dynamic';
 

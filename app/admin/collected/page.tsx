@@ -4,7 +4,7 @@ import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
 import { RunAssessmentButton } from '@/components/run-assessment-button';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
-import { sourceRelationName } from '@/lib/source-relations';
+import { sourceRelationName } from '@/lib/supabase/relations';
 
 export const dynamic = 'force-dynamic';
 

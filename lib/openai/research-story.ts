@@ -4,7 +4,7 @@ import { estimateLunaTokenCost } from './pricing';
 import { PRIMARY_TOPICS, SECONDARY_TOPICS, TAXONOMY_REVIEW_TOPIC } from '@/lib/taxonomy';
 import { recordResearchSourceSuggestions } from '@/lib/source-discovery';
 import { aiInstructions, parseAiJson } from './house-style';
-import { sourceRelationName } from '@/lib/source-relations';
+import { sourceRelationName } from '@/lib/supabase/relations';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'research-v3-conservation-outlook';

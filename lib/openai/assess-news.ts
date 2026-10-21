@@ -3,7 +3,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { estimateLunaTokenCost } from './pricing';
 import { EDITORIAL_TOPICS, type EditorialTopicName } from '@/lib/taxonomy';
 import { aiInstructions, parseAiJson } from './house-style';
-import { sourceRelationName } from '@/lib/source-relations';
+import { sourceRelationName } from '@/lib/supabase/relations';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'assessment-v2-recent-event-matching';
