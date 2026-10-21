@@ -7,6 +7,7 @@ import { RunAssessmentButton } from '@/components/run-assessment-button';
 import { RunCollectionButton } from '@/components/run-collection-button';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { sourceRelationName } from '@/lib/supabase/relations';
+import { londonMediumDateTimeFormatter as dateTime } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -32,12 +33,6 @@ type TopCandidate = {
   evidence_score: number | null;
   assessment: { primary_topic?: string } | null;
 };
-
-const dateTime = new Intl.DateTimeFormat('en-GB', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'Europe/London',
-});
 
 export default async function PipelinePage() {
   const { supabase } = await requireContentAdmin();

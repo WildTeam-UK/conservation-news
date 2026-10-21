@@ -6,6 +6,7 @@ import { PublicationSettings } from '@/components/publication-settings';
 import { QueueItemActions } from '@/components/queue-item-actions';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { firstRelation } from '@/lib/supabase/relations';
+import { londonMediumDateTimeFormatter as dateTime } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,8 +28,6 @@ type QueueItem = {
 function storyFor(item: QueueItem) {
   return firstRelation(item.stories);
 }
-
-const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
 
 export default async function PublicationQueuePage() {
   const { supabase } = await requireContentAdmin();

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, CircleDollarSign, Clock3, FilePenLine, LoaderCircle, Play, RotateCcw, Save, SearchCheck, ShieldCheck } from 'lucide-react';
 import { firstRelation } from '@/lib/supabase/relations';
+import { londonMediumDateTimeFormatter } from '@/lib/date-format';
 
 type RunItem = {
   id: string;
@@ -129,7 +130,7 @@ export function DailyEditorialRun({
   const runState = snapshot?.run;
   const finished = runState && runState.status !== 'running';
   const lastTick = lastAutomationTickAt
-    ? new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(lastAutomationTickAt))
+    ? londonMediumDateTimeFormatter.format(new Date(lastAutomationTickAt))
     : null;
 
   return (

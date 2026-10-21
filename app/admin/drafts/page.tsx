@@ -5,6 +5,7 @@ import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
 import { stripSourceMarkers } from '@/lib/article-text';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { londonMediumDateTimeFormatter as dateTime } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +16,6 @@ export const metadata: Metadata = {
 
 type ArticleView = 'all' | 'scheduled' | 'unscheduled' | 'held' | 'published';
 type QueueGroup = 'scheduled' | 'unscheduled' | 'held';
-
-const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
 
 function queueGroup(status?: string): QueueGroup {
   if (status === 'held') return 'held';

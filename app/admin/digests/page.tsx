@@ -5,6 +5,7 @@ import { AdminNav } from '@/components/admin-nav';
 import { DigestSettings } from '@/components/digest-settings';
 import { DigestRunControls } from '@/components/digest-run-controls';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { londonMediumDateTimeFormatter as dateTime } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,7 +30,6 @@ type DigestRun = {
   created_at: string;
 };
 
-const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
 const londonCalendarDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
 
 function previousCalendarDate(date: string) {
