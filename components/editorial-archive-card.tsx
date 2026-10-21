@@ -31,7 +31,7 @@ export function EditorialArchiveCard({
       {image ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={image} alt={imageAlt} loading={featured ? 'eager' : 'lazy'} fetchPriority={featured ? 'high' : undefined} decoding="async" /></> : null}
       {goodNews ? <GoodNewsBadge overlay /> : null}
     </a>
-    <div>
+    <div className="topic-story-content">
       {labels}
       <h2><a href={href}>{title}</a></h2>
       {summary ? <p>{summary}</p> : null}

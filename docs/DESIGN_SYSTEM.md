@@ -165,7 +165,7 @@ Story discovery uses a small set of repeated patterns:
 - `story-card`: image and copy rows used in the main latest-stories list.
 - `compact-story`: smaller image/title rows.
 - `carousel-card`: horizontal topic-shelf cards.
-- `topic-story`: archive cards, with the first item promoted to `topic-story-featured`.
+- `topic-story`: archive cards, with the first item promoted to `topic-story-featured`. The copy column is a vertical layout and keeps the explicit read link at its bottom with a 20px minimum gap from the preceding content.
 - `related` / `SimilarStories`: three-card discovery section.
 - `digest-more`: six most recent daily digest cards on daily digest pages.
 
