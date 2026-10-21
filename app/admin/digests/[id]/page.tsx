@@ -1,5 +1,5 @@
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation */
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, ExternalLink, Eye, Globe2, LockKeyhole } from 'lucide-react';
 import { AdminHeader } from '@/components/admin-header';
@@ -38,7 +38,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
     <AdminHeader />
     <AdminNav active="digests" />
     <div className="admin-shell digest-preview-shell">
-      <Link className="admin-back-link" href="/admin/digests" prefetch={false}><ArrowLeft /> All digests</Link>
+      <a className="admin-back-link" href="/admin/digests"><ArrowLeft /> All digests</a>
       <section className={`digest-preview-status ${story.status === 'published' ? 'published' : ''}`}><span>{story.status === 'published' ? <Globe2 /> : <LockKeyhole />}</span><div><p className="eyebrow">Editorial preview</p><h1>{story.status === 'published' ? 'Published edition' : 'Private digest draft'}</h1><p>{story.status === 'published' ? 'This edition is live on the public site.' : historicalPublicationDate ? `This recovered edition will publish with a 14:00 UK timestamp on ${historicalPublicationDate}. Social and email distribution are disabled.` : 'Only signed-in editors can see this page. Social and email distribution are disabled.'}</p></div><div className="digest-preview-actions">{story.status === 'published' ? <a href={publicPath} target="_blank" rel="noopener noreferrer"><Eye /> View public edition</a> : <><a href={`/admin/digests/${story.id}/full-preview`} target="_blank" rel="noopener noreferrer"><ExternalLink /> Full-page preview</a><PublishDigestButton storyId={story.id} publicationDate={historicalPublicationDate} /></>}</div></section>
       <div className="digest-preview-canvas"><InteriorHeader /><DigestTemplate content={content} stories={sourceStories} periodEnd={story.digest_period_end} imageUrl={story.image_url} imageAlt={story.image_alt} moreDigests={moreDigests} /><SiteFooter /></div>
     </div>

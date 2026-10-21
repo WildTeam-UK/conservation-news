@@ -1,7 +1,8 @@
 'use client';
 
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation */
+
 import { RotateCcw } from 'lucide-react';
-import Link from 'next/link';
 import { Brand } from '@/components/brand';
 
 export default function AdminError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -13,7 +14,7 @@ export default function AdminError({ reset }: { error: Error & { digest?: string
       <p className="admin-login-intro">The request failed before the editorial page was ready. Retry it now. If the problem continues, check the latest deployment and server logs before changing any content.</p>
       <div className="admin-error-actions">
         <button className="admin-primary-button" type="button" onClick={reset}><RotateCcw aria-hidden="true" /> Retry this view</button>
-        <Link href="/admin" prefetch={false}>Return to overview</Link>
+        <a href="/admin">Return to overview</a>
       </div>
     </section>
   </main>;

@@ -1,5 +1,5 @@
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation */
 import { ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 
@@ -10,7 +10,7 @@ export default function NotFound() {
       <p className="eyebrow">404</p>
       <h1>We could not find that page.</h1>
       <p>The story, digest or archive may have moved, or it may no longer be available.</p>
-      <Link className="action-button" href="/" prefetch={false}>Explore the latest stories <ArrowRight /></Link>
+      <a className="action-button" href="/">Explore the latest stories <ArrowRight /></a>
     </section>
     <SiteFooter />
   </main>;
