@@ -1,18 +1,11 @@
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { normalizeTaxonomyKey, tagSlug } from '@/lib/taxonomy-text';
 
 export const dynamic = 'force-dynamic';
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const tagTypes = new Set(['species', 'place', 'habitat', 'theme']);
-
-function normalizeTag(value: string) {
-  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-}
-
-function tagSlug(value: string) {
-  return normalizeTag(value).replace(/\s+/g, '-') || 'tag';
-}
 
 async function requireAdmin() {
   const supabase = await createSupabaseServerClient();
@@ -47,13 +40,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       const name = body.name?.trim().slice(0, 120) ?? '';
       const tagType = body.tagType ?? '';
       if (!name || !tagTypes.has(tagType)) return Response.json({ error: 'Enter a valid tag name and type.' }, { status: 400 });
-      const aliases = [...new Set((body.aliases ?? []).map((alias) => alias.trim().slice(0, 120)).filter((alias) => alias && normalizeTag(alias) !== normalizeTag(name)))].slice(0, 20);
+      const aliases = [...new Set((body.aliases ?? []).map((alias) => alias.trim().slice(0, 120)).filter((alias) => alias && normalizeTaxonomyKey(alias) !== normalizeTaxonomyKey(name)))].slice(0, 20);
       const { error: updateError } = await supabase.from('content_tags').update({ name, slug: tagSlug(name), tag_type: tagType, description: body.description?.trim().slice(0, 500) || null, seo_title: body.seoTitle?.trim().slice(0, 120) || null, meta_description: body.metaDescription?.trim().slice(0, 200) || null }).eq('id', id);
       if (updateError) throw updateError;
       const { error: deleteError } = await supabase.from('content_tag_aliases').delete().eq('tag_id', id);
       if (deleteError) throw deleteError;
       if (aliases.length) {
-        const { error: aliasError } = await supabase.from('content_tag_aliases').insert(aliases.map((alias) => ({ tag_id: id, alias, normalized_alias: normalizeTag(alias) })));
+        const { error: aliasError } = await supabase.from('content_tag_aliases').insert(aliases.map((alias) => ({ tag_id: id, alias, normalized_alias: normalizeTaxonomyKey(alias) })));
         if (aliasError) throw aliasError;
       }
     } else if (body.action === 'merge') {
@@ -78,7 +71,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
         const { error } = await supabase.from('story_tags').upsert(storyLinks.map((link) => ({ ...link, tag_id: targetId })), { onConflict: 'story_id,tag_id', ignoreDuplicates: true });
         if (error) throw error;
       }
-      const aliasesToMove = [{ alias: source.name, normalized_alias: normalizeTag(source.name) }, ...(sourceAliases ?? [])];
+      const aliasesToMove = [{ alias: source.name, normalized_alias: normalizeTaxonomyKey(source.name) }, ...(sourceAliases ?? [])];
       if (aliasesToMove.length) await supabase.from('content_tag_aliases').upsert(aliasesToMove.map((alias) => ({ ...alias, tag_id: targetId })), { onConflict: 'normalized_alias', ignoreDuplicates: true });
       const { error: deleteError } = await supabase.from('content_tags').delete().eq('id', id);
       if (deleteError) throw deleteError;

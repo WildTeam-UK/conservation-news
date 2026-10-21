@@ -3,6 +3,7 @@ import type { ResearchSource } from '@/lib/openai/research-story';
 import type { TrainingCoursePromotion } from '@/lib/training-courses';
 import type { ArticleLinkTarget } from '@/lib/article-linking';
 import { firstRelation } from '@/lib/supabase/relations';
+import { normalizeTaxonomyKey } from '@/lib/taxonomy-text';
 
 type RelatedStory = {
   id: string;
@@ -13,8 +14,6 @@ type RelatedStory = {
   story_topics: { topics: { name: string } | { name: string }[] | null }[];
   story_tags: { content_tags: { name: string; status: string } | { name: string; status: string }[] | null }[];
 };
-
-const normalized = (value: string) => value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLocaleLowerCase('en-GB').replace(/[^a-z0-9]+/g, ' ').trim();
 
 export async function buildArticleLinkTargets(input: {
   topics: string[];
@@ -33,13 +32,13 @@ export async function buildArticleLinkTargets(input: {
   if (tagsError) throw tagsError;
   if (storiesError) throw storiesError;
 
-  const topicNames = new Set(input.topics.map(normalized));
-  const tagNames = new Set((tagRows ?? []).map((tag) => normalized(tag.name)));
+  const topicNames = new Set(input.topics.map(normalizeTaxonomyKey));
+  const tagNames = new Set((tagRows ?? []).map((tag) => normalizeTaxonomyKey(tag.name)));
   const related = ((storyRows ?? []) as unknown as RelatedStory[])
     .filter((story) => story.id !== input.excludeStoryId)
     .map((story, index) => {
-      const sharedTopics = story.story_topics.filter((link) => { const topic = firstRelation(link.topics); return topic && topicNames.has(normalized(topic.name)); }).length;
-      const sharedTags = story.story_tags.filter((link) => { const tag = firstRelation(link.content_tags); return tag?.status === 'approved' && tagNames.has(normalized(tag.name)); }).length;
+      const sharedTopics = story.story_topics.filter((link) => { const topic = firstRelation(link.topics); return topic && topicNames.has(normalizeTaxonomyKey(topic.name)); }).length;
+      const sharedTags = story.story_tags.filter((link) => { const tag = firstRelation(link.content_tags); return tag?.status === 'approved' && tagNames.has(normalizeTaxonomyKey(tag.name)); }).length;
       return { story, index, score: (sharedTopics * 3) + (sharedTags * 2) };
     })
     .filter(({ score }) => score > 0)

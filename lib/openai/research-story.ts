@@ -5,6 +5,7 @@ import { PRIMARY_TOPICS, SECONDARY_TOPICS, TAXONOMY_REVIEW_TOPIC } from '@/lib/t
 import { recordResearchSourceSuggestions } from '@/lib/source-discovery';
 import { aiInstructions, parseAiJson } from './house-style';
 import { sourceRelationName } from '@/lib/supabase/relations';
+import { normalizeTaxonomyKey, tagSlug } from '@/lib/taxonomy-text';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'research-v3-conservation-outlook';
@@ -98,14 +99,6 @@ function normalizeCoverageScore(value: number) {
   return value > 0 && value <= 1 ? clampScore(value * 100) : clampScore(value);
 }
 
-function normalizeTag(value: string) {
-  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-}
-
-function tagSlug(value: string) {
-  return normalizeTag(value).replace(/\s+/g, '-') || 'tag';
-}
-
 async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) {
   const supabase = getSupabaseAdminClient();
   const [{ data: existingTags, error: tagsError }, { data: aliases, error: aliasesError }] = await Promise.all([
@@ -117,7 +110,7 @@ async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) 
 
   type StoredTag = { id: string; name: string; slug: string; tag_type: ResearchTag['tag_type']; status: string };
   const tags = (existingTags ?? []) as StoredTag[];
-  const byName = new Map(tags.map((tag) => [normalizeTag(tag.name), tag]));
+  const byName = new Map(tags.map((tag) => [normalizeTaxonomyKey(tag.name), tag]));
   const byId = new Map(tags.map((tag) => [tag.id, tag]));
   const bySlug = new Map(tags.map((tag) => [tag.slug, tag]));
   for (const alias of aliases ?? []) {
@@ -126,7 +119,7 @@ async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) 
   }
 
   for (const suggestion of suggestions.slice(0, 6)) {
-    const normalized = normalizeTag(suggestion.name);
+    const normalized = normalizeTaxonomyKey(suggestion.name);
     if (!normalized) continue;
     let tag = byName.get(normalized) ?? bySlug.get(tagSlug(suggestion.name));
     // A retired tag is an editorial decision not to use that concept again.
