@@ -44,7 +44,7 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
   return <main className="archive-page">
     <InteriorHeader />
     <section className="topic-page-hero shell">
-      <TopicTag topic={topic} className="topic-pill" />
+      <TopicTag topic={topic} />
       <h1>{topic}</h1>
       <p><InlineBrand text={archive.description ?? `The latest reporting, analysis and practical ideas shaping ${topic.toLowerCase()} conservation.`} /></p>
       <span>{topicStories.length} {topicStories.length === 1 ? 'story' : 'stories'}</span>
