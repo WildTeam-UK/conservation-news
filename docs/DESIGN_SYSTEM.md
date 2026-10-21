@@ -11,8 +11,9 @@ The public application defines its core tokens in `app/globals.css`.
 | Token | Value | Implemented use |
 | --- | --- | --- |
 | `--ink` / `--foreground` | `#080808` | Primary text, strong rules and dark surfaces |
-| `--forest` / `--primary` | `#6e0f6c` | WildTeam purple, headings, links and primary hover states |
-| `--lime` | `#e60088` | WildTeam pink, primary actions, accents and focus states |
+| `--brand-purple` / `--primary` | `#6e0f6c` | WildTeam purple, headings, links and primary hover states |
+| `--brand-gradient-middle` | `#b41e8e` | Middle stop in branded gradient treatments |
+| `--brand-pink` | `#e60088` | WildTeam pink, primary actions, accents and focus states |
 | `--cream` | `#fef3e5` | Warm neutral panels, topic pills and supporting surfaces |
 | `--paper` / `--background` | `#ffffff` | Page and card surfaces |
 | `--rule` / `--border` | `#d6d1d3` | Standard dividers and quiet borders |
@@ -20,7 +21,7 @@ The public application defines its core tokens in `app/globals.css`.
 | `--coral` | `#e84a43` | Legacy accent with limited current use |
 | `--orange` | `#ff8044` | Legacy accent with limited current use |
 
-The variable names `--forest` and `--lime` are historical; their effective colours are purple and pink. Do not infer new green styling from their names. Status panels also use local success, warning and error colours. Course promotions use a course-specific `--course-colour` supplied by the database.
+The historical `--forest` and `--lime` names remain as compatibility aliases for `--brand-purple` and `--brand-pink`. New work should use the canonical brand token names and must not infer green styling from the aliases. Status panels also use local success, warning and error colours. Course promotions use a course-specific `--course-colour` supplied by the database.
 
 The Good News and digest “fancy” labels use a gradient made from `#6e0f6c`, `#b41e8e` and `#e60088`. Their hover state is solid pink with white text.
 
@@ -84,7 +85,8 @@ Do not introduce another breakpoint without confirming that an existing tier can
 
 ## Shape, borders and depth
 
-- Global component radius token: 18px.
+- Global component radius token: `--radius` at 18px, exposed as `--radius-card` for standard cards.
+- Pill and circular shapes use `--radius-pill` and `--radius-round`.
 - Public button radius: 6px.
 - Image and standard card radii: commonly 18px.
 - Large editorial panels and promotions: commonly 22–24px.
@@ -209,8 +211,8 @@ Admin pages use:
 These are recorded facts, not design changes:
 
 - `app/globals.css` contains chronological layers of overrides, so an early declaration is not always the effective style.
-- Several equivalent values are literals rather than named tokens.
-- Historical token names do not match their current colours.
+- Some feature-specific and status colours remain local literals rather than shared tokens.
+- Historical colour aliases remain for compatibility with existing selectors.
 - The admin and public styles partly overlap in `globals.css`; admin consolidation is incomplete.
 - Many feature-specific breakpoints repeat the same viewport widths.
 
