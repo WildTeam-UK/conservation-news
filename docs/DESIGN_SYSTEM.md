@@ -204,7 +204,7 @@ Daily and weekly digests share one template:
 
 1. Full-width split hero with colour derived from the featured image and WildTeam purple as fallback.
 2. Edition/date metadata, title, standfirst and AI-method link.
-3. Digest and topic pills above the editorial introduction.
+3. Digest and topic pills above the editorial introduction. Sharing remains a vertical rail beside the introduction on desktop, then moves into a horizontal row above these pills at 1000px and below.
 4. Flowing editorial sections with wider supporting images.
 5. One compact newsletter CTA within the body.
 6. Source-article list, training banner and full newsletter CTA.
