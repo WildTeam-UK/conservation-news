@@ -7,6 +7,7 @@ import { DailyEditorialRun } from '@/components/daily-editorial-run';
 import { RunCollectionButton } from '@/components/run-collection-button';
 import { buildAdminProfile } from '@/lib/admin-profile';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { firstRelation } from '@/lib/supabase/relations';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,7 +26,7 @@ type QueueOverviewItem = {
 };
 
 function queueStory(item: QueueOverviewItem) {
-  return Array.isArray(item.stories) ? item.stories[0] : item.stories;
+  return firstRelation(item.stories);
 }
 
 const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });

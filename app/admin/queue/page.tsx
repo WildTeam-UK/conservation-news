@@ -5,6 +5,7 @@ import { AdminNav } from '@/components/admin-nav';
 import { PublicationSettings } from '@/components/publication-settings';
 import { QueueItemActions } from '@/components/queue-item-actions';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { firstRelation } from '@/lib/supabase/relations';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +25,7 @@ type QueueItem = {
 };
 
 function storyFor(item: QueueItem) {
-  return Array.isArray(item.stories) ? item.stories[0] : item.stories;
+  return firstRelation(item.stories);
 }
 
 const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });

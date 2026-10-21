@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CheckCircle2, CircleDollarSign, Clock3, FilePenLine, LoaderCircle, Play, RotateCcw, Save, SearchCheck, ShieldCheck } from 'lucide-react';
+import { firstRelation } from '@/lib/supabase/relations';
 
 type RunItem = {
   id: string;
@@ -50,7 +51,7 @@ type DailyEditorialRunProps = {
 };
 
 function candidateTitle(item: RunItem) {
-  return Array.isArray(item.story_clusters) ? item.story_clusters[0]?.working_title : item.story_clusters?.working_title;
+  return firstRelation(item.story_clusters)?.working_title;
 }
 
 export function DailyEditorialRun({

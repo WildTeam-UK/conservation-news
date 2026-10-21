@@ -5,6 +5,7 @@ import { AdminNav } from '@/components/admin-nav';
 import { GoodNewsControls } from '@/components/good-news-controls';
 import { getGoodNewsStatus } from '@/lib/good-news-status';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { firstRelation } from '@/lib/supabase/relations';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Good News | WILDNEWS editorial', robots: { index: false, follow: false } };
@@ -20,7 +21,7 @@ type OutlookRow = {
 };
 
 function relatedStory(row: OutlookRow) {
-  return Array.isArray(row.stories) ? row.stories[0] : row.stories;
+  return firstRelation(row.stories);
 }
 
 export default async function GoodNewsAdminPage() {

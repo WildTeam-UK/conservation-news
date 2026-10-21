@@ -1,5 +1,6 @@
 import { hydrateDigestSourceStories, type DigestContent, type DigestSourceStory } from '@/lib/digests';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { firstRelation } from '@/lib/supabase/relations';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 
 const calendarDatePattern = /^\d{4}-\d{2}-\d{2}$/;
@@ -48,7 +49,7 @@ export async function publishDigest(storyId: string, { reviewerId, publicationDa
     const { data: sourceLinks } = await supabase.from('digest_run_stories').select('stories(story_topics(topics(name)))').eq('run_id', run.id);
     const counts = new Map<string, number>();
     for (const link of (sourceLinks ?? []) as unknown as Array<{ stories: { story_topics?: Array<{ topics: { name: string } | { name: string }[] | null }> } | { story_topics?: Array<{ topics: { name: string } | { name: string }[] | null }> }[] | null }>) {
-      const source = Array.isArray(link.stories) ? link.stories[0] : link.stories;
+      const source = firstRelation(link.stories);
       for (const topicLink of source?.story_topics ?? []) {
         const names = Array.isArray(topicLink.topics) ? topicLink.topics.map((topic) => topic.name) : topicLink.topics?.name ? [topicLink.topics.name] : [];
         for (const name of normalizeEditorialTopics(names)) counts.set(name, (counts.get(name) ?? 0) + 1);
