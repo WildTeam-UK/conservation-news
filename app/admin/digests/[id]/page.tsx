@@ -10,6 +10,7 @@ import { PublishDigestButton } from '@/components/publish-digest-button';
 import { SiteFooter } from '@/components/site-footer';
 import { getPublishedDailyDigests, hydrateDigestSourceStories, type DigestContent, type DigestSourceStory } from '@/lib/digests';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { firstRelation } from '@/lib/supabase/relations';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Digest preview | WILDNEWS editorial', robots: { index: false, follow: false } };
@@ -24,7 +25,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   if (error || !story) notFound();
   const { data: run } = await supabase.from('digest_runs').select('id').eq('story_id', story.id).maybeSingle();
   const { data: links } = run ? await supabase.from('digest_run_stories').select('display_order, stories(id, slug, headline, standfirst, image_url, image_alt, published_at)').eq('run_id', run.id).order('display_order') : { data: [] };
-  const linkedStories = ((links ?? []) as unknown as LinkedStory[]).flatMap((link) => Array.isArray(link.stories) ? link.stories[0] ?? [] : link.stories ?? []);
+  const linkedStories = ((links ?? []) as unknown as LinkedStory[]).flatMap((link) => firstRelation(link.stories) ?? []);
   const sourceStories = await hydrateDigestSourceStories(linkedStories);
   const content = (story.generation_metadata as { digest_content?: DigestContent }).digest_content;
   if (!content) notFound();

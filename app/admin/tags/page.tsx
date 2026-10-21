@@ -7,6 +7,7 @@ import { TagManager, type EditorialTag, type TagUsage } from '@/components/tag-m
 import { TaxonomyControls } from '@/components/taxonomy-controls';
 import { TopicManager, type EditorialTopic } from '@/components/topic-manager';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { firstRelation } from '@/lib/supabase/relations';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +42,7 @@ export default async function TaxonomyPage({ searchParams }: TaxonomyPageProps) 
   const publishedUsagesByTag = new Map<string, TagUsage[]>();
   for (const link of storyTagsResult.data ?? []) {
     if (!publishedIds.has(link.story_id)) continue;
-    const story = Array.isArray(link.stories) ? link.stories[0] : link.stories;
+    const story = firstRelation(link.stories);
     if (!story) continue;
     publishedUsagesByTag.set(link.tag_id, [...(publishedUsagesByTag.get(link.tag_id) ?? []), { id: story.id, title: story.headline, slug: story.slug, status: story.status, confidence: link.confidence, rationale: link.rationale }]);
   }
@@ -50,7 +51,7 @@ export default async function TaxonomyPage({ searchParams }: TaxonomyPageProps) 
   for (const alias of aliasesResult.data ?? []) aliasesByTag.set(alias.tag_id, [...(aliasesByTag.get(alias.tag_id) ?? []), alias.alias]);
   const usagesByTag = new Map<string, TagUsage[]>();
   for (const usage of usagesResult.data ?? []) {
-    const cluster = Array.isArray(usage.story_clusters) ? usage.story_clusters[0] : usage.story_clusters;
+    const cluster = firstRelation(usage.story_clusters);
     if (!cluster) continue;
     usagesByTag.set(usage.tag_id, [...(usagesByTag.get(usage.tag_id) ?? []), { id: cluster.id, title: cluster.working_title, status: cluster.status, confidence: usage.confidence, rationale: usage.rationale }]);
   }
