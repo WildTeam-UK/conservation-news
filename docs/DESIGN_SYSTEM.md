@@ -18,10 +18,14 @@ The public application defines its core tokens in `app/globals.css`.
 | `--paper` / `--background` | `#ffffff` | Page and card surfaces |
 | `--rule` / `--border` | `#d6d1d3` | Standard dividers and quiet borders |
 | `--muted` | `#5d5d61` | Secondary copy, dates and metadata |
-| `--coral` | `#e84a43` | Legacy accent with limited current use |
-| `--orange` | `#ff8044` | Legacy accent with limited current use |
+| `--accent-coral` | `#e84a43` | Contested coverage signal |
+| `--accent-orange` | `#ff8044` | Economic coverage signal, warning progress and retained accent treatments |
+| `--status-success-text` / `--status-success-surface` | `#17602d` / `#e7f5e9` | Successful admin states and confirmation messages |
+| `--status-warning-text` | `#9a4917` | Warning icons and copy |
+| `--status-error-text` / `--status-error-surface` | `#8a1d24` / `#fff0f0` | Standard destructive and failed states |
+| `--status-error-strong` | `#7b1820` | Higher-emphasis error copy |
 
-Status panels use local success, warning and error colours. Course promotions use a course-specific `--course-colour` supplied by the database.
+Less frequently repeated state shades remain local to the component that owns them. Course promotions use a course-specific `--course-colour` supplied by the database.
 
 The Good News and digest “fancy” labels use a gradient made from `#6e0f6c`, `#b41e8e` and `#e60088`. Their hover state is solid pink with white text.
 
