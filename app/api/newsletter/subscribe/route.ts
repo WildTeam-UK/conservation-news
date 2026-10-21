@@ -8,8 +8,10 @@ function configuration() {
 }
 
 export async function POST(request: Request) {
+  const body = await request.json().catch(() => null) as { email?: unknown; website?: unknown } | null;
+  if (!body) return Response.json({ error: 'Enter your email address.' }, { status: 400 });
+
   try {
-    const body = await request.json() as { email?: unknown; website?: unknown };
     if (typeof body.website === 'string' && body.website.trim()) {
       return Response.json({ ok: true, message: 'You are subscribed to the WildNews Weekly Digest.' });
     }
