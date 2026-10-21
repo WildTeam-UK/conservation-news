@@ -1,6 +1,7 @@
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
-import { trainingCourseValues } from '@/lib/training-courses';
+import { TrainingCourseValidationError, trainingCourseValues } from '@/lib/training-courses';
 import { isUuid } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
@@ -19,7 +20,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     return Response.json({ saved: true });
   } catch (error) {
     const code = typeof error === 'object' && error && 'code' in error ? String(error.code) : '';
-    const message = error instanceof Error && !code ? error.message : code === '23505' ? 'That course title or URL is already in the catalogue.' : 'The course could not be saved.';
-    return Response.json({ error: message }, { status: code === '23505' ? 409 : 400 });
+    if (error instanceof TrainingCourseValidationError) return Response.json({ error: error.message }, { status: 400 });
+    if (code === '23505') return Response.json({ error: 'That course title or URL is already in the catalogue.' }, { status: 409 });
+    return unexpectedErrorResponse('Training course update failed', error, 'The course could not be saved.');
   }
 }

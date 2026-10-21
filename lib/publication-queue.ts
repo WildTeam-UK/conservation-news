@@ -5,6 +5,8 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
 import { londonDateTimeParts, londonLocalDateTimeToUtc } from '@/lib/london-time';
 
+export class PublicationQueueConflict extends Error {}
+
 const MINIMUM_AUTOMATIC_SOURCES = 3;
 
 type PublicationSettings = {
@@ -225,7 +227,7 @@ export async function restoreDraftToQueue(storyId: string) {
   const supabase = getSupabaseAdminClient();
   const { data: story, error: storyError } = await supabase.from('stories').select('id, status').eq('id', storyId).maybeSingle();
   if (storyError) throw storyError;
-  if (!story || story.status !== 'draft') throw new Error('Only a private draft can be added to the publishing queue.');
+  if (!story || story.status !== 'draft') throw new PublicationQueueConflict('Only a private draft can be added to the publishing queue.');
 
   await queueReadyDrafts(null, storyId, true, true, true);
   const { data: queueItem, error: queueError } = await supabase
@@ -234,7 +236,7 @@ export async function restoreDraftToQueue(storyId: string) {
     .eq('story_id', storyId)
     .maybeSingle();
   if (queueError) throw queueError;
-  if (!queueItem) throw new Error('The draft could not be added to the publishing queue.');
+  if (!queueItem) throw new PublicationQueueConflict('The draft could not be added to the publishing queue.');
   return queueItem;
 }
 
@@ -248,7 +250,7 @@ export async function cancelQueuedPublication(queueId: string) {
     .select('id, story_id')
     .maybeSingle();
   if (error) throw error;
-  if (!data) throw new Error('This article is no longer removable from the queue.');
+  if (!data) throw new PublicationQueueConflict('This article is no longer removable from the queue.');
   const result = await rebalancePublicationQueue();
   return { removed: true, storyId: data.story_id, rescheduled: result.scheduled };
 }

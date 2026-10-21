@@ -1,4 +1,5 @@
-import { restoreDraftToQueue } from '@/lib/publication-queue';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
+import { PublicationQueueConflict, restoreDraftToQueue } from '@/lib/publication-queue';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { isUuid } from '@/lib/validation';
 
@@ -17,7 +18,7 @@ export async function POST(request: Request) {
     await supabase.from('editorial_actions').insert({ story_id: body.storyId, user_id: user.id, action: 'edited', notes: 'Draft added to the automatic publishing queue by an editor.' });
     return Response.json({ added: true, queue });
   } catch (error) {
-    const detail = error instanceof Error ? error.message : 'The draft could not be added to the publishing queue.';
-    return Response.json({ error: detail }, { status: 409 });
+    if (error instanceof PublicationQueueConflict) return Response.json({ error: error.message }, { status: 409 });
+    return unexpectedErrorResponse('Adding a draft to the publication queue failed', error, 'The draft could not be added to the publishing queue.');
   }
 }
