@@ -143,7 +143,7 @@ Use existing button classes or component-owned styles:
 - Approved discovery tags appear as small outlined pills.
 - `DigestTag` represents daily or weekly editions and always links to `/digests`.
 - `GoodNewsBadge` links to `/good-news-in-conservation`; image overlays collapse to the icon treatment.
-- Icons in public topic, digest and expanded Good News pills use the shared optical middle alignment for VAG Rounded labels.
+- Icon and label pairs in public topic, digest and expanded Good News pills move together for optical middle alignment with VAG Rounded.
 - Admin statuses use compact filled pills with semantic success, warning and error colours.
 
 ### Story cards
