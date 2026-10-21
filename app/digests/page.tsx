@@ -1,6 +1,7 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic archive routes */
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
+import { EditorialArchiveCard } from '@/components/editorial-archive-card';
 import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
@@ -42,15 +43,17 @@ export default async function DigestArchive() {
         const type = digestType(digest);
         const date = digest.slug.replace(`${type}-digest-`, '');
         const path = digestPath(type, date);
-        return <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={digest.id}>
-          <a className="topic-story-image" href={path} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
-          <div>
-            <div className="digest-archive-meta"><DigestTag type={type} /><time dateTime={digest.digest_period_end}>{digestDate.format(new Date(digest.digest_period_end))}</time></div>
-            <h2><a href={path}>{cleanDigestText(digest.headline)}</a></h2>
-            {index === 0 ? <p>{cleanDigestText(digest.standfirst)}</p> : null}
-            <a className="text-link" href={path}>Read this edition <ArrowRight /></a>
-          </div>
-        </article>;
+        return <EditorialArchiveCard
+          featured={index === 0}
+          href={path}
+          image={digest.image_url}
+          imageAlt={digest.image_alt ?? ''}
+          labels={<div className="digest-archive-meta"><DigestTag type={type} /><time dateTime={digest.digest_period_end}>{digestDate.format(new Date(digest.digest_period_end))}</time></div>}
+          title={cleanDigestText(digest.headline)}
+          summary={index === 0 ? cleanDigestText(digest.standfirst) : null}
+          linkLabel="Read this edition"
+          key={digest.id}
+        />;
       })}
     </section> : <div className="digest-archive-empty shell"><h3>No digest editions yet</h3><p>The first published digest will appear here.</p></div>}
     <div id="digest-archive-newsletter" className="archive-newsletter-anchor"><WeeklyDigestNewsletterCta id="digest-archive-email" className="editorial-newsletter-cta shell" /></div>

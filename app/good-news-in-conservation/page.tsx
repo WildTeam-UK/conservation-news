@@ -1,6 +1,7 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic archive routes */
 import type { Metadata } from 'next';
 import { ArrowRight } from 'lucide-react';
+import { EditorialArchiveCard } from '@/components/editorial-archive-card';
 import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
@@ -36,10 +37,17 @@ export default async function GoodNewsPage() {
       <span>{stories.length} {stories.length === 1 ? 'story' : 'stories'}</span>
     </section>
     {stories.length ? <section className="topic-page-grid shell">
-      {stories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}>
-        <a className="topic-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
-        <div><TopicTag topic={story.topic} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div>
-      </article>)}
+      {stories.map((story, index) => <EditorialArchiveCard
+        featured={index === 0}
+        href={storyHref(story)}
+        image={storyImage(story)}
+        goodNews={story.goodNews}
+        labels={<TopicTag topic={story.topic} />}
+        title={cleanCopy(story.title)}
+        summary={cleanCopy(story.summary)}
+        linkLabel="Read story"
+        key={story.slug}
+      />)}
     </section> : <section className="good-news-empty shell"><h2>The threshold is doing its job.</h2><p>No published story currently has enough evidence to qualify. New stories will appear here automatically when they meet the standard.</p></section>}
     <WeeklyDigestNewsletterCta id="good-news-digest-email" className="editorial-newsletter-cta shell" />
     <SimilarStories stories={related} description="Keep exploring the latest conservation coverage." />

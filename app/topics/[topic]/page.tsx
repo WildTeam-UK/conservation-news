@@ -1,7 +1,7 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic archive routes */
 import type { Metadata } from 'next';
-import { ArrowRight } from 'lucide-react';
 import { notFound } from 'next/navigation';
+import { EditorialArchiveCard } from '@/components/editorial-archive-card';
 import { InteriorHeader } from '@/components/interior-header';
 import { WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
 import { SimilarStories } from '@/components/similar-stories';
@@ -10,7 +10,6 @@ import { TopicTag } from '@/components/topic-tag';
 import { StoryTags } from '@/components/story-tags';
 import { getGoodNewsSettings, getPublishedStories, getPublicTopic, publishedStoryToListing, publishedTopics, relatedPublishedStories } from '@/lib/published-stories';
 import { allTopics, cleanCopy, getTopic, storyHref, storyImage, topicSlug } from '@/lib/stories';
-import { GoodNewsBadge } from '@/components/good-news-badge';
 import { InlineBrand } from '@/components/inline-brand';
 import { pageMetadata } from '@/lib/seo';
 
@@ -50,10 +49,17 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
       <span>{topicStories.length} {topicStories.length === 1 ? 'story' : 'stories'}</span>
     </section>
     <section className="topic-page-grid shell">
-      {topicStories.map((story, index) => <article className={index === 0 ? 'topic-story topic-story-featured' : 'topic-story'} key={story.slug}>
-        <a className="topic-story-image" href={storyHref(story)} aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
-        <div><StoryTags story={story} /><h2><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h2><p>{cleanCopy(story.summary)}</p><a className="text-link" href={storyHref(story)}>Read story <ArrowRight /></a></div>
-      </article>)}
+      {topicStories.map((story, index) => <EditorialArchiveCard
+        featured={index === 0}
+        href={storyHref(story)}
+        image={storyImage(story)}
+        goodNews={story.goodNews}
+        labels={<StoryTags story={story} />}
+        title={cleanCopy(story.title)}
+        summary={cleanCopy(story.summary)}
+        linkLabel="Read story"
+        key={story.slug}
+      />)}
     </section>
     <WeeklyDigestNewsletterCta id={`topic-${slug}-digest-email`} className="editorial-newsletter-cta shell" />
     <SimilarStories stories={related} />
