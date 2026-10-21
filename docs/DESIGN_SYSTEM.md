@@ -221,7 +221,6 @@ These are recorded facts, not design changes:
 
 - `app/globals.css` contains chronological layers of overrides, so an early declaration is not always the effective style.
 - Some feature-specific and status colours remain local literals rather than shared tokens.
-- Historical colour aliases remain for compatibility with existing selectors.
 - The admin and public styles partly overlap in `globals.css`; admin consolidation is incomplete.
 - Many feature-specific breakpoints repeat the same viewport widths.
 
