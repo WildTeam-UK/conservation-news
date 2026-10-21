@@ -27,7 +27,10 @@ export function SiteNavigation() {
     </button>
     <div className={`site-navigation${open ? ' is-open' : ''}`} id="site-navigation">
       <nav className="primary-nav" aria-label="Main navigation">
-        {navigationLinks.map((link) => <a href={link.href} onClick={closeMenu} key={link.label}>{link.label}</a>)}
+        {navigationLinks.map((link) => {
+          const external = link.href.startsWith('http');
+          return <a href={link.href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} onClick={closeMenu} key={link.label}>{link.label}</a>;
+        })}
       </nav>
       <div className="site-navigation-actions">
         {navigationActions.map((action) => <a className={`site-navigation-button ${action.kind}`} href={action.href} onClick={closeMenu} key={action.label}>{action.kind === 'good-news' ? <span className="good-news-nav-icon" aria-hidden="true" /> : null}<span>{action.label}</span></a>)}
