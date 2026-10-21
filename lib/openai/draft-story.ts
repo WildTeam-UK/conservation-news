@@ -12,6 +12,7 @@ import { buildArticleLinkTargets } from '@/lib/article-link-candidates';
 import { applyArticleLinkPlan, articleLinkRows, cleanArticleLinks, countArticleLinks, type ArticleContextualLink, type ArticleLinkPlanItem } from '@/lib/article-linking';
 import { slugify } from '@/lib/stories';
 import { clampScore } from '@/lib/scores';
+import { safeHttpUrl } from '@/lib/urls';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'draft-v6-conservation-outlook-fallback';
@@ -103,13 +104,7 @@ function cleanText(value: unknown, maxLength: number) {
 
 function safeImageUrl(value: unknown) {
   const text = cleanText(value, 2000);
-  if (!text) return '';
-  try {
-    const url = new URL(text);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : '';
-  } catch {
-    return '';
-  }
+  return text ? safeHttpUrl(text) ?? '' : '';
 }
 
 function cleanImageCredit(value: unknown): EditorialImageCredit | null {

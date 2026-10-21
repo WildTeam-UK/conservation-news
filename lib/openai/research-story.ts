@@ -7,6 +7,7 @@ import { aiInstructions, parseAiJson } from './house-style';
 import { sourceRelationName } from '@/lib/supabase/relations';
 import { normalizeTaxonomyKey, tagSlug } from '@/lib/taxonomy-text';
 import { normalizeFractionalScore } from '@/lib/scores';
+import { safeHttpUrl } from '@/lib/urls';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'research-v3-conservation-outlook';
@@ -72,17 +73,8 @@ export type ResearchResult = {
   alreadyCompleted: boolean;
 };
 
-function safeUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null;
-  } catch {
-    return null;
-  }
-}
-
 function comparableUrl(value: string) {
-  const safe = safeUrl(value);
+  const safe = safeHttpUrl(value);
   if (!safe) return null;
   const url = new URL(safe);
   url.hash = '';
@@ -344,7 +336,7 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
 
     const validSourceUrls = new Set<string>();
     const sources = raw.sources.flatMap((source) => {
-      const safe = safeUrl(source.url);
+      const safe = safeHttpUrl(source.url);
       const comparable = safe ? comparableUrl(safe) : null;
       if (!safe || !comparable || !consultedUrls.has(comparable)) return [];
       validSourceUrls.add(comparable);
@@ -354,7 +346,7 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
     for (const original of originalSources) {
       const comparable = comparableUrl(original.url);
       if (!comparable || validSourceUrls.has(comparable)) continue;
-      const safe = safeUrl(original.url);
+      const safe = safeHttpUrl(original.url);
       if (!safe) continue;
       validSourceUrls.add(comparable);
       sources.push({ title: original.title, publisher: sourceRelationName(original.sources), url: safe, source_type: 'news', why_relevant: 'Original collected reporting used to identify this candidate.' });
@@ -363,7 +355,7 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
     const cleanClaims = (claims: ResearchClaim[]) => claims.map((claim) => ({
       claim: claim.claim,
       source_urls: claim.source_urls.flatMap((url) => {
-        const safe = safeUrl(url);
+        const safe = safeHttpUrl(url);
         return safe && validSourceUrls.has(comparableUrl(safe) ?? '') ? [safe] : [];
       }),
     })).filter((claim) => claim.source_urls.length > 0);

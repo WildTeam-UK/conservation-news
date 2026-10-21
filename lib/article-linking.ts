@@ -1,4 +1,5 @@
 import { clampScore } from '@/lib/scores';
+import { safeHttpUrl } from '@/lib/urls';
 
 export const ARTICLE_LINK_SECTIONS = ['key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know'] as const;
 
@@ -54,12 +55,7 @@ const MAX_LINKS = 5;
 
 function safeHref(value: string) {
   if (value.startsWith('/') && !value.startsWith('//')) return value;
-  try {
-    const url = new URL(value);
-    return url.protocol === 'https:' || url.protocol === 'http:' ? url.toString() : '';
-  } catch {
-    return '';
-  }
+  return safeHttpUrl(value) ?? '';
 }
 
 function occurrence(text: string, anchor: string) {
