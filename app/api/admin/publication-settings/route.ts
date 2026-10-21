@@ -42,13 +42,16 @@ export async function PATCH(request: Request) {
     min_auto_publish_evidence_score: minimumEvidence,
     updated_by: user.id,
   }).eq('id', true);
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('Publication settings save failed', error);
+    return Response.json({ error: 'Publication settings could not be saved.' }, { status: 500 });
+  }
 
   try {
     const queue = body.autoPublishEnabled ? await queueReadyDrafts(null) : await rebalancePublicationQueue();
     return Response.json({ saved: true, queue });
   } catch (error) {
-    const detail = error instanceof Error ? error.message : 'The queue could not be refreshed.';
-    return Response.json({ saved: true, warning: `Settings were saved, but ${detail}` });
+    console.error('Publication queue refresh failed after saving settings', error);
+    return Response.json({ saved: true, warning: 'Settings were saved, but the queue could not be refreshed.' });
   }
 }

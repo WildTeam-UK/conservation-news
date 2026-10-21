@@ -37,7 +37,10 @@ export async function PATCH(request: Request) {
     max_estimated_cost_usd: Math.round(maxEstimatedCostUsd * 100) / 100,
     updated_by: user.id,
   });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('Editorial settings save failed', error);
+    return Response.json({ error: 'Editorial settings could not be saved.' }, { status: 500 });
+  }
 
   return Response.json({ saved: true });
 }

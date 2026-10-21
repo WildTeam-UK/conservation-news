@@ -53,7 +53,10 @@ export async function PATCH(request: Request) {
     email_distribution_enabled: false,
     updated_by: user.id,
   }).eq('id', true);
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('Digest settings save failed', error);
+    return Response.json({ error: 'Digest settings could not be saved.' }, { status: 500 });
+  }
 
   return Response.json({ saved: true, automationEnabled: body.automationEnabled });
 }
