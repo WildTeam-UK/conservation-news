@@ -6,7 +6,7 @@ import { EditorialPageEnd } from '@/components/editorial-page-end';
 import { InteriorHeader } from '@/components/interior-header';
 import { JsonLd } from '@/components/json-ld';
 import { getGoodNewsSettings, getPublishedStories, getPublishedStory, publishedStoryToArticle, publishedStoryToListing, publishedTopics, relatedPublishedStories } from '@/lib/published-stories';
-import { articleMetadata, newsArticleJsonLd } from '@/lib/seo';
+import { articleMetadata, newsArticleJsonLd, withSiteName } from '@/lib/seo';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const content = published.generation_metadata.article_content as { seo_title?: string; seo_description?: string } | undefined;
   const title = content?.seo_title || published.headline;
   const description = content?.seo_description || published.standfirst;
-  return articleMetadata({ title: `${title} | WILDNEWS`, description, path: `/stories/${published.slug}`, image: published.image_url, imageAlt: published.image_alt, publishedTime: published.published_at, modifiedTime: published.updated_at });
+  return articleMetadata({ title: withSiteName(title), description, path: `/stories/${published.slug}`, image: published.image_url, imageAlt: published.image_alt, publishedTime: published.published_at, modifiedTime: published.updated_at });
 }
 
 export default async function StoryPage({ params }: { params: Promise<{ slug: string }> }) {

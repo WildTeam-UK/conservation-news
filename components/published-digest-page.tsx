@@ -5,7 +5,7 @@ import { InteriorHeader } from '@/components/interior-header';
 import { JsonLd } from '@/components/json-ld';
 import { SiteFooter } from '@/components/site-footer';
 import { cleanDigestText, digestPath, getPublishedDailyDigests, getPublishedDigest, type DigestContent, type DigestType } from '@/lib/digests';
-import { articleMetadata, newsArticleJsonLd } from '@/lib/seo';
+import { articleMetadata, newsArticleJsonLd, withSiteName } from '@/lib/seo';
 
 export async function publishedDigestMetadata(type: DigestType, date: string): Promise<Metadata> {
   const digest = await getPublishedDigest(type, date);
@@ -13,7 +13,7 @@ export async function publishedDigestMetadata(type: DigestType, date: string): P
   if (!digest) return { title: `${edition} digest not found | WILDNEWS`, robots: { index: false, follow: false } };
 
   const content = digest.generation_metadata.digest_content;
-  const title = `${cleanDigestText(content?.seo_title ?? digest.headline)} | WILDNEWS`;
+  const title = withSiteName(cleanDigestText(content?.seo_title ?? digest.headline));
   const description = cleanDigestText(content?.seo_description ?? digest.standfirst);
   return articleMetadata({
     title,
