@@ -22,7 +22,7 @@ export const GENERAL_TRAINING_PROMOTION: TrainingCoursePromotion = {
   cta_label: 'Explore WildTeam Training',
 };
 
-export function slugifyCourse(value: string) {
+function slugifyCourse(value: string) {
   return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 100) || 'course';
 }
 
