@@ -192,7 +192,7 @@ The article template is shared by every published news story:
 
 1. Centred hero with Good News/topic pills, title and compact coverage summary.
 2. Full-width lead image with attribution.
-3. “The story at a glance” introduction, discovery tags, update date and vertical share controls.
+3. “The story at a glance” introduction, discovery tags, update date and share controls. The controls form a vertical rail beside the introduction on desktop, then move above the discovery tags in a horizontal row at 1000px and below.
 4. Structured editorial sections: what you need to know, why it matters, what happens next, what is known, what is unknown, and source reporting.
 5. Sticky desktop sidebar containing coverage analysis and a course promotion.
 6. Newsletter CTA and related-story discovery supplied by the page route.
