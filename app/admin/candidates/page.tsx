@@ -67,7 +67,7 @@ function ResearchClaims({ claims, sourceNumbers }: { claims: ResearchClaim[]; so
   if (!claims.length) return <p className="research-none">Nothing material was identified.</p>;
   return <ul>{claims.map((item) => <li key={item.claim}><span>{item.claim}</span><small>{item.source_urls.map((url) => {
     const number = sourceNumbers.get(url);
-    return number ? <a href={url} target="_blank" rel="noreferrer" key={url}>Source {number}</a> : null;
+    return number ? <a href={url} target="_blank" rel="noopener noreferrer" key={url}>Source {number}</a> : null;
   })}</small></li>)}</ul>;
 }
 
@@ -89,7 +89,7 @@ function ResearchPackView({ pack }: { pack: ResearchPack }) {
       <section><h4>Open questions</h4>{content.open_questions.length ? <ul>{content.open_questions.map((question) => <li key={question}>{question}</li>)}</ul> : <p className="research-none">No material open questions were identified.</p>}</section>
     </div>
     <section className="research-coverage"><div><h4>Coverage analysis</h4><p>{coverage.explanation}</p>{coverage.conservation_outlook_rationale ? <p>{coverage.conservation_outlook_rationale}</p> : null}</div><dl><div><dt>Ecological framing</dt><dd>{coverage.ecological}</dd></div><div><dt>Evidence-led</dt><dd>{coverage.evidence}</dd></div><div><dt>Source agreement</dt><dd>{coverage.consensus}</dd></div><div><dt>Conservation outlook</dt><dd>{coverage.conservation_outlook}{Number.isFinite(coverage.conservation_outlook_score) ? ` · ${coverage.conservation_outlook_score}/100` : ''}{Number.isFinite(coverage.conservation_outlook_confidence) ? ` · ${coverage.conservation_outlook_confidence}% confidence` : ''}</dd></div></dl></section>
-    <section className="research-source-list"><h4>Sources consulted</h4>{content.sources.map((source, index) => <a href={source.url} target="_blank" rel="noreferrer" key={source.url}><span>{index + 1}</span><div><strong>{source.title}</strong><small>{source.publisher} · {source.source_type} · {source.why_relevant}</small></div><ExternalLink /></a>)}</section>
+    <section className="research-source-list"><h4>Sources consulted</h4>{content.sources.map((source, index) => <a href={source.url} target="_blank" rel="noopener noreferrer" key={source.url}><span>{index + 1}</span><div><strong>{source.title}</strong><small>{source.publisher} · {source.source_type} · {source.why_relevant}</small></div><ExternalLink /></a>)}</section>
     <p className="research-cost-note">Estimated model-token cost ${Number(pack.estimated_cost_usd ?? 0).toFixed(4)}, plus {pack.web_search_actions} web search {pack.web_search_actions === 1 ? 'action' : 'actions'}.</p>
   </section>;
 }
@@ -206,7 +206,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
                     {assessment.rationale ? <p>{assessment.rationale}</p> : null}
                     <div className="candidate-sources">
                       <h3><Newspaper /> Source {sources.length === 1 ? 'story' : 'stories'}</h3>
-                      {sources.map((source) => <a href={source.url} target="_blank" rel="noreferrer" key={source.id}><span>{sourceRelationName(source.sources)}</span>{source.title}<ExternalLink /></a>)}
+                      {sources.map((source) => <a href={source.url} target="_blank" rel="noopener noreferrer" key={source.id}><span>{sourceRelationName(source.sources)}</span>{source.title}<ExternalLink /></a>)}
                     </div>
                     {research?.status === 'completed' ? <><p className="research-complete-label"><ShieldCheck /> Research complete</p>{draftId ? <a className="candidate-edit-draft" href={`/admin/drafts/${draftId}`}>Edit draft</a> : <GenerateDraftButton clusterId={candidate.id} />}</> : research?.status === 'researching' ? <p className="research-progress-label">Research is in progress. Refresh shortly.</p> : <ResearchCandidateButton clusterId={candidate.id} retry={research?.status === 'failed'} />}
                     {research?.status === 'failed' && research.error_message ? <p className="research-error-detail">The previous attempt failed and can be retried.</p> : null}

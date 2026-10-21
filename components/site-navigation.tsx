@@ -29,7 +29,7 @@ export function SiteNavigation() {
       <nav className="primary-nav" aria-label="Main navigation">
         {navigationLinks.map((link) => {
           const external = link.href.startsWith('http');
-          return <a href={link.href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined} onClick={closeMenu} key={link.label}>{link.label}</a>;
+          return <a href={link.href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined} onClick={closeMenu} key={link.label}>{link.label}</a>;
         })}
       </nav>
       <div className="site-navigation-actions">

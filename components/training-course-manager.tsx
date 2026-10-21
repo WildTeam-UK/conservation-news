@@ -77,7 +77,7 @@ function CourseCard({ course }: { course: TrainingCourse }) {
   }
 
   return <article className={`training-course-card${course.active ? '' : ' inactive'}`}>
-    <div className="training-course-card-heading"><span className="training-course-swatch" style={{ backgroundColor: course.primary_colour }}><GraduationCap /></span><div><p className="eyebrow">{course.active ? 'Active course' : 'Inactive course'}</p><h2>{course.title}</h2><a href={course.course_url} target="_blank" rel="noreferrer">View course <ExternalLink /></a></div><button type="button" disabled={working} onClick={() => update('toggle')}>{course.active ? 'Deactivate' : 'Activate'}</button></div>
+    <div className="training-course-card-heading"><span className="training-course-swatch" style={{ backgroundColor: course.primary_colour }}><GraduationCap /></span><div><p className="eyebrow">{course.active ? 'Active course' : 'Inactive course'}</p><h2>{course.title}</h2><a href={course.course_url} target="_blank" rel="noopener noreferrer">View course <ExternalLink /></a></div><button type="button" disabled={working} onClick={() => update('toggle')}>{course.active ? 'Deactivate' : 'Activate'}</button></div>
     <details><summary>Edit course <ChevronDown /></summary><form onSubmit={(event) => update('update', event)}><CourseFieldsForm fields={fields} setFields={setFields} /><div className="training-course-actions"><button type="submit" disabled={working}>{working ? <LoaderCircle className="admin-spinner" /> : <Save />} Save course</button>{message ? <output>{message}</output> : null}</div></form></details>
   </article>;
 }

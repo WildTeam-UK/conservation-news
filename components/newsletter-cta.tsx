@@ -39,7 +39,7 @@ export function NewsletterSignupForm({ id }: { id: string }) {
     <input className="digest-signup-honeypot" name="website" type="text" tabIndex={-1} autoComplete="off" aria-hidden="true" />
     <div className="digest-signup-control"><input id={id} name="email" type="email" inputMode="email" autoComplete="email" placeholder="Email address" maxLength={254} required disabled={status === 'submitting'} /><button type="submit" disabled={status === 'submitting'}>{status === 'submitting' ? 'Signing up…' : 'Sign me up'} <ArrowRight /></button></div>
     {message ? <output className={`digest-signup-message ${status}`} aria-live="polite">{message}</output> : null}
-    <p className="digest-signup-privacy">By signing up, you agree to receive the <InlineBrand text="WILDNEWS" /> Weekly Digest. You can unsubscribe at any time. <a href="https://training.wildteam.org.uk/privacy" target="_blank" rel="noreferrer">Privacy policy</a>.</p>
+    <p className="digest-signup-privacy">By signing up, you agree to receive the <InlineBrand text="WILDNEWS" /> Weekly Digest. You can unsubscribe at any time. <a href="https://training.wildteam.org.uk/privacy" target="_blank" rel="noopener noreferrer">Privacy policy</a>.</p>
   </form>;
 }
 

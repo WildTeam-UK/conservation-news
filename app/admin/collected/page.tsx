@@ -56,7 +56,7 @@ export default async function CollectedItemsPage() {
             {items.map((item) => (
               <article className="collected-item" key={item.id}>
                 <div className="collected-item-meta"><span>{sourceRelationName(item.sources)}</span><time dateTime={item.published_at ?? item.discovered_at}>{londonMediumDateTimeFormatter.format(new Date(item.published_at ?? item.discovered_at))}</time><strong className={`assessment-status ${item.assessment_status}`}>{item.assessment_status.replace('_', ' ')}</strong></div>
-                <h2><a href={item.url} target="_blank" rel="noreferrer">{item.title} <ExternalLink /></a></h2>
+                <h2><a href={item.url} target="_blank" rel="noopener noreferrer">{item.title} <ExternalLink /></a></h2>
                 {item.summary ? <p>{item.summary}</p> : null}
                 {item.assessment_status === 'failed' && item.assessment_error ? <small className="assessment-error">Assessment will retry automatically: {item.assessment_error}</small> : null}
                 {item.author ? <small>By {item.author}</small> : null}

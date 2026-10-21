@@ -62,7 +62,7 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
   return <section className="wildteam-footer-column">
     <h2>{title}</h2>
     {links.map((link) => link.href
-      ? <a href={link.href} target="_blank" rel="noreferrer" key={link.label}>{link.label}</a>
+      ? <a href={link.href} target="_blank" rel="noopener noreferrer" key={link.label}>{link.label}</a>
       : <span key={link.label}>{link.label}</span>)}
   </section>;
 }
@@ -75,9 +75,9 @@ export function SiteFooter() {
         <section className="wildteam-footer-column">
           <h2>Join the conversation</h2>
           <div className="wildteam-social-links">
-            {socialLinks.map(({ label, href, network }) => <a href={href} target="_blank" rel="noreferrer" aria-label={label} key={label}><SocialIcon network={network} /></a>)}
+            {socialLinks.map(({ label, href, network }) => <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} key={label}><SocialIcon network={network} /></a>)}
           </div>
-          <a className="wildteam-cpd-link" href="https://training.wildteam.org.uk/cpd-certification" target="_blank" rel="noreferrer">
+          <a className="wildteam-cpd-link" href="https://training.wildteam.org.uk/cpd-certification" target="_blank" rel="noopener noreferrer">
             {/* oxlint-disable-next-line next/no-img-element -- shared WildTeam certification asset */}
             <img src="https://lwfiles.mycourse.app/6874ec826e31c5cf606cc001-public/24d306bb870071d95fb156827191ca00.png" alt="CPD Member certification" />
           </a>

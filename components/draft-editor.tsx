@@ -14,7 +14,7 @@ export type DraftSource = { id: string; title: string; publisher: string; url: s
 function SourceReferences({ ids, sources }: { ids: string[]; sources: Map<string, DraftSource> }) {
   return <span className="draft-source-refs">{ids.map((id) => {
     const source = sources.get(id);
-    return source ? <a href={source.url} target="_blank" rel="noreferrer" title={`${source.publisher}: ${source.title}`} key={id}>{id.replace('source-', '')}</a> : null;
+    return source ? <a href={source.url} target="_blank" rel="noopener noreferrer" title={`${source.publisher}: ${source.title}`} key={id}>{id.replace('source-', '')}</a> : null;
   })}</span>;
 }
 

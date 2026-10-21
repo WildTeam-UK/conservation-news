@@ -86,7 +86,7 @@ function LinkedArticleText({ text, links }: { text: string; links?: ArticleConte
   positioned.forEach(({ link, start, end }, index) => {
     if (start < cursor) return;
     if (start > cursor) nodes.push(text.slice(cursor, start));
-    nodes.push(<a className="article-contextual-link" href={link.href} {...(link.external ? { target: '_blank', rel: 'noreferrer' } : {})} key={`${link.type}-${link.target_id}-${index}`}>{text.slice(start, end)}</a>);
+    nodes.push(<a className="article-contextual-link" href={link.href} {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} key={`${link.type}-${link.target_id}-${index}`}>{text.slice(start, end)}</a>);
     cursor = end;
   });
   if (cursor < text.length) nodes.push(text.slice(cursor));
@@ -99,7 +99,7 @@ function ArticleTextContent({ value, sources }: { value: ArticleText; sources: M
   const links = typeof value === 'string' ? [] : value.links;
   return <><LinkedArticleText text={text} links={links} />{sourceIds.length ? <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
     const source = sources.get(id);
-    return source ? <a href={source.url} target="_blank" rel="noreferrer" title={`${source.name}${source.title ? `: ${source.title}` : ''}`} aria-label={`Source ${id.replace('source-', '')}: ${source.name}`} key={id}>{id.replace('source-', '')}</a> : null;
+    return source ? <a href={source.url} target="_blank" rel="noopener noreferrer" title={`${source.name}${source.title ? `: ${source.title}` : ''}`} aria-label={`Source ${id.replace('source-', '')}: ${source.name}`} key={id}>{id.replace('source-', '')}</a> : null;
   })}</span> : null}</>;
 }
 
@@ -135,7 +135,7 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
         {articleTextValue(article.whatHappensNext) ? <section className="story-section"><p className="eyebrow">The developing story</p><h2>What happens next</h2><p className="story-explainer"><ArticleTextContent value={article.whatHappensNext} sources={sourcesById} /></p></section> : null}
         <section className="story-section"><p className="eyebrow">Established evidence</p><h2>What we know</h2><ul className="evidence-points">{article.whatWeKnow.map((point, index) => <li key={`known-${index}`}><ArticleTextContent value={point} sources={sourcesById} /></li>)}</ul></section>
         <section className="story-section"><p className="eyebrow">Open questions</p><h2>What we don&apos;t know</h2><ul className="evidence-points">{article.whatWeDontKnow.map((point, index) => <li key={`unknown-${index}`}><ArticleTextContent value={point} sources={sourcesById} /></li>)}</ul></section>
-        <section className="story-section" id="sources"><p className="eyebrow">Source coverage</p><h2>Read the reporting</h2><div className="source-list">{article.sources.map((source, index) => <a href={source.url} target="_blank" rel="noreferrer" key={`${source.url}-${index}`} title={source.title}><span>{source.primary ? 'Primary story' : 'Also covering'}</span><strong>{source.name}</strong><ExternalLink /></a>)}</div></section>
+        <section className="story-section" id="sources"><p className="eyebrow">Source coverage</p><h2>Read the reporting</h2><div className="source-list">{article.sources.map((source, index) => <a href={source.url} target="_blank" rel="noopener noreferrer" key={`${source.url}-${index}`} title={source.title}><span>{source.primary ? 'Primary story' : 'Also covering'}</span><strong>{source.name}</strong><ExternalLink /></a>)}</div></section>
       </div>
       <div className="article-sidebar"><aside className="coverage-card">
         <p className="eyebrow">Coverage analysis</p>

@@ -25,6 +25,6 @@ export function TrainingBanner({
       <h2>{title}</h2>
       <p>{description}</p>
     </div>
-    <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noreferrer' : undefined}>{linkLabel} <ArrowRight /></a>
+    <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>{linkLabel} <ArrowRight /></a>
   </aside>;
 }
