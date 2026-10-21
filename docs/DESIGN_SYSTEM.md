@@ -109,6 +109,7 @@ The admin surface standardises card borders and shadows through `--admin-card-bo
 
 - Primary public buttons: pink background, white text; purple background on hover.
 - Secondary public buttons: transparent with pink border/text; purple border/text on hover.
+- Shared CTA colour states are owned by the `Public CTA colour system` block in `app/globals.css`; component rules define their geometry and layout without restating those colours.
 - The Good News navigation button uses the primary treatment plus a periodic shine. Reduced-motion users do not receive the animation.
 - Topic pills: cream with purple text; pink with white text on hover.
 - Fancy digest and Good News pills: white centre, 1px gradient border and gradient text; pink with white text on hover.
