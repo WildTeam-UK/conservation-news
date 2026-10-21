@@ -606,6 +606,10 @@ p{margin-top:0;margin-bottom:1.25em}p:last-child{margin-bottom:0}p+p{margin-top:
 .editorial-image-credit{position:absolute;right:13px;bottom:13px;display:block;max-width:calc(100% - 26px);margin:0;padding:7px 10px;border-radius:var(--radius-pill);background:var(--paper);color:var(--muted);font-size:8px;font-weight:700;line-height:1.35;text-align:right;box-shadow:0 1px 5px rgba(8,8,8,.12)}
 .editorial-image-credit a{color:inherit;text-decoration:underline;text-underline-offset:2px}
 
+/* Shared keyboard focus treatment */
+:where(a,button,input,textarea,select,summary):focus-visible{outline:2px solid var(--brand-pink);outline-offset:3px}
+.digest-signup-control input:focus-visible{outline:0}
+
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}

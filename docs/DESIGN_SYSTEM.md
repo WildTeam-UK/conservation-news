@@ -118,7 +118,8 @@ The admin surface standardises card borders and shadows through `--admin-card-bo
 - Editorial text links: purple, frequently with a pink underline or arrow.
 - Images in prominent story links use a subtle scale-up hover.
 - Source-number circles use a grey border/text and change to pink on hover or focus.
-- Focus-visible states must remain distinct. Animation must respect `prefers-reduced-motion`.
+- Links, buttons, form controls and disclosure summaries use a 2px pink keyboard-focus outline with a 3px offset. Components on dark surfaces may override this with a white ring, and newsletter inputs expose focus on their shared outer control.
+- Animation must respect `prefers-reduced-motion`.
 
 ## Shared public components
 
