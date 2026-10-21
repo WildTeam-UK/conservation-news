@@ -95,7 +95,7 @@ export async function POST(request: Request) {
         await recordDigestFailure(digestClaim.claimed_run_id, detail);
         await recordHeartbeatSuccess();
         console.error('Digest automation failed', digestError);
-        return Response.json({ action: 'digest_failed', publication, digestError: detail });
+        return Response.json({ action: 'digest_failed', publication, digestError: 'Scheduled digest generation failed.' });
       }
     }
 
@@ -132,6 +132,6 @@ export async function POST(request: Request) {
     const detail = error instanceof Error ? error.message : 'Unknown automation error.';
     await recordHeartbeatFailure(detail);
     console.error('Editorial automation heartbeat failed', error);
-    return Response.json({ error: detail }, { status: 500 });
+    return Response.json({ error: 'Editorial automation heartbeat failed.' }, { status: 500 });
   }
 }
