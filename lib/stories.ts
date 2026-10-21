@@ -7,11 +7,8 @@ export type Story = {
   topics: string[];
   title: string;
   summary: string;
-  byline: string;
   image: string;
   bullets: string[];
-  leaning: 'Left' | 'Centre' | 'Right';
-  balance: [number, number, number];
   sources: { name: string; url: string; primary?: boolean }[];
   goodNews?: boolean;
   digestType?: 'daily' | 'weekly';

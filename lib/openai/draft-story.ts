@@ -39,7 +39,6 @@ export type StoryDraftContent = {
   image_search_query: string;
   image_search_fallbacks: string[];
   image_credit: EditorialImageCredit | null;
-  byline: string;
   seo_title: string;
   seo_description: string;
 };
@@ -82,7 +81,6 @@ type DraftFallback = {
   coverage_analysis?: Partial<DraftCoverageAnalysis>;
   image_url?: string | null;
   image_alt?: string | null;
-  byline?: string | null;
 };
 
 const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
@@ -166,7 +164,6 @@ export function cleanDraftContent(value: StoryDraftContent, validSourceIds: Set<
     image_search_query: primaryImageQuery,
     image_search_fallbacks: imageSearchFallbacks,
     image_credit: cleanImageCredit(value.image_credit),
-    byline: cleanText(value.byline, 120) || 'WildNews editorial team',
     seo_title: stripSourceMarkers(cleanText(value.seo_title, 180)),
     seo_description: cleanText(value.seo_description, 320),
   };
@@ -226,7 +223,6 @@ export function migrateDraftContent(value: unknown, fallback: DraftFallback = {}
     image_search_query: cleanText(record.headline, 120),
     image_search_fallbacks: [],
     image_credit: null,
-    byline: cleanText(fallback.byline, 120) || 'WildNews editorial team',
     seo_title: stripSourceMarkers(cleanText(record.seo_title, 180)),
     seo_description: cleanText(record.seo_description, 320),
   };
@@ -436,7 +432,6 @@ This is a private first draft for human review, never a finished or published ar
     image_alt: selectedImage?.alt_text || (selectedImage ? `Illustrative image related to ${selectedImageQuery}` : ''),
     image_search_query: selectedImageQuery,
     image_credit: selectedImage?.credit ?? null,
-    byline: 'WildNews editorial team',
   }, validSourceIds), generated.link_plan ?? [], linkTargets);
   const slug = await uniqueSlug(content.headline);
   const inputTokens = response.usage?.input_tokens ?? 0;
@@ -568,7 +563,7 @@ This is a private first draft for human review, never a finished or published ar
 
 export async function recalculateStoryCoverage(storyId: string, userId: string): Promise<CoverageRecalculationResult> {
   const supabase = getSupabaseAdminClient();
-  const { data: story, error: storyError } = await supabase.from('stories').select('id, cluster_id, status, generation_metadata, image_url, image_alt, byline').eq('id', storyId).single();
+  const { data: story, error: storyError } = await supabase.from('stories').select('id, cluster_id, status, generation_metadata, image_url, image_alt').eq('id', storyId).single();
   if (storyError || !story) throw storyError ?? new Error('Draft not found.');
   if (story.status !== 'draft' || !story.cluster_id) throw new Error('Coverage can only be recalculated for a researched draft.');
   const { data: pack, error: packError } = await supabase.from('research_packs').select('content').eq('cluster_id', story.cluster_id).eq('status', 'completed').single();
@@ -610,7 +605,7 @@ Ecological measures ecological framing versus economic framing. Evidence measure
   const coverage = normalizedCoverage(parseAiJson<DraftCoverageAnalysis>(response.output_text));
   const metadata = (story.generation_metadata ?? {}) as Record<string, unknown> & { article_content?: StoryDraftContent; topic_classification?: { primary_topic?: string; secondary_topics?: string[] } };
   const topics = [metadata.topic_classification?.primary_topic, ...(metadata.topic_classification?.secondary_topics ?? [])].filter((topic): topic is string => Boolean(topic));
-  const articleContent = migrateDraftContent(metadata.article_content ?? {}, { topics, coverage_analysis: coverage, image_url: story.image_url, image_alt: story.image_alt, byline: story.byline });
+  const articleContent = migrateDraftContent(metadata.article_content ?? {}, { topics, coverage_analysis: coverage, image_url: story.image_url, image_alt: story.image_alt });
   const updatedMetadata = { ...metadata, article_content: { ...articleContent, coverage_analysis: coverage }, coverage_analysis: { ...coverage, explanation: 'Coverage scores recalibrated from the completed research pack.' }, coverage_recalculated_at: new Date().toISOString() };
   const inputTokens = response.usage?.input_tokens ?? 0;
   const outputTokens = response.usage?.output_tokens ?? 0;

@@ -37,12 +37,12 @@ type CoverageUpdate = {
 export default async function DraftPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const { supabase } = await requireContentAdmin();
-  const { data: story, error } = await supabase.from('stories').select('id, cluster_id, slug, headline, status, published_at, generation_metadata, updated_at, image_url, image_alt, byline, taxonomy_review_required, taxonomy_review_reason, taxonomy_confidence').eq('id', id).maybeSingle();
+  const { data: story, error } = await supabase.from('stories').select('id, cluster_id, slug, headline, status, published_at, generation_metadata, updated_at, image_url, image_alt, taxonomy_review_required, taxonomy_review_reason, taxonomy_confidence').eq('id', id).maybeSingle();
   if (error || !story) notFound();
   const metadata = story.generation_metadata as { article_content?: unknown; source_ids?: DraftSource[]; model?: string; estimated_cost_usd?: number | string; topic_classification?: { primary_topic?: string; secondary_topics?: string[] }; coverage_analysis?: Partial<DraftCoverageAnalysis> };
   if (!metadata.article_content) notFound();
   const topics = [metadata.topic_classification?.primary_topic, ...(metadata.topic_classification?.secondary_topics ?? [])].filter((topic): topic is string => Boolean(topic));
-  const articleContent = migrateDraftContent(metadata.article_content, { topics, coverage_analysis: metadata.coverage_analysis, image_url: story.image_url, image_alt: story.image_alt, byline: story.byline });
+  const articleContent = migrateDraftContent(metadata.article_content, { topics, coverage_analysis: metadata.coverage_analysis, image_url: story.image_url, image_alt: story.image_alt });
   const [{ data: coverageUpdateRows }, { data: queueItem, error: queueError }, { data: courseRecommendation, error: courseError }, { data: contextualLinkRows, error: contextualLinksError }] = await Promise.all([
     story.cluster_id ? supabase.from('story_cluster_updates').select('id, relationship, rationale, created_at, source_items(title, url, sources(name))').eq('cluster_id', story.cluster_id).eq('status', 'pending_review').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason').eq('story_id', story.id).maybeSingle(),

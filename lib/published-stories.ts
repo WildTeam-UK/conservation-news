@@ -25,7 +25,6 @@ export type PublishedStory = {
   standfirst: string;
   image_url: string | null;
   image_alt: string | null;
-  byline: string;
   published_at: string;
   updated_at: string;
   content_type: 'news' | 'daily_digest' | 'weekly_digest';
@@ -44,7 +43,7 @@ function publicClient() {
   return createClient(url, publishableKey, { auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false } });
 }
 
-const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, byline, published_at, updated_at, content_type, digest_period_end, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale), story_conservation_outlooks(classification, score, confidence, rationale)';
+const storySelect = 'id, slug, headline, standfirst, image_url, image_alt, published_at, updated_at, content_type, digest_period_end, generation_metadata, story_sources(source_name, source_title, source_url, source_role, display_order), story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale), story_conservation_outlooks(classification, score, confidence, rationale)';
 
 function one<T>(value: T | T[] | null): T | null {
   return Array.isArray(value) ? value[0] ?? null : value;
@@ -163,11 +162,8 @@ export function publishedStoryToListing(story: PublishedStory, goodNewsSettings?
       topics,
       title: story.headline,
       summary: stripSourceMarkers(story.standfirst),
-      byline: '',
       image: story.image_url ?? sourceStories.find((source) => source.image_url)?.image_url ?? '',
       bullets: content?.what_to_watch ?? [],
-      leaning: 'Centre',
-      balance: [34, 52, 14],
       sources: [],
       goodNews: false,
       digestType: type,
@@ -181,11 +177,8 @@ export function publishedStoryToListing(story: PublishedStory, goodNewsSettings?
     topics,
     title: story.headline,
     summary: stripSourceMarkers(story.standfirst),
-    byline: story.byline,
     image: story.image_url ?? content.image_url,
     bullets: content.key_takeaways.map((item) => item.text),
-    leaning: 'Centre',
-    balance: [34, 52, 14],
     sources: story.story_sources.map((source) => ({ name: source.source_name, url: source.source_url, primary: source.source_role === 'primary' })),
     goodNews: isPublishedGoodNews(story, goodNewsSettings),
   };

@@ -52,7 +52,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       open_questions: content.what_we_dont_know.map((item) => item.text),
       image_url: content.image_url || null,
       image_alt: content.image_alt || null,
-      byline: content.byline,
       reviewer_id: user.id,
       primary_topic_id: primaryTopic?.id ?? null,
       taxonomy_review_required: !taxonomyReady,
