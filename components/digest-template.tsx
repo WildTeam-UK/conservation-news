@@ -70,7 +70,7 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
     <div className="digest-more-grid">{digests.map((digest) => {
       const date = digest.slug.replace('daily-digest-', '');
       return <article key={digest.id}>
-        <a className="digest-more-image" href={`/daily-digest/${date}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
+        <a className="digest-more-image" href={`/daily-digest/${date}`} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt="" /></> : null}</a>
         <time dateTime={digest.digest_period_end}>{longDate(digest.digest_period_end)}</time>
         <h3><a href={`/daily-digest/${date}`}>{cleanDigestText(digest.headline)}</a></h3>
       </article>;

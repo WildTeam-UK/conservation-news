@@ -20,7 +20,7 @@ function SourceReferences({ ids, sources }: { ids: string[]; sources: Map<string
 
 function SourcedFields({ label, items, sources, onChange }: { label: string; items: SourcedDraftText[]; sources: Map<string, DraftSource>; onChange: (items: SourcedDraftText[]) => void }) {
   return <fieldset className="draft-fieldset"><legend>{label}</legend>{items.map((item, index) => <div className="draft-sourced-field" key={`${label}-${index}`}>
-    <textarea value={item.text} onChange={(event) => onChange(items.map((current, currentIndex) => currentIndex === index ? { ...current, text: event.target.value } : current))} rows={3} />
+    <textarea aria-label={`${label}, item ${index + 1}`} value={item.text} onChange={(event) => onChange(items.map((current, currentIndex) => currentIndex === index ? { ...current, text: event.target.value } : current))} rows={3} />
     <div><span>Supporting sources</span><SourceReferences ids={item.source_ids} sources={sources} /></div>
   </div>)}</fieldset>;
 }
