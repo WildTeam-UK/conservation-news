@@ -111,7 +111,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
         <p>{cleanDigestText(content.standfirst)}</p>
         <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
       </div>
-      {resolvedImageUrl ? <figure className="digest-lead-image"><DigestHeroImage src={resolvedImageUrl} alt={resolvedImageAlt} colourTargetId={heroColourTargetId} /><EditorialImageCredit credit={heroStory?.image_credit} className="digest-image-credit" /></figure> : null}
+      {resolvedImageUrl ? <figure className="digest-lead-image"><DigestHeroImage src={resolvedImageUrl} alt={resolvedImageAlt} colourTargetId={heroColourTargetId} /><EditorialImageCredit credit={heroStory?.image_credit} /></figure> : null}
     </header>
 
     <div className="digest-article-body shell">
@@ -130,7 +130,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           if (sectionImage?.image_url) usedImages.add(sectionImage.image_url);
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
-            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><EditorialImageCredit credit={sectionImage.image_credit} className="digest-image-credit" /></figure> : null}
+            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><EditorialImageCredit credit={sectionImage.image_credit} /></figure> : null}
             {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <StreamlinedNewsletterCta id="digest-email-inline" /> : null}</Fragment>)}
           </section>;
         })}
