@@ -8,10 +8,10 @@ type ArchiveHeroProps = {
 };
 
 export function ArchiveHero({ label, title, description, meta }: ArchiveHeroProps) {
-  return <section className="archive-hero shell">
-    <div className="archive-hero-label">{label}</div>
+  return <section className="archive-hero editorial-hero shell">
+    <div className="archive-hero-label editorial-hero-label">{label}</div>
     <h1>{title}</h1>
-    <p>{description}</p>
+    <p className="editorial-hero-description">{description}</p>
     <span>{meta}</span>
   </section>;
 }

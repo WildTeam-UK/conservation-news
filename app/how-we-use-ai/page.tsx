@@ -4,6 +4,7 @@ import { ArrowRight, CheckCircle2, Search, Sparkles } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { InlineBrand } from '@/components/inline-brand';
+import { PageHero } from '@/components/page-hero';
 import { pageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = pageMetadata({
@@ -16,13 +17,9 @@ export default function AiTransparencyPage() {
   return <main>
     <InteriorHeader />
 
-    <article className="ai-page shell">
-      <header className="ai-page-hero">
-        <p className="eyebrow">Transparency at <InlineBrand text="WILDNEWS" /></p>
-        <h1>How we use AI</h1>
-        <p><InlineBrand text="WILDNEWS" /> uses artificial intelligence to help find, organise and summarise conservation coverage. It makes a large and fragmented field easier to follow, but it does not turn a summary into original reporting.</p>
-      </header>
-
+    <article className="ai-page">
+      <PageHero eyebrow={<>Transparency at <InlineBrand text="WILDNEWS" /></>} title="How we use AI" description={<><InlineBrand text="WILDNEWS" /> uses artificial intelligence to help find, organise and summarise conservation coverage. It makes a large and fragmented field easier to follow, but it does not turn a summary into original reporting.</>} />
+      <div className="ai-page-content shell">
       <section className="ai-caution">
         <strong>The important bit</strong>
         <p>AI can misunderstand context, flatten disagreement and make mistakes. Treat every <InlineBrand text="WILDNEWS" /> briefing as a starting point, then use the linked sources to read the original reporting and evidence.</p>
@@ -43,6 +40,7 @@ export default function AiTransparencyPage() {
       </div>
 
       <section className="ai-next-step"><div><p className="eyebrow">Keep reading critically</p><h2>Go to the evidence.</h2></div><p>Use <InlineBrand text="WILDNEWS" /> to discover what is happening, then follow the source links for the detail, uncertainty and reporting behind each story.</p><a className="action-button" href="/">Explore the stories <ArrowRight /></a></section>
+      </div>
     </article>
 
     <SiteFooter />

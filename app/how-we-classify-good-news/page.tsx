@@ -4,6 +4,7 @@ import { ArrowRight, CircleCheckBig, CircleDotDashed, CircleMinus, TriangleAlert
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { InlineBrand } from '@/components/inline-brand';
+import { PageHero } from '@/components/page-hero';
 import { pageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = pageMetadata({
@@ -15,13 +16,9 @@ export const metadata: Metadata = pageMetadata({
 export default function GoodNewsMethodPage() {
   return <main>
     <InteriorHeader />
-    <article className="ai-page shell good-news-method">
-      <header className="ai-page-hero">
-        <p className="eyebrow">A transparent classification</p>
-        <h1>What counts as good news?</h1>
-        <p><InlineBrand text="WILDNEWS" /> looks for demonstrated conservation progress, not simply positive language. A story only enters the Good News archive when the reported evidence supports both a strong positive outlook and a confident classification.</p>
-      </header>
-
+    <article className="ai-page good-news-method">
+      <PageHero eyebrow="A transparent classification" title="What counts as good news?" description={<><InlineBrand text="WILDNEWS" /> looks for demonstrated conservation progress, not simply positive language. A story only enters the Good News archive when the reported evidence supports both a strong positive outlook and a confident classification.</>} />
+      <div className="ai-page-content shell">
       <section className="ai-caution"><strong>The short version</strong><p>Announcements, pledges and planned projects are not automatically good news. We look for delivery, credible evidence or outcomes that benefit nature or conservation practice.</p></section>
 
       <section className="ai-process" aria-labelledby="outlook-classes">
@@ -40,6 +37,7 @@ export default function GoodNewsMethodPage() {
       </div>
 
       <section className="ai-next-step"><div><p className="eyebrow">See the results</p><h2>Find progress worth following.</h2></div><p>Explore the conservation stories that currently meet the <InlineBrand text="WILDNEWS" /> evidence and confidence thresholds.</p><a className="action-button" href="/good-news-in-conservation">Read Good News <ArrowRight /></a></section>
+      </div>
     </article>
     <SiteFooter />
   </main>;

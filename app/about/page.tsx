@@ -4,6 +4,7 @@ import { ArrowRight } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { InlineBrand } from '@/components/inline-brand';
+import { PageHero } from '@/components/page-hero';
 import { pageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = pageMetadata({
@@ -15,11 +16,7 @@ export const metadata: Metadata = pageMetadata({
 export default function About() {
   return <main>
     <InteriorHeader />
-    <section className="about-hero shell">
-      <p className="eyebrow">About <InlineBrand text="WILDNEWS" /></p>
-      <h1>We tell the whole story of a changing natural world.</h1>
-      <p className="about-intro"><InlineBrand text="WILDNEWS" /> is an independent, nonprofit newsroom covering the people, places and ideas shaping conservation, with curiosity, rigour and a stubborn belief that progress deserves attention.</p>
-    </section>
+    <PageHero eyebrow={<>About <InlineBrand text="WILDNEWS" /></>} title="We tell the whole story of a changing natural world." description={<><InlineBrand text="WILDNEWS" /> is an independent, nonprofit newsroom covering the people, places and ideas shaping conservation, with curiosity, rigour and a stubborn belief that progress deserves attention.</>} />
     <section className="about-image"><img src="https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1800&q=85" alt="Sunlight filtering through a dense green forest" loading="eager" fetchPriority="high" decoding="async" /></section>
     <section className="about-values shell">
       <div><p className="eyebrow">Why we exist</p><h2>Nature is not a niche.</h2></div>
