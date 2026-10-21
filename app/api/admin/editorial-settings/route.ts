@@ -1,8 +1,7 @@
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
+import { isTime } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
-
-const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export async function PATCH(request: Request) {
   const auth = await requireApiAdmin();
@@ -19,7 +18,7 @@ export async function PATCH(request: Request) {
   const maxEstimatedCostUsd = Number(body?.maxEstimatedCostUsd);
   const dailyRunTime = body?.dailyRunTime?.slice(0, 5) ?? '';
 
-  if (typeof body?.automationEnabled !== 'boolean' || !timePattern.test(dailyRunTime)) {
+  if (typeof body?.automationEnabled !== 'boolean' || !isTime(dailyRunTime)) {
     return Response.json({ error: 'Choose a valid automation status and daily run time.' }, { status: 400 });
   }
   if (!Number.isInteger(maxNewDrafts) || maxNewDrafts < 1 || maxNewDrafts > 25) {

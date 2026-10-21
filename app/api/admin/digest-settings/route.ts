@@ -1,8 +1,7 @@
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
+import { isTime } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
-
-const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export async function PATCH(request: Request) {
   const auth = await requireApiAdmin();
@@ -27,7 +26,7 @@ export async function PATCH(request: Request) {
   const weeklyMax = Number(body?.weeklyMaxStories);
   const maxCost = Number(body?.maxEstimatedCostUsd);
 
-  if (!timePattern.test(runTime)) return Response.json({ error: 'Choose a valid digest time.' }, { status: 400 });
+  if (!isTime(runTime)) return Response.json({ error: 'Choose a valid digest time.' }, { status: 400 });
   if (!Number.isInteger(dailyMin) || !Number.isInteger(dailyMax) || dailyMin < 1 || dailyMax > 50 || dailyMax < dailyMin) {
     return Response.json({ error: 'Daily story limits must be between 1 and 50, with the maximum no lower than the minimum.' }, { status: 400 });
   }

@@ -2,6 +2,7 @@ import { getOpenAIClient } from './client';
 import { estimateLunaTokenCost } from './pricing';
 import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestType } from '@/lib/digests';
 import { aiInstructions, parseAiJson } from './house-style';
+import { isCalendarDate } from '@/lib/validation';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 import { readableHeroColour } from '@/lib/images/colour';
@@ -78,7 +79,7 @@ function addCalendarDay(date: string) {
 }
 
 function historicalDailyPeriod(date: string) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(date) || londonDate(londonMidnight(date)) !== date) throw new Error('Choose a valid missed daily edition date.');
+  if (!isCalendarDate(date) || londonDate(londonMidnight(date)) !== date) throw new Error('Choose a valid missed daily edition date.');
   if (date >= londonDate(new Date())) throw new Error('Missed-date generation is only available for an earlier London calendar day.');
   const start = londonMidnight(date);
   const endExclusive = londonMidnight(addCalendarDay(date));

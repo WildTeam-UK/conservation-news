@@ -1,9 +1,8 @@
 import { queueReadyDrafts, rebalancePublicationQueue } from '@/lib/publication-queue';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
+import { isTime } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
-
-const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export async function PATCH(request: Request) {
   const auth = await requireApiAdmin();
@@ -24,7 +23,7 @@ export async function PATCH(request: Request) {
   const minimumOverall = Number(body?.minOverallScore);
   const minimumEvidence = Number(body?.minEvidenceScore);
 
-  if (typeof body?.autoPublishEnabled !== 'boolean' || !timePattern.test(start) || !timePattern.test(end) || end <= start) {
+  if (typeof body?.autoPublishEnabled !== 'boolean' || !isTime(start) || !isTime(end) || end <= start) {
     return Response.json({ error: 'Choose valid publishing hours with the end later than the start.' }, { status: 400 });
   }
   if (!Number.isInteger(maximum) || maximum < 1 || maximum > 200) {
