@@ -20,12 +20,18 @@ The public application defines its core tokens in `app/globals.css`.
 | `--muted` | `#5d5d61` | Secondary copy, dates and metadata |
 | `--footer-surface` | `#2a2f34` | Shared WildTeam footer background |
 | `--footer-muted` | `#f5f5f5` | Secondary footer links and legal copy |
+| `--text-on-purple-muted` / `--text-on-ink-muted` | `#eadbea` / `#d9d5d7` | Supporting copy on the two dark CTA surfaces |
+| `--text-placeholder` | `#777378` | Form placeholder copy |
 | `--accent-coral` | `#e84a43` | Contested coverage signal |
 | `--accent-orange` | `#ff8044` | Economic coverage signal, warning progress and retained accent treatments |
+| `--signal-neutral-track` / `--signal-neutral-fill` | `#ddd` / `#8f8f8f` | Neutral coverage-analysis tracks and values |
 | `--status-success-text` / `--status-success-surface` | `#17602d` / `#e7f5e9` | Successful admin states and confirmation messages |
 | `--status-warning-text` | `#9a4917` | Warning icons and copy |
 | `--status-error-text` / `--status-error-surface` | `#8a1d24` / `#fff0f0` | Standard destructive and failed states |
 | `--status-error-strong` | `#7b1820` | Higher-emphasis error copy |
+| `--status-info-text` / `--status-info-surface` | `#18517c` / `#e8f4ff` | Informational, generated and scheduled states |
+| `--status-pending-text` / `--status-pending-surface` | `#875109` / `#fff1d9` | Work that is actively publishing or awaiting completion |
+| `--status-partial-text` / `--status-partial-surface` | `#785514` / `#fff4d7` | Partial workflow outcomes |
 
 Less frequently repeated state shades remain local to the component that owns them. Course promotions use a course-specific `--course-colour` supplied by the database.
 
@@ -40,6 +46,28 @@ The application uses **VAG Rounded** throughout. Local files live under `public/
 - Black: `vag-rounded-black.woff`, weights 801–950
 
 `--font-family` is the single application font-family token. All public, editorial and admin interfaces use it with a sans-serif fallback; there is no secondary UI family or active serif typeface.
+
+The three installed faces are exposed through semantic weight tokens rather than treating every numeric value as a different design choice:
+
+| Token | Value | Role |
+| --- | --- | --- |
+| `--font-weight-regular` | `400` | Body copy and normal controls |
+| `--font-weight-bold` | `800` | Eyebrows, captions and supporting emphasis |
+| `--font-weight-black` | `900` | Display headings, card titles, actions and strong labels |
+
+The shared public typography roles are:
+
+| Role | Tokens | Current treatment |
+| --- | --- | --- |
+| Caption | `--type-caption-size`, `--type-caption-leading` | 10px / 1.35; used by editorial image credits |
+| Label | `--type-label-size`, `--type-label-leading`, `--type-label-tracking` | 11px / 1 / `.1em`; used by the standard eyebrow |
+| Small body | `--type-body-small-size`, `--type-body-small-leading` | 15px / 1.55; used by supporting CTA copy |
+| Editorial body | `--type-body-size`, `--type-body-leading` | 17px / 1.65; sections may retain a deliberately roomier local leading |
+| Editorial lead | `--type-lead-size`, `--type-lead-leading` | 21px / 1.72; used by digest introductions |
+| Card title | `--type-card-title-size`, `--type-card-title-leading` | 25px / 1.08; used by related and digest discovery cards |
+| Section title | `--type-section-title-size`, `--type-section-title-leading` | 44px / 1; used by principal editorial sections |
+
+Components own their layout, colour and responsive variation while consuming these shared roles. A one-off display size may remain local when it expresses a genuinely different hierarchy; new near-duplicate values should not be introduced without updating this system.
 
 Implemented hierarchy:
 
@@ -240,7 +268,7 @@ Admin pages use:
 These are recorded facts, not design changes:
 
 - `app/globals.css` contains chronological layers of overrides, so an early declaration is not always the effective style.
-- Some feature-specific and status colours remain local literals rather than shared tokens.
+- Some feature-specific colours remain local literals where they do not yet represent a reusable semantic role.
 - The admin and public styles partly overlap in `globals.css`; admin consolidation is incomplete.
 - Many feature-specific breakpoints repeat the same viewport widths.
 
