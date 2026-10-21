@@ -110,7 +110,7 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
       <div className="article-topics">{article.goodNews ? <GoodNewsBadge href="/good-news-in-conservation" /> : null}{article.topics.map((topic) => <TopicTag topic={topic} key={topic} />)}</div>
       <h1>{article.headline}</h1>
       <div className="article-coverage-summary" aria-label="Coverage analysis summary">
-        <div className="leaning-summary-heading"><span>Coverage mix</span><Link className="analysis-help" href="/how-coverage-analysis-works" aria-label="Learn how our coverage analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">A quick view of the ecological, evidence and consensus signals found across current coverage. Click to learn how it works.</span></Link></div>
+        <div className="coverage-summary-heading"><span>Coverage mix</span><Link className="analysis-help" href="/how-coverage-analysis-works" aria-label="Learn how our coverage analysis works"><CircleHelp /><span className="analysis-tooltip" role="tooltip">A quick view of the ecological, evidence and consensus signals found across current coverage. Click to learn how it works.</span></Link></div>
         <div className="article-coverage-track">
           <CoverageSummaryBinary title="Ecological / Economic" firstLabel="Ecological" firstValue={coverage.ecological} secondLabel="Economic" tone="ecology-signal" />
           <CoverageSummaryBinary title="Evidence / Opinion" firstLabel="Evidence" firstValue={coverage.evidence} secondLabel="Opinion" tone="evidence-signal" />
