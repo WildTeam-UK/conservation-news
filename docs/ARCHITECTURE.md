@@ -180,7 +180,7 @@ Published content is read dynamically for the homepage, archives, related storie
 
 ### Digests
 
-At the configured digest time, published stories from the relevant period are selected. Monday–Thursday and weekend runs create daily digests; Friday creates a weekly digest instead. Digests publish immediately when that setting is enabled. Social and email distribution states exist in the schema but external distribution is currently disabled.
+At the configured digest time, published stories from the relevant period are selected. Monday–Thursday and weekend runs create daily digests; Friday creates a weekly digest instead. Digest generation receives bounded candidates for related articles, active topics, approved tags, active courses and underlying reporting, then stores a validated contextual-link plan with the structured digest content. Digests publish immediately when that setting is enabled. Social and email distribution states exist in the schema but external distribution is currently disabled.
 
 ## Scheduling and recovery
 
@@ -206,6 +206,7 @@ Used server-side for:
 - Source-item assessment and clustering
 - Story research and web-search-supported research packs
 - Structured article drafting
+- Structured article and digest contextual-link planning
 - Coverage analysis and conservation outlook
 - Taxonomy suggestions and descriptions
 - Course recommendations and contextual-link assessment

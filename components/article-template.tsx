@@ -1,6 +1,6 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation */
 import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
-import type { ReactNode } from 'react';
+import { ContextualLinkedText } from '@/components/contextual-linked-text';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { SocialShare } from '@/components/social-share';
 import { TopicTag } from '@/components/topic-tag';
@@ -75,29 +75,11 @@ function articleTextValue(value: ArticleText) {
   return stripSourceMarkers(text);
 }
 
-function LinkedArticleText({ text, links }: { text: string; links?: ArticleContextualLink[] }) {
-  if (!links?.length) return text;
-  const positioned = links.flatMap((link) => {
-    const start = text.toLocaleLowerCase('en-GB').indexOf(link.anchor_text.toLocaleLowerCase('en-GB'));
-    return start >= 0 ? [{ link, start, end: start + link.anchor_text.length }] : [];
-  }).sort((a, b) => a.start - b.start);
-  const nodes: ReactNode[] = [];
-  let cursor = 0;
-  positioned.forEach(({ link, start, end }, index) => {
-    if (start < cursor) return;
-    if (start > cursor) nodes.push(text.slice(cursor, start));
-    nodes.push(<a className="article-contextual-link" href={link.href} {...(link.external ? { target: '_blank', rel: 'noopener noreferrer' } : {})} key={`${link.type}-${link.target_id}-${index}`}>{text.slice(start, end)}</a>);
-    cursor = end;
-  });
-  if (cursor < text.length) nodes.push(text.slice(cursor));
-  return <>{nodes}</>;
-}
-
 function ArticleTextContent({ value, sources }: { value: ArticleText; sources: Map<string, ArticleSource> }) {
   const sourceIds = typeof value === 'string' ? [] : [...new Set(value.sourceIds ?? [])];
   const text = articleTextValue(value);
   const links = typeof value === 'string' ? [] : value.links;
-  return <><LinkedArticleText text={text} links={links} />{sourceIds.length ? <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
+  return <><ContextualLinkedText text={text} links={links} />{sourceIds.length ? <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
     const source = sources.get(id);
     return source ? <a href={source.url} target="_blank" rel="noopener noreferrer" title={`${source.name}${source.title ? `: ${source.title}` : ''}`} aria-label={`Source ${id.replace('source-', '')}: ${source.name}`} key={id}>{id.replace('source-', '')}</a> : null;
   })}</span> : null}</>;

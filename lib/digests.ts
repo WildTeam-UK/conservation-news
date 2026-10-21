@@ -1,4 +1,5 @@
 import type { EditorialImageCredit } from '@/lib/images/types';
+import type { ArticleContextualLink } from '@/lib/article-linking';
 import { cleanAiText } from '@/lib/openai/house-style';
 import { getSupabasePublicClient } from '@/lib/supabase/public';
 
@@ -10,8 +11,13 @@ export type DigestSection = {
   story_ids: string[];
 };
 
+export type DigestContextualLink = ArticleContextualLink & {
+  section_index: number;
+  paragraph_index: number;
+};
+
 export type DigestContent = {
-  template_version: 1;
+  template_version: 1 | 2;
   digest_type: DigestType;
   edition_label: string;
   headline: string;
@@ -20,6 +26,7 @@ export type DigestContent = {
   topics?: string[];
   introduction: string[];
   sections: DigestSection[];
+  contextual_links?: DigestContextualLink[];
   what_to_watch: string[];
   closing_note?: string;
   seo_title: string;
