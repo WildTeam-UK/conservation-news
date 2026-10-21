@@ -1,16 +1,14 @@
 import { restoreDraftToQueue } from '@/lib/publication-queue';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 
 export const dynamic = 'force-dynamic';
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 export async function POST(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: 'Authentication required.' }, { status: 401 });
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  if (!admin) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
+  const { supabase, user } = auth;
 
   const body = await request.json().catch(() => null) as { storyId?: string } | null;
   if (!body?.storyId || !uuidPattern.test(body.storyId)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
