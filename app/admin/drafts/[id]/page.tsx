@@ -64,7 +64,7 @@ export default async function DraftPage({ params }: { params: Promise<{ id: stri
     <AdminHeader />
     <AdminNav active="drafts" />
     <div className="admin-shell admin-draft-shell">
-      {/* oxlint-disable-next-line next/no-html-link-for-pages */}
+      {/* oxlint-disable-next-line next/no-html-link-for-pages -- a full page load reliably refreshes the protected Supabase article list */}
       <a className="admin-back-link" href="/admin/drafts"><ArrowLeft /> All drafts</a>
       <section className="admin-welcome draft-page-heading"><div><p className="eyebrow">{story.status === 'published' ? 'Published article' : 'Human review required'}</p><h1><FilePenLine /> {story.status === 'published' ? 'Article controls' : 'Edit draft'}</h1><p>{story.status === 'published' ? 'This article is live and locked. Unpublish it before making corrections.' : 'This article is private. Saving changes will not publish it.'}</p></div><div className="draft-status-card"><span>Status</span><strong>{story.status}</strong><small>Last saved {new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' }).format(new Date(story.updated_at))}</small></div></section>
       {story.taxonomy_review_required ? <section className="new-coverage-panel taxonomy-review-panel"><div><CircleAlert /><span><strong>Topic review required</strong><small>{story.taxonomy_review_reason ?? 'The system could not confidently place this article in the controlled topic structure.'}{story.taxonomy_confidence !== null ? ` Confidence: ${story.taxonomy_confidence}%.` : ''} Choose the best topic below and save the article.</small></span></div></section> : null}
