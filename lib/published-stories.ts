@@ -100,6 +100,26 @@ export async function getPublishedStories(limit = 100): Promise<PublishedStory[]
   return (data ?? []) as unknown as PublishedStory[];
 }
 
+export async function getAllPublishedStories(maximum = 50_000): Promise<PublishedStory[]> {
+  const pageSize = 1000;
+  const stories: PublishedStory[] = [];
+  while (stories.length < maximum) {
+    const batchSize = Math.min(pageSize, maximum - stories.length);
+    const { data, error } = await getSupabasePublicClient().from('stories')
+      .select(storyListingSelect)
+      .eq('status', 'published')
+      .lte('published_at', new Date().toISOString())
+      .order('published_at', { ascending: false })
+      .order('id', { ascending: false })
+      .range(stories.length, stories.length + batchSize - 1);
+    if (error) throw error;
+    const batch = (data ?? []) as unknown as PublishedStory[];
+    stories.push(...batch);
+    if (batch.length < batchSize) break;
+  }
+  return stories;
+}
+
 export function relatedPublishedStories(referenceStories: PublishedStory[], candidates: PublishedStory[], limit = 6) {
   const excludedIds = new Set(referenceStories.map((story) => story.id));
   const referenceTopics = new Set(referenceStories.flatMap(publishedTopics));
