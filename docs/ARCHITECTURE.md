@@ -84,6 +84,7 @@ The unused generic starter component collection and its component-only dependenc
 | `supabase/migrations/` | Ordered production database migrations |
 | `public/` | Fonts, favicon, logo and social-sharing image |
 | `docs/` | Architecture, design and database documentation |
+| `vite.config.ts` | Vinext, Nitro and local development-server configuration |
 
 ## Public routes
 
