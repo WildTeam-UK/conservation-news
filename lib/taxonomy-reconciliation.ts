@@ -4,6 +4,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
 import { normalizeTaxonomyKey, tagSlug } from '@/lib/taxonomy-text';
+import { clampScore } from '@/lib/scores';
 import { aiInstructions, parseAiJson } from '@/lib/openai/house-style';
 
 const MODEL = 'gpt-6-luna';
@@ -30,10 +31,6 @@ type ReconciledStory = {
 };
 
 type StoredTag = { id: string; name: string; slug: string; tag_type: SuggestedTag['tag_type']; status: string };
-
-function clamp(value: number) {
-  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
-}
 
 export type TaxonomyReconciliationResult = {
   processed: number;
@@ -169,7 +166,7 @@ Return every supplied story ID exactly once. Use neutral British English for rat
 
     for (const item of results) {
       const story = storyById.get(item.story_id)!;
-      const confidence = clamp(item.topic_confidence);
+      const confidence = clampScore(item.topic_confidence);
       const requiresReview = item.review_required || !item.primary_topic || confidence < REVIEW_CONFIDENCE;
       const classifiedTopics = item.primary_topic ? normalizeEditorialTopics([item.primary_topic, ...item.secondary_topics]).slice(0, 3) : [];
       const metadata = (story.generation_metadata ?? {}) as Record<string, unknown>;
@@ -231,7 +228,7 @@ Return every supplied story ID exactly once. Use neutral British English for rat
           const aliases = suggestion.aliases.map((alias) => ({ tag_id: tag!.id, alias: alias.trim(), normalized_alias: normalizeTaxonomyKey(alias) })).filter((alias) => alias.alias && alias.normalized_alias);
           if (aliases.length) await supabase.from('content_tag_aliases').upsert(aliases, { onConflict: 'normalized_alias', ignoreDuplicates: true });
         }
-        resolvedTags.push({ tag, confidence: clamp(suggestion.confidence), rationale: suggestion.rationale.trim() });
+        resolvedTags.push({ tag, confidence: clampScore(suggestion.confidence), rationale: suggestion.rationale.trim() });
       }
       const uniqueTags = [...new Map(resolvedTags.map((item) => [item.tag.id, item])).values()];
       const { error: clearTagsError } = await supabase.from('story_tags').delete().eq('story_id', story.id);

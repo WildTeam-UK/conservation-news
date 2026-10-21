@@ -4,6 +4,7 @@ import { estimateLunaTokenCost } from './pricing';
 import { EDITORIAL_TOPICS, type EditorialTopicName } from '@/lib/taxonomy';
 import { aiInstructions, parseAiJson } from './house-style';
 import { sourceRelationName } from '@/lib/supabase/relations';
+import { clampScore } from '@/lib/scores';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'assessment-v2-recent-event-matching';
@@ -84,7 +85,6 @@ const emptyResult = (overrides: Partial<AssessmentResult> = {}): AssessmentResul
   ...overrides,
 });
 
-const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 const maxScore = (existing: number | null, incoming: number) => Math.max(existing ?? 0, incoming);
 
 async function countQueue(status: 'pending' | 'expired') {

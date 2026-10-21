@@ -6,6 +6,7 @@ import { recordResearchSourceSuggestions } from '@/lib/source-discovery';
 import { aiInstructions, parseAiJson } from './house-style';
 import { sourceRelationName } from '@/lib/supabase/relations';
 import { normalizeTaxonomyKey, tagSlug } from '@/lib/taxonomy-text';
+import { normalizeFractionalScore } from '@/lib/scores';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'research-v3-conservation-outlook';
@@ -89,16 +90,6 @@ function comparableUrl(value: string) {
   return `${url.hostname.replace(/^www\./, '')}${url.pathname.replace(/\/$/, '')}${url.search}`.toLowerCase();
 }
 
-const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
-
-function normalizeConfidence(value: number) {
-  return value > 0 && value <= 1 ? clampScore(value * 100) : clampScore(value);
-}
-
-function normalizeCoverageScore(value: number) {
-  return value > 0 && value <= 1 ? clampScore(value * 100) : clampScore(value);
-}
-
 async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) {
   const supabase = getSupabaseAdminClient();
   const [{ data: existingTags, error: tagsError }, { data: aliases, error: aliasesError }] = await Promise.all([
@@ -143,7 +134,7 @@ async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) 
     const { error: linkError } = await supabase.from('story_cluster_tags').upsert({
       cluster_id: clusterId,
       tag_id: tag.id,
-      confidence: normalizeConfidence(suggestion.confidence),
+      confidence: normalizeFractionalScore(suggestion.confidence),
       rationale: suggestion.rationale,
     }, { onConflict: 'cluster_id,tag_id' });
     if (linkError) throw linkError;
@@ -383,15 +374,15 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
       key_facts: cleanClaims(raw.key_facts),
       areas_of_agreement: cleanClaims(raw.areas_of_agreement),
       disputed_points: cleanClaims(raw.disputed_points),
-      topic_classification: { ...raw.topic_classification, confidence: normalizeConfidence(raw.topic_classification.confidence), secondary_topics: raw.topic_classification.secondary_topics.filter((topic) => topic !== raw.topic_classification.primary_topic).slice(0, 2) },
-      tags: raw.tags.slice(0, 6).map((tag) => ({ ...tag, name: tag.name.trim(), aliases: tag.aliases.map((alias) => alias.trim()).filter(Boolean).slice(0, 8), confidence: normalizeConfidence(tag.confidence) })).filter((tag) => tag.name.length > 0),
+      topic_classification: { ...raw.topic_classification, confidence: normalizeFractionalScore(raw.topic_classification.confidence), secondary_topics: raw.topic_classification.secondary_topics.filter((topic) => topic !== raw.topic_classification.primary_topic).slice(0, 2) },
+      tags: raw.tags.slice(0, 6).map((tag) => ({ ...tag, name: tag.name.trim(), aliases: tag.aliases.map((alias) => alias.trim()).filter(Boolean).slice(0, 8), confidence: normalizeFractionalScore(tag.confidence) })).filter((tag) => tag.name.length > 0),
       coverage_analysis: {
         ...raw.coverage_analysis,
-        ecological: normalizeCoverageScore(raw.coverage_analysis.ecological),
-        evidence: normalizeCoverageScore(raw.coverage_analysis.evidence),
-        consensus: normalizeCoverageScore(raw.coverage_analysis.consensus),
-        conservation_outlook_score: normalizeCoverageScore(raw.coverage_analysis.conservation_outlook_score),
-        conservation_outlook_confidence: normalizeConfidence(raw.coverage_analysis.conservation_outlook_confidence),
+        ecological: normalizeFractionalScore(raw.coverage_analysis.ecological),
+        evidence: normalizeFractionalScore(raw.coverage_analysis.evidence),
+        consensus: normalizeFractionalScore(raw.coverage_analysis.consensus),
+        conservation_outlook_score: normalizeFractionalScore(raw.coverage_analysis.conservation_outlook_score),
+        conservation_outlook_confidence: normalizeFractionalScore(raw.coverage_analysis.conservation_outlook_confidence),
       },
     };
 

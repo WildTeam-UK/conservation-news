@@ -1,3 +1,5 @@
+import { clampScore } from '@/lib/scores';
+
 export const ARTICLE_LINK_SECTIONS = ['key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know'] as const;
 
 export type ArticleLinkSection = typeof ARTICLE_LINK_SECTIONS[number];
@@ -80,7 +82,7 @@ export function cleanArticleLinks(text: string, links: ArticleContextualLink[] |
       href,
       anchor_text: text.slice(start, end),
       external: href.startsWith('http://') || href.startsWith('https://'),
-      confidence: Math.max(0, Math.min(100, Math.round(Number(link.confidence) || 0))),
+      confidence: clampScore(link.confidence),
       rationale: String(link.rationale ?? '').trim().slice(0, 400),
     });
   }
@@ -101,7 +103,7 @@ export function applyArticleLinkPlan<T extends LinkableArticle>(article: T, plan
 
   for (const proposed of [...plan].sort((a, b) => Number(b.confidence) - Number(a.confidence))) {
     if (total >= MAX_LINKS) break;
-    const confidence = Math.max(0, Math.min(100, Math.round(Number(proposed.confidence) || 0)));
+    const confidence = clampScore(proposed.confidence);
     const threshold = proposed.target_type === 'course' ? 85 : 75;
     if (confidence < threshold || typeCounts[proposed.target_type] >= TYPE_LIMITS[proposed.target_type]) continue;
     if ((proposed.target_type === 'topic' || proposed.target_type === 'tag') && taxonomyCount() >= 1) continue;

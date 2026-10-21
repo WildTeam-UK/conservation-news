@@ -11,6 +11,7 @@ import type { TrainingCoursePromotion } from '@/lib/training-courses';
 import { buildArticleLinkTargets } from '@/lib/article-link-candidates';
 import { applyArticleLinkPlan, articleLinkRows, cleanArticleLinks, countArticleLinks, type ArticleContextualLink, type ArticleLinkPlanItem } from '@/lib/article-linking';
 import { slugify } from '@/lib/stories';
+import { clampScore } from '@/lib/scores';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'draft-v6-conservation-outlook-fallback';
@@ -83,8 +84,6 @@ type DraftFallback = {
   image_url?: string | null;
   image_alt?: string | null;
 };
-
-const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
 
 function normalizedCoverage(value?: Partial<DraftCoverageAnalysis>): DraftCoverageAnalysis {
   return {
@@ -400,7 +399,7 @@ This is a private first draft for human review, never a finished or published ar
         rationale: cleanText(generated.conservation_outlook.rationale, 1000),
       };
   const recommendedCourse = courses.find((course) => course.id === generated.course_recommendation.course_id);
-  const courseConfidence = Math.max(0, Math.min(100, Math.round(Number(generated.course_recommendation.confidence) || 0)));
+  const courseConfidence = clampScore(generated.course_recommendation.confidence);
   let selectedImage: UnsplashImageCandidate | null = null;
   let selectedImageQuery = generated.image_search_query;
   if (unsplashIsConfigured()) {
