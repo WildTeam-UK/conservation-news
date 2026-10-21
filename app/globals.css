@@ -216,7 +216,7 @@ button svg{width:16px}
 .good-news-icon-wrap{display:grid;flex:0 0 auto;place-items:center;width:17px;height:17px}
 .good-news-icon{display:block;width:17px;height:17px;background:linear-gradient(135deg,var(--brand-purple),var(--brand-gradient-middle),var(--brand-pink));mask:url('/favicon.png') center/contain no-repeat;-webkit-mask:url('/favicon.png') center/contain no-repeat}
 .good-news-fancy:hover .good-news-icon{background:var(--paper)}
-.good-news-fancy-overlay{position:absolute;z-index:3;top:10px;right:10px;gap:0;padding:7px;border-radius:var(--radius-round);box-shadow:0 2px 8px rgba(8,8,8,.12)}
+.good-news-fancy-overlay{position:absolute;z-index:3;top:10px;right:10px;gap:0;padding:7px;border:0;border-radius:var(--radius-round);box-shadow:0 2px 8px rgba(8,8,8,.12)}
 .archive-hero-label>.good-news-fancy{display:inline-flex;margin-top:0}
 .hero-image,.story-image,.compact-story-image,.carousel-image,.topic-story-image,.related-image{position:relative}
 
