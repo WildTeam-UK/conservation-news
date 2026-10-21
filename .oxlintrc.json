@@ -25,6 +25,7 @@
   "ignorePatterns": [
     ".next/**",
     ".vinext/**",
+    ".output/**",
     "out/**",
     "build/**",
     "dist/**",
