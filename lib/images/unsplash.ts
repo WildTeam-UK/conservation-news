@@ -3,6 +3,7 @@ import { environmentValue } from '@/lib/environment';
 import { isHexColour } from '@/lib/validation';
 
 const API_URL = 'https://api.unsplash.com';
+const REQUEST_TIMEOUT_MS = 10_000;
 const APP_NAME = 'wildnews';
 
 type UnsplashPhoto = {
@@ -77,7 +78,11 @@ export async function searchUnsplashImages(query: string, limit = 6): Promise<Un
   url.searchParams.set('orientation', 'landscape');
   url.searchParams.set('content_filter', 'high');
   url.searchParams.set('per_page', String(Math.max(1, Math.min(12, limit))));
-  const response = await fetch(url, { headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' }, cache: 'no-store' });
+  const response = await fetch(url, {
+    headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
   if (!response.ok) {
     const detail = response.status === 401 ? 'Check the Unsplash access key.' : `Unsplash returned ${response.status}.`;
     throw new Error(`Image search failed. ${detail}`);
@@ -91,7 +96,11 @@ export async function recordUnsplashSelection(downloadLocation: string) {
   if (!key || !downloadLocation) return;
   const url = new URL(downloadLocation);
   if (url.origin !== API_URL) return;
-  const response = await fetch(url, { headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' }, cache: 'no-store' });
+  const response = await fetch(url, {
+    headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
   if (!response.ok) console.warn(`Unsplash selection tracking returned ${response.status}.`);
 }
 
@@ -99,7 +108,11 @@ export async function getUnsplashImageColour(sourceId: string) {
   const key = accessKey();
   const id = sourceId.trim();
   if (!key || !/^[a-zA-Z0-9_-]+$/.test(id)) return null;
-  const response = await fetch(`${API_URL}/photos/${id}`, { headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' }, cache: 'no-store' });
+  const response = await fetch(`${API_URL}/photos/${id}`, {
+    headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' },
+    cache: 'no-store',
+    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
+  });
   if (!response.ok) return null;
   const photo = await response.json() as Pick<UnsplashPhoto, 'color'>;
   return isHexColour(photo.color) ? photo.color : null;
