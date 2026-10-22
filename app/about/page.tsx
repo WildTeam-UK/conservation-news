@@ -19,12 +19,12 @@ export default function About() {
     <PageHero eyebrow={<>About <InlineBrand text="WILDNEWS" /></>} title="We tell the whole story of a changing natural world." description={<><InlineBrand text="WILDNEWS" /> is an independent, nonprofit newsroom covering the people, places and ideas shaping conservation, with curiosity, rigour and a stubborn belief that progress deserves attention.</>} />
     <section className="about-values shell">
       <div><p className="eyebrow">Why we exist</p><h2>Nature is not a niche.</h2></div>
-      <div className="about-body"><p>Conservation connects to almost everything: food, health, livelihoods, culture, climate and justice. Yet the stories behind it are often fragmented, buried in specialist journals, or reduced to crisis.</p><p>We bring those threads together. Our journalists follow the science, listen to communities on the front line, and look closely at what is working, as well as what is not.</p></div>
+      <div className="about-body"><p>Conservation connects to almost everything: food, health, livelihoods, culture, climate and justice. Yet the stories behind it are often fragmented, buried in specialist journals, or reduced to crisis.</p><p>We bring those threads together by following the science, listening to communities on the front line, and looking closely at what is working, as well as what is not.</p></div>
     </section>
     <section className="principles shell">
-      <article><span>01</span><h3>Evidence first</h3><p>We report with independence, precision and a healthy respect for complexity.</p></article>
+      <article><span>01</span><h3>Evidence first</h3><p>We synthesise source reporting with precision and a healthy respect for complexity.</p></article>
       <article><span>02</span><h3>People belong in the story</h3><p>Conservation works best when local and Indigenous leadership is heard and valued.</p></article>
-      <article><span>03</span><h3>Possibility matters</h3><p>We investigate solutions without hype, and make space for grounded hope.</p></article>
+      <article><span>03</span><h3>Possibility matters</h3><p>We examine reported solutions without hype, and make space for grounded hope.</p></article>
     </section>
     <section className="about-guides shell" id="how-wildnews-works">
       <div className="section-heading"><h2>How <InlineBrand text="WILDNEWS" /> works</h2><p>Understand the tools and editorial signals behind every source-linked briefing.</p></div>

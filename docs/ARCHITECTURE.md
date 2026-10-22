@@ -40,7 +40,7 @@ The public application reads published records with the Supabase publishable key
 - Intended canonical domain: `https://news.wildteam.org.uk`
 - Current framework declaration: Nitro in `vercel.json`
 - Build command: `vite build`
-- Application build script: `vinext build`
+- Application build script: `vite build`
 - Production start command: `node .output/server/index.mjs`
 - Supported Node.js runtime: 22.13 or newer
 - Pinned package manager: pnpm 11.25.0
@@ -54,7 +54,7 @@ Vercel applies browser-security headers to every route: MIME sniffing is disable
 ### Runtime
 
 - React 19
-- Vinext 1 beta, providing the Next-compatible App Router runtime on Vite
+- Vinext 1, providing the Next-compatible App Router runtime on Vite
 - Vite 8
 - Nitro 3, producing the Vercel server output
 - TypeScript
