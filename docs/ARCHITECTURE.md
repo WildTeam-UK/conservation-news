@@ -89,6 +89,7 @@ The unused generic starter component collection and its component-only dependenc
 | `supabase/migrations/` | Ordered production database migrations |
 | `public/` | Fonts, favicon, logo and social-sharing image |
 | `docs/` | Architecture, design and database documentation |
+| `.github/workflows/` | Repository automation, including encrypted database backups |
 | `vite.config.ts` | Vinext, Nitro and local development-server configuration |
 
 ## Public routes
@@ -238,6 +239,14 @@ Vercel Speed Insights records Core Web Vitals for public production pages only. 
 ### Availability and automation health
 
 `/api/health` is the production monitoring endpoint. It returns no records or error details, but verifies that Supabase is reachable, the one-minute automation heartbeat is current, and enabled editorial, publishing and digest systems have not recorded an unresolved automation failure. A required heartbeat older than ten minutes makes the endpoint return HTTP 503; a healthy or intentionally disabled system returns HTTP 200. The endpoint is uncached and excluded from search indexing so an external uptime service can use its HTTP status for alerts without receiving private operational data.
+
+### Backup and recovery
+
+While the Supabase project remains on the Free plan, `.github/workflows/supabase-backup.yml` creates an encrypted logical database backup every day at 03:30 UTC and supports manual runs. The workflow uses the official Supabase CLI, verifies the encrypted archive before upload, and retains the encrypted GitHub Actions artifact for 30 days. Production records are never committed to the repository.
+
+The workflow depends on the GitHub Actions secrets `SUPABASE_DB_URL` and `BACKUP_ENCRYPTION_PASSPHRASE`. They are repository automation secrets, not application runtime variables, and do not belong in `.env.example` or Vercel. The operational scope, exclusions, integrity check and safe recovery sequence are documented in `docs/BACKUP_RECOVERY.md`.
+
+Logical database backups do not contain Supabase Storage object bytes or external-platform configuration. Storage currently contains admin avatars; service credentials and configuration remain the responsibility of their owning platforms and the WildTeam password manager. If Supabase is upgraded to a paid production plan, Supabase-managed daily backups should become the primary recovery mechanism and this workflow should be reassessed rather than silently duplicated.
 
 `/api/health/supabase` remains a narrower database-connectivity diagnostic. Vercel provides deployment-failure notifications and runtime logs on the current plan. Automated Vercel runtime-anomaly alerts require a paid Observability tier, so external monitoring of `/api/health` supplies the proactive availability alert.
 
