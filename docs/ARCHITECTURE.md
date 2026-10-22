@@ -235,6 +235,12 @@ The public application uses the existing WildTeam Google Tag Manager container, 
 
 Vercel Speed Insights records Core Web Vitals for public production pages only. Admin routes and preview deployments are excluded. Dynamic story, digest, topic and tag paths are grouped by route pattern so performance can be compared across each page type without exposing editorial slugs as separate route groups.
 
+### Availability and automation health
+
+`/api/health` is the production monitoring endpoint. It returns no records or error details, but verifies that Supabase is reachable, the one-minute automation heartbeat is current, and enabled editorial, publishing and digest systems have not recorded an unresolved automation failure. A required heartbeat older than ten minutes makes the endpoint return HTTP 503; a healthy or intentionally disabled system returns HTTP 200. The endpoint is uncached and excluded from search indexing so an external uptime service can use its HTTP status for alerts without receiving private operational data.
+
+`/api/health/supabase` remains a narrower database-connectivity diagnostic. Vercel provides deployment-failure notifications and runtime logs on the current plan. Automated Vercel runtime-anomaly alerts require a paid Observability tier, so external monitoring of `/api/health` supplies the proactive availability alert.
+
 ## Environment variables
 
 Only names and purposes belong in source control.
