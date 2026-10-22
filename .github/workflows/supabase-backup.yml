@@ -1,0 +1,138 @@
+name: Backup Supabase database
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: supabase-database-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    name: Create encrypted database backup
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
+
+    steps:
+      - name: Validate backup secrets
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${SUPABASE_DB_URL:-}" ]]; then
+            echo "::error::The SUPABASE_DB_URL repository secret is missing."
+            exit 1
+          fi
+
+          if [[ -z "${BACKUP_ENCRYPTION_PASSPHRASE:-}" ]]; then
+            echo "::error::The BACKUP_ENCRYPTION_PASSPHRASE repository secret is missing."
+            exit 1
+          fi
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v3.0.1
+        with:
+          version: 2.121.0
+
+      - name: Export database
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          backup_dir="${RUNNER_TEMP}/wildnews-database-backup"
+          mkdir -p "${backup_dir}"
+
+          supabase db dump \
+            --db-url "${SUPABASE_DB_URL}" \
+            --file "${backup_dir}/roles.sql" \
+            --role-only
+
+          supabase db dump \
+            --db-url "${SUPABASE_DB_URL}" \
+            --file "${backup_dir}/schema.sql"
+
+          supabase db dump \
+            --db-url "${SUPABASE_DB_URL}" \
+            --file "${backup_dir}/data.sql" \
+            --data-only \
+            --use-copy \
+            --exclude "storage.buckets_vectors" \
+            --exclude "storage.vector_indexes"
+
+          supabase db dump \
+            --db-url "${SUPABASE_DB_URL}" \
+            --file "${backup_dir}/migration-history-schema.sql" \
+            --schema supabase_migrations
+
+          supabase db dump \
+            --db-url "${SUPABASE_DB_URL}" \
+            --file "${backup_dir}/migration-history-data.sql" \
+            --schema supabase_migrations \
+            --data-only \
+            --use-copy
+
+          generated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          printf 'WildNews Supabase logical backup\nGenerated: %s\nWorkflow run: %s\n' \
+            "${generated_at}" \
+            "${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}" \
+            > "${backup_dir}/BACKUP_INFO.txt"
+
+          (
+            cd "${backup_dir}"
+            sha256sum ./*.sql > SHA256SUMS
+          )
+
+      - name: Encrypt and verify archive
+        id: archive
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          timestamp="$(date -u +'%Y%m%dT%H%M%SZ')"
+          archive_name="wildnews-database-${timestamp}.tar.gz"
+          plaintext_archive="${RUNNER_TEMP}/${archive_name}"
+          encrypted_archive="${plaintext_archive}.enc"
+          verification_archive="${RUNNER_TEMP}/verification.tar.gz"
+
+          tar -C "${RUNNER_TEMP}/wildnews-database-backup" -czf "${plaintext_archive}" .
+
+          openssl enc \
+            -aes-256-cbc \
+            -salt \
+            -pbkdf2 \
+            -iter 200000 \
+            -in "${plaintext_archive}" \
+            -out "${encrypted_archive}" \
+            -pass env:BACKUP_ENCRYPTION_PASSPHRASE
+
+          openssl enc \
+            -d \
+            -aes-256-cbc \
+            -pbkdf2 \
+            -iter 200000 \
+            -in "${encrypted_archive}" \
+            -out "${verification_archive}" \
+            -pass env:BACKUP_ENCRYPTION_PASSPHRASE
+
+          tar -tzf "${verification_archive}" > /dev/null
+
+          echo "artifact_path=${encrypted_archive}" >> "${GITHUB_OUTPUT}"
+          echo "artifact_name=wildnews-database-${timestamp}" >> "${GITHUB_OUTPUT}"
+
+      - name: Upload encrypted backup
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: ${{ steps.archive.outputs.artifact_name }}
+          path: ${{ steps.archive.outputs.artifact_path }}
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
