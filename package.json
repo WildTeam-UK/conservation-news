@@ -16,6 +16,7 @@
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.117.3",
+    "@vercel/speed-insights": "^2.0.0",
     "fast-xml-parser": "^5.11.2",
     "lucide-react": "1.31.0",
     "openai": "^7.39.0",
