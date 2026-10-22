@@ -421,8 +421,8 @@ p{margin-top:0;margin-bottom:1.25em}p:last-child{margin-bottom:0}p+p{margin-top:
 .analytics-consent-actions button{min-height:44px;padding:0 16px;border-radius:var(--public-button-radius);font-size:11px;font-weight:var(--font-weight-black);line-height:1;text-transform:uppercase;white-space:nowrap;cursor:pointer;transition:background .15s,border-color .15s,color .15s}
 .analytics-consent-primary{border:2px solid var(--brand-pink);background:var(--brand-pink);color:var(--paper)}
 .analytics-consent-primary:hover{border-color:var(--brand-purple);background:var(--brand-purple)}
-.analytics-consent-secondary{border:2px solid var(--brand-pink);background:transparent;color:var(--brand-pink)}
-.analytics-consent-secondary:hover{border-color:var(--brand-purple);color:var(--brand-purple)}
+.analytics-consent-opt-out{border:0;background:transparent;color:var(--brand-pink)}
+.analytics-consent-opt-out:hover{color:var(--brand-purple);text-decoration:underline;text-underline-offset:3px}
 @media(max-width:700px){.analytics-consent{right:15px;bottom:15px;left:15px;grid-template-columns:1fr;gap:18px;width:calc(100% - 30px);padding:21px 48px 21px 21px}.analytics-consent-actions{justify-content:stretch}.analytics-consent-actions button{flex:1}}
 @media(max-width:420px){.analytics-consent-actions{align-items:stretch;flex-direction:column-reverse}.analytics-consent-actions button{width:100%}}
 

@@ -14,14 +14,34 @@ type ConsentChoice = 'granted' | 'denied';
 declare global {
   interface Window {
     dataLayer?: unknown[];
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
-function loadGoogleTagManager() {
+function updateGoogleConsent(analyticsChoice: ConsentChoice, command: 'default' | 'update') {
+  window.dataLayer = window.dataLayer || [];
+  window.gtag = window.gtag || function googleTagCommand(...args: unknown[]) {
+    void args;
+    // oxlint-disable-next-line prefer-rest-params -- Google's gtag queue expects the function's Arguments object.
+    window.dataLayer!.push(arguments);
+  };
+  window.gtag(
+    'consent',
+    command,
+    {
+      analytics_storage: analyticsChoice,
+      ad_storage: 'denied',
+      ad_user_data: 'denied',
+      ad_personalization: 'denied',
+    },
+  );
+}
+
+function loadGoogleTagManager(analyticsChoice: ConsentChoice = 'granted') {
   if (document.querySelector(`script[data-wildnews-gtm="${GTM_ID}"]`)) return;
 
-  window.dataLayer = window.dataLayer || [];
-  window.dataLayer.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
+  updateGoogleConsent(analyticsChoice, 'default');
+  window.dataLayer!.push({ 'gtm.start': Date.now(), event: 'gtm.js' });
 
   const script = document.createElement('script');
   script.async = true;
@@ -63,7 +83,7 @@ export function AnalyticsConsent() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
-    if (!pathname.startsWith('/admin') && choice === 'granted' && window.location.hostname === 'news.wildteam.org.uk') {
+    if (!pathname.startsWith('/admin') && choice !== 'denied' && window.location.hostname === 'news.wildteam.org.uk') {
       loadGoogleTagManager();
     }
   }, [choice, pathname]);
@@ -81,13 +101,20 @@ export function AnalyticsConsent() {
     setSettingsOpen(false);
 
     if (nextChoice === 'granted' && window.location.hostname === 'news.wildteam.org.uk') {
-      loadGoogleTagManager();
+      if (document.querySelector(`script[data-wildnews-gtm="${GTM_ID}"]`)) updateGoogleConsent('granted', 'update');
+      else loadGoogleTagManager();
     }
 
     if (nextChoice === 'denied') {
+      if (window.location.hostname === 'news.wildteam.org.uk') updateGoogleConsent('denied', 'update');
       clearGoogleAnalyticsCookies();
-      if (previouslyGranted) window.location.reload();
+      if (previouslyGranted || document.querySelector(`script[data-wildnews-gtm="${GTM_ID}"]`)) window.location.reload();
     }
+  }
+
+  function dismissNotice() {
+    if (choice === null) saveChoice('granted');
+    else setSettingsOpen(false);
   }
 
   if (pathname.startsWith('/admin') || choice === undefined || (choice !== null && !settingsOpen)) return null;
@@ -96,8 +123,8 @@ export function AnalyticsConsent() {
     <button
       type="button"
       className="analytics-consent-close"
-      aria-label="Close cookie settings and continue without analytics"
-      onClick={() => saveChoice('denied')}
+      aria-label="Dismiss analytics notice"
+      onClick={dismissNotice}
     >
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
         <path d="M6 6l12 12M18 6 6 18" />
@@ -106,11 +133,11 @@ export function AnalyticsConsent() {
     <div className="analytics-consent-copy">
       <p className="eyebrow">Your privacy</p>
       <h2>Help us improve <InlineBrand text="WILDNEWS" /></h2>
-      <p>We use Google Analytics to understand how people use WildNews. Analytics stays off unless you accept it. <a href="https://training.wildteam.org.uk/cookies" target="_blank" rel="noopener noreferrer">Read our cookie policy</a>.</p>
+      <p>We use privacy-friendly analytics to understand how people use <InlineBrand text="WildNews" /> and improve the experience. You can opt out at any time.</p>
     </div>
     <div className="analytics-consent-actions">
-      <button type="button" className="analytics-consent-secondary" onClick={() => saveChoice('denied')}>No thanks</button>
-      <button type="button" className="analytics-consent-primary" onClick={() => saveChoice('granted')}>Accept analytics</button>
+      <button type="button" className="analytics-consent-opt-out" onClick={() => saveChoice('denied')}>Opt out</button>
+      <button type="button" className="analytics-consent-primary" onClick={() => saveChoice('granted')}>Got it</button>
     </div>
   </section>;
 }
