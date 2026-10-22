@@ -60,6 +60,7 @@ jobs:
           connection.password = encodeURIComponent(
             process.env.SUPABASE_DB_PASSWORD,
           );
+          connection.searchParams.set("sslmode", "require");
 
           const encodedConnection = connection.toString();
           process.stdout.write(`::add-mask::${encodedConnection}\n`);

@@ -136,7 +136,7 @@ The admin workspace covers:
 - `lib/supabase/admin.ts`: cached service-role client for server-only privileged work.
 - `lib/supabase/require-admin.ts`: verifies the authenticated Supabase user has an active `admin_users` record.
 
-Public read policies expose active taxonomy and published editorial records. Admin policies call `is_content_admin()`. The service role performs scheduled and privileged processing.
+Public read policies expose active taxonomy and published editorial records. Admin policies call the authenticated-only, security-invoker `is_content_admin()` function, which checks the caller's own RLS-visible admin record. The internal `rls_auto_enable()` event-trigger function is not executable through the Data API. The service role performs scheduled and privileged processing.
 
 ### Principal data groups
 
@@ -244,7 +244,7 @@ Vercel Speed Insights records Core Web Vitals for public production pages only. 
 
 While the Supabase project remains on the Free plan, `.github/workflows/supabase-backup.yml` creates an encrypted logical database backup every day at 03:30 UTC and supports manual runs. The workflow uses the official Supabase CLI, verifies the encrypted archive before upload, and retains the encrypted GitHub Actions artifact for 30 days. Production records are never committed to the repository.
 
-The workflow depends on the GitHub Actions secrets `SUPABASE_DB_URL`, `SUPABASE_DB_PASSWORD` and `BACKUP_ENCRYPTION_PASSPHRASE`. The database address and password remain separate so passwords containing URL-sensitive characters do not make the connection URI invalid. They are repository automation secrets, not application runtime variables, and do not belong in `.env.example` or Vercel. The operational scope, exclusions, integrity check and safe recovery sequence are documented in `docs/BACKUP_RECOVERY.md`.
+The workflow depends on the GitHub Actions secrets `SUPABASE_DB_URL`, `SUPABASE_DB_PASSWORD` and `BACKUP_ENCRYPTION_PASSPHRASE`. The database address and password remain separate so passwords containing URL-sensitive characters do not make the connection URI invalid, and the assembled backup connection explicitly requires SSL. They are repository automation secrets, not application runtime variables, and do not belong in `.env.example` or Vercel. The operational scope, exclusions, integrity check and safe recovery sequence are documented in `docs/BACKUP_RECOVERY.md`.
 
 Logical database backups do not contain Supabase Storage object bytes, a separate Supabase migration-history schema or external-platform configuration. The ordered files in `supabase/migrations` remain the migration source of truth. Storage currently contains admin avatars; service credentials and configuration remain the responsibility of their owning platforms and secure organisational password storage. If Supabase is upgraded to a paid production plan, Supabase-managed daily backups should become the primary recovery mechanism and this workflow should be reassessed rather than silently duplicated.
 
