@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 30
     env:
       SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       BACKUP_ENCRYPTION_PASSPHRASE: ${{ secrets.BACKUP_ENCRYPTION_PASSPHRASE }}
 
     steps:
@@ -29,6 +30,11 @@ jobs:
 
           if [[ -z "${SUPABASE_DB_URL:-}" ]]; then
             echo "::error::The SUPABASE_DB_URL repository secret is missing."
+            exit 1
+          fi
+
+          if [[ -z "${SUPABASE_DB_PASSWORD:-}" ]]; then
+            echo "::error::The SUPABASE_DB_PASSWORD repository secret is missing."
             exit 1
           fi
 
@@ -52,15 +58,18 @@ jobs:
 
           supabase db dump \
             --db-url "${SUPABASE_DB_URL}" \
+            --password "${SUPABASE_DB_PASSWORD}" \
             --file "${backup_dir}/roles.sql" \
             --role-only
 
           supabase db dump \
             --db-url "${SUPABASE_DB_URL}" \
+            --password "${SUPABASE_DB_PASSWORD}" \
             --file "${backup_dir}/schema.sql"
 
           supabase db dump \
             --db-url "${SUPABASE_DB_URL}" \
+            --password "${SUPABASE_DB_PASSWORD}" \
             --file "${backup_dir}/data.sql" \
             --data-only \
             --use-copy \
@@ -69,11 +78,13 @@ jobs:
 
           supabase db dump \
             --db-url "${SUPABASE_DB_URL}" \
+            --password "${SUPABASE_DB_PASSWORD}" \
             --file "${backup_dir}/migration-history-schema.sql" \
             --schema supabase_migrations
 
           supabase db dump \
             --db-url "${SUPABASE_DB_URL}" \
+            --password "${SUPABASE_DB_PASSWORD}" \
             --file "${backup_dir}/migration-history-data.sql" \
             --schema supabase_migrations \
             --data-only \
