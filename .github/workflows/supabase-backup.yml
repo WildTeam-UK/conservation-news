@@ -48,6 +48,27 @@ jobs:
         with:
           version: 2.121.0
 
+      - name: Prepare database connection
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          node <<'NODE'
+          const fs = require("node:fs");
+
+          const connection = new URL(process.env.SUPABASE_DB_URL);
+          connection.password = encodeURIComponent(
+            process.env.SUPABASE_DB_PASSWORD,
+          );
+
+          const encodedConnection = connection.toString();
+          process.stdout.write(`::add-mask::${encodedConnection}\n`);
+          fs.appendFileSync(
+            process.env.GITHUB_ENV,
+            `SUPABASE_BACKUP_DB_URL=${encodedConnection}\n`,
+          );
+          NODE
+
       - name: Export database
         shell: bash
         run: |
@@ -57,19 +78,16 @@ jobs:
           mkdir -p "${backup_dir}"
 
           supabase db dump \
-            --db-url "${SUPABASE_DB_URL}" \
-            --password "${SUPABASE_DB_PASSWORD}" \
+            --db-url "${SUPABASE_BACKUP_DB_URL}" \
             --file "${backup_dir}/roles.sql" \
             --role-only
 
           supabase db dump \
-            --db-url "${SUPABASE_DB_URL}" \
-            --password "${SUPABASE_DB_PASSWORD}" \
+            --db-url "${SUPABASE_BACKUP_DB_URL}" \
             --file "${backup_dir}/schema.sql"
 
           supabase db dump \
-            --db-url "${SUPABASE_DB_URL}" \
-            --password "${SUPABASE_DB_PASSWORD}" \
+            --db-url "${SUPABASE_BACKUP_DB_URL}" \
             --file "${backup_dir}/data.sql" \
             --data-only \
             --use-copy \
@@ -77,14 +95,12 @@ jobs:
             --exclude "storage.vector_indexes"
 
           supabase db dump \
-            --db-url "${SUPABASE_DB_URL}" \
-            --password "${SUPABASE_DB_PASSWORD}" \
+            --db-url "${SUPABASE_BACKUP_DB_URL}" \
             --file "${backup_dir}/migration-history-schema.sql" \
             --schema supabase_migrations
 
           supabase db dump \
-            --db-url "${SUPABASE_DB_URL}" \
-            --password "${SUPABASE_DB_PASSWORD}" \
+            --db-url "${SUPABASE_BACKUP_DB_URL}" \
             --file "${backup_dir}/migration-history-data.sql" \
             --schema supabase_migrations \
             --data-only \
