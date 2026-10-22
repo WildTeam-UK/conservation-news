@@ -22,7 +22,8 @@ Configure these repository secrets under **Settings â†’ Secrets and variables â†
 
 | Name | Purpose |
 | --- | --- |
-| `SUPABASE_DB_URL` | Session-pooler database connection string for the production Supabase project. Use the connection string supplied by Supabase and include the database password. |
+| `SUPABASE_DB_URL` | Session-pooler database connection string for the production Supabase project, with the password placeholder and its preceding colon removed. For example: `postgresql://postgres.project-ref@pooler-host:5432/postgres`. |
+| `SUPABASE_DB_PASSWORD` | Production Supabase database password. It is passed separately so special characters do not need to be URL encoded. |
 | `BACKUP_ENCRYPTION_PASSPHRASE` | A unique, randomly generated passphrase of at least 32 characters. Store a second copy in WildTeam's password manager because GitHub cannot reveal it later. |
 
 Never place either value in source control, issue text, workflow logs or documentation.
