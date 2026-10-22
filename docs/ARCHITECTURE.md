@@ -226,6 +226,10 @@ Used server-side to search for landscape editorial images. The application hotli
 
 Buffer distribution is planned but not implemented. There is no active Buffer client or environment variable in the repository. Digest social status remains disabled.
 
+### Analytics
+
+The public application uses the existing WildTeam Google Tag Manager container, `GTM-KW2PQNF`, which feeds the shared Google Analytics 4 property used by the main WildTeam and Training sites. On `news.wildteam.org.uk`, statistical analytics are enabled by default under the UK statistical-purposes exception. Consent Mode v2 keeps `ad_storage`, `ad_user_data` and `ad_personalization` denied for WildNews. Visitors receive a clear notice and may opt out free of charge; opting out disables the container on subsequent loads and removes existing Google Analytics cookies. Preview deployments, local development and authenticated admin routes are not tracked. The visitor's choice is stored locally in the browser and can be changed from the site footer.
+
 ## Environment variables
 
 Only names and purposes belong in source control.

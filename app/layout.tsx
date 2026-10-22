@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { AnalyticsConsent } from '@/components/analytics-consent';
 import { JsonLd } from '@/components/json-ld';
 import { DEFAULT_DESCRIPTION, DEFAULT_SOCIAL_IMAGE, DEFAULT_TITLE, isProductionDeployment, SITE_NAME, SITE_URL, siteJsonLd } from '@/lib/seo';
 import './globals.css';
@@ -36,5 +37,5 @@ export const metadata: Metadata = {
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="en-GB"><head><link rel="describedby" href="/llms.txt" type="text/markdown" /></head><body><JsonLd data={siteJsonLd} />{children}</body></html>;
+  return <html lang="en-GB"><head><link rel="describedby" href="/llms.txt" type="text/markdown" /></head><body><JsonLd data={siteJsonLd} />{children}<AnalyticsConsent /></body></html>;
 }

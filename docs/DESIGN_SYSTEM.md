@@ -212,6 +212,10 @@ Email controls visually combine a white input and pink action. Training and news
 
 `SiteFooter` is the shared WildTeam footer. It uses a dark background, grouped About/Explore/Legal links, social icons, CPD mark and the WildTeam mission statement.
 
+### Analytics consent
+
+`AnalyticsConsent` is the shared public analytics notice. It uses the standard paper surface, quiet border, card radius and branded WILDNEWS wordmark, without a drop shadow. “Got it” uses the primary button treatment while “Opt out” is an unbordered pink text action. It stacks its actions on narrow phones and is not shown in the authenticated admin workspace. Closing the notice has the same effect as “Got it”; analytics remains enabled unless the visitor chooses “Opt out”. The “Cookie settings” control at the bottom of the footer's Legal menu reopens the same panel rather than introducing a second settings interface.
+
 ## Editorial page patterns
 
 ### News articles

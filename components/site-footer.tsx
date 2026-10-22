@@ -1,3 +1,5 @@
+import { CookieSettingsButton } from '@/components/analytics-consent';
+
 type FooterLink = {
   label: string;
   href?: string;
@@ -58,12 +60,13 @@ function SocialIcon({ network }: { network: keyof typeof socialIconPaths }) {
   return <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d={socialIconPaths[network]} /></svg>;
 }
 
-function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) {
+function FooterColumn({ title, links, includeCookieSettings = false }: { title: string; links: FooterLink[]; includeCookieSettings?: boolean }) {
   return <section className="wildteam-footer-column">
     <h2>{title}</h2>
     {links.map((link) => link.href
       ? <a href={link.href} target="_blank" rel="noopener noreferrer" key={link.label}>{link.label}</a>
       : <span key={link.label}>{link.label}</span>)}
+    {includeCookieSettings ? <CookieSettingsButton /> : null}
   </section>;
 }
 
@@ -71,7 +74,7 @@ export function SiteFooter() {
   return <footer className="wildteam-footer">
     <div className="shell wildteam-footer-inner">
       <div className="wildteam-footer-grid">
-        {footerColumns.map((column) => <FooterColumn {...column} key={column.title} />)}
+        {footerColumns.map((column) => <FooterColumn {...column} includeCookieSettings={column.title === 'Legal'} key={column.title} />)}
         <section className="wildteam-footer-column">
           <h2>Join the conversation</h2>
           <div className="wildteam-social-links">
