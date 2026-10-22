@@ -60,6 +60,7 @@ Vercel applies browser-security headers to every route: MIME sniffing is disable
 - TypeScript
 - Supabase JS and Supabase SSR
 - OpenAI JavaScript client
+- Vercel Speed Insights for production Core Web Vitals
 - `fast-xml-parser` for RSS ingestion
 - Lucide React for interface icons
 
@@ -229,6 +230,10 @@ Buffer distribution is planned but not implemented. There is no active Buffer cl
 ### Analytics
 
 The public application uses the existing WildTeam Google Tag Manager container, `GTM-KW2PQNF`, which feeds the shared Google Analytics 4 property used by the main WildTeam and Training sites. On `news.wildteam.org.uk`, statistical analytics are enabled by default under the UK statistical-purposes exception. Consent Mode v2 keeps `ad_storage`, `ad_user_data` and `ad_personalization` denied for WildNews. Visitors receive a clear notice and may opt out free of charge; opting out disables the container on subsequent loads and removes existing Google Analytics cookies. Preview deployments, local development and authenticated admin routes are not tracked. The visitor's choice is stored locally in the browser and can be changed from the site footer.
+
+### Performance monitoring
+
+Vercel Speed Insights records Core Web Vitals for public production pages only. Admin routes and preview deployments are excluded. Dynamic story, digest, topic and tag paths are grouped by route pattern so performance can be compared across each page type without exposing editorial slugs as separate route groups.
 
 ## Environment variables
 
