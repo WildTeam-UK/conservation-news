@@ -2,6 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, useSyncExternalStore } from 'react';
+import { InlineBrand } from '@/components/inline-brand';
 
 const GTM_ID = 'GTM-KW2PQNF';
 const CONSENT_KEY = 'wildnews_analytics_consent';
@@ -92,9 +93,19 @@ export function AnalyticsConsent() {
   if (pathname.startsWith('/admin') || choice === undefined || (choice !== null && !settingsOpen)) return null;
 
   return <section className="analytics-consent" aria-label="Analytics cookie settings">
+    <button
+      type="button"
+      className="analytics-consent-close"
+      aria-label="Close cookie settings and continue without analytics"
+      onClick={() => saveChoice('denied')}
+    >
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+        <path d="M6 6l12 12M18 6 6 18" />
+      </svg>
+    </button>
     <div className="analytics-consent-copy">
       <p className="eyebrow">Your privacy</p>
-      <h2>Help us improve WILDNEWS</h2>
+      <h2>Help us improve <InlineBrand text="WILDNEWS" /></h2>
       <p>We use Google Analytics to understand how people use WildNews. Analytics stays off unless you accept it. <a href="https://training.wildteam.org.uk/cookies" target="_blank" rel="noopener noreferrer">Read our cookie policy</a>.</p>
     </div>
     <div className="analytics-consent-actions">

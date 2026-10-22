@@ -214,7 +214,7 @@ Email controls visually combine a white input and pink action. Training and news
 
 ### Analytics consent
 
-`AnalyticsConsent` is the shared public consent panel. It uses the standard paper surface, quiet border, card radius, compact shadow and existing primary/secondary button treatments. It stacks its actions on narrow phones and is not shown in the authenticated admin workspace. The footer's “Cookie settings” control reopens the same panel rather than introducing a second settings interface.
+`AnalyticsConsent` is the shared public consent panel. It uses the standard paper surface, quiet border, card radius, branded WILDNEWS wordmark and existing primary/secondary button treatments, without a drop shadow. It stacks its actions on narrow phones and is not shown in the authenticated admin workspace. Closing the panel is an explicit refusal of analytics, equivalent to “No thanks”. The “Cookie settings” control at the bottom of the footer's Legal menu reopens the same panel rather than introducing a second settings interface.
 
 ## Editorial page patterns
 
