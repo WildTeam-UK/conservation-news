@@ -15,10 +15,10 @@ export async function generateMetadata({ params }: { params: Promise<{ slug: str
   const published = await getPublishedStory(slug);
   if (!published) return { title: 'Story not found | WILDNEWS', robots: { index: false, follow: false } };
 
-  const content = published.generation_metadata.article_content as { seo_title?: string; seo_description?: string } | undefined;
+  const content = published.generation_metadata.article_content as { seo_title?: string; seo_description?: string; image_url?: string; image_alt?: string } | undefined;
   const title = content?.seo_title || published.headline;
   const description = content?.seo_description || published.standfirst;
-  return articleMetadata({ title: withSiteName(title), description, path: `/stories/${published.slug}`, image: published.image_url, imageAlt: published.image_alt, publishedTime: published.published_at, modifiedTime: published.updated_at });
+  return articleMetadata({ title: withSiteName(title), description, path: `/stories/${published.slug}`, image: published.image_url ?? content?.image_url, imageAlt: published.image_alt ?? content?.image_alt, publishedTime: published.published_at, modifiedTime: published.updated_at });
 }
 
 export default async function StoryPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -29,7 +29,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   const [allPublished, goodNewsSettings] = await Promise.all([getPublishedStories(20), getGoodNewsSettings()]);
   const related = relatedPublishedStories([published], allPublished).map((story) => publishedStoryToListing(story, goodNewsSettings));
   const article = publishedStoryToArticle(published, goodNewsSettings);
-  const structuredData = newsArticleJsonLd({ headline: published.headline, description: published.standfirst, path: `/stories/${published.slug}`, image: published.image_url, publishedTime: published.published_at, modifiedTime: published.updated_at, sections: publishedTopics(published) });
+  const structuredData = newsArticleJsonLd({ headline: published.headline, description: published.standfirst, path: `/stories/${published.slug}`, image: article.imageUrl, publishedTime: published.published_at, modifiedTime: published.updated_at, sections: publishedTopics(published) });
 
   return <main>
     <InteriorHeader />
