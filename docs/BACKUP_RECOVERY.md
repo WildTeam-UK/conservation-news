@@ -9,8 +9,9 @@ The `Backup Supabase database` GitHub Actions workflow runs every day at 03:30 U
 - PostgreSQL roles required by the logical export.
 - The application database schema.
 - Application data, including stories, sources, editorial workflow state, taxonomy, schedules and settings.
-- Supabase migration-history schema and data.
 - A checksum manifest and generation record.
+
+Migration history is not exported separately because this project was initially migrated through the Supabase SQL editor and does not have a `supabase_migrations` tracking schema. The ordered SQL files in `supabase/migrations` remain the migration source of truth.
 
 The files are packed into one archive, encrypted with AES-256-CBC using PBKDF2, verified by decrypting and reading the archive, and uploaded as a GitHub Actions artifact. Only the encrypted archive is uploaded. Artifacts are retained for 30 days.
 
@@ -32,7 +33,7 @@ Never place either value in source control, issue text, workflow logs or documen
 
 A logical database export does not contain the bytes stored in Supabase Storage. WildNews currently uses Storage for admin avatars; those files must be recreated or copied separately if the project is lost. Remote Unsplash editorial images are referenced by URL and are not Supabase Storage objects.
 
-The workflow also does not preserve external-service configuration or secret values held by Vercel, Supabase Vault, OpenAI, Unsplash, Brevo, Google or UptimeRobot. Their names and responsibilities are documented in `docs/ARCHITECTURE.md`, while actual values must remain in the appropriate service and WildTeam password manager.
+The workflow also does not preserve external-service configuration or secret values held by Vercel, Supabase Vault, OpenAI, Unsplash, Brevo, Google or UptimeRobot. Their names and responsibilities are documented in `docs/ARCHITECTURE.md`, while actual values must remain in the appropriate service and secure organisational password storage.
 
 ## Confirming backups
 
@@ -78,7 +79,7 @@ The safe recovery sequence is:
 1. Pause WildNews automation and publishing.
 2. Download and decrypt the chosen artifact.
 3. Create a separate Supabase recovery project.
-4. Follow Supabase's current **Backup and Restore using the CLI** procedure to restore roles, schema, migration history and data into that recovery project.
+4. Follow Supabase's current **Backup and Restore using the CLI** procedure to restore roles, schema and data into that recovery project.
 5. Verify row counts, admin authentication, public stories, scheduled work and automation configuration.
 6. Copy only the required recovered records into production, or plan a controlled project cutover if full replacement is necessary.
 7. Restore external configuration, Vault secrets and Storage objects separately.

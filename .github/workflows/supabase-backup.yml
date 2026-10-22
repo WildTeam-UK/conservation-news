@@ -94,18 +94,6 @@ jobs:
             --exclude "storage.buckets_vectors" \
             --exclude "storage.vector_indexes"
 
-          supabase db dump \
-            --db-url "${SUPABASE_BACKUP_DB_URL}" \
-            --file "${backup_dir}/migration-history-schema.sql" \
-            --schema supabase_migrations
-
-          supabase db dump \
-            --db-url "${SUPABASE_BACKUP_DB_URL}" \
-            --file "${backup_dir}/migration-history-data.sql" \
-            --schema supabase_migrations \
-            --data-only \
-            --use-copy
-
           generated_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           printf 'WildNews Supabase logical backup\nGenerated: %s\nWorkflow run: %s\n' \
             "${generated_at}" \
