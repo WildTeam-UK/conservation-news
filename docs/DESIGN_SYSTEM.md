@@ -212,6 +212,10 @@ Email controls visually combine a white input and pink action. Training and news
 
 `SiteFooter` is the shared WildTeam footer. It uses a dark background, grouped About/Explore/Legal links, social icons, CPD mark and the WildTeam mission statement.
 
+### Analytics consent
+
+`AnalyticsConsent` is the shared public consent panel. It uses the standard paper surface, quiet border, card radius, compact shadow and existing primary/secondary button treatments. It stacks its actions on narrow phones and is not shown in the authenticated admin workspace. The footer's “Cookie settings” control reopens the same panel rather than introducing a second settings interface.
+
 ## Editorial page patterns
 
 ### News articles

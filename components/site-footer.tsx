@@ -1,3 +1,5 @@
+import { CookieSettingsButton } from '@/components/analytics-consent';
+
 type FooterLink = {
   label: string;
   href?: string;
@@ -87,6 +89,7 @@ export function SiteFooter() {
         <h2>Empowering conservationists to restore nature</h2>
         <p>We give conservationists worldwide the knowledge, the skills, and the community support they need to design and deliver conservation projects that have more impact.</p>
         <small>WILDTEAM is a registered charity in England and Wales. Number 1149465. © {new Date().getFullYear()} by WildTeam</small>
+        <CookieSettingsButton />
       </div>
     </div>
   </footer>;
