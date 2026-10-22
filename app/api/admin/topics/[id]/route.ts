@@ -1,22 +1,14 @@
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
+import { isUuid } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-async function requireAdmin() {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return false;
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  return Boolean(admin);
-}
-
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!uuidPattern.test(id)) return Response.json({ error: 'A valid topic is required.' }, { status: 400 });
-  if (!await requireAdmin()) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if (!isUuid(id)) return Response.json({ error: 'A valid topic is required.' }, { status: 400 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
   const body = await request.json().catch(() => null) as { description?: string; seoTitle?: string; metaDescription?: string } | null;
   if (!body) return Response.json({ error: 'Enter valid topic details.' }, { status: 400 });
   const description = body.description?.trim().slice(0, 500) ?? '';

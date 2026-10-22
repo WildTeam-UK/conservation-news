@@ -3,8 +3,10 @@ import { stripSourceMarkers } from '@/lib/article-text';
 import { publicationChecks } from '@/lib/publishing';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
+import { londonDateTimeParts, londonLocalDateTimeToUtc } from '@/lib/london-time';
 
-const ZONE = 'Europe/London';
+export class PublicationQueueConflict extends Error {}
+
 const MINIMUM_AUTOMATIC_SOURCES = 3;
 
 type PublicationSettings = {
@@ -26,38 +28,6 @@ type QueueRow = {
   created_at: string;
 };
 
-const partsFormatter = new Intl.DateTimeFormat('en-GB', {
-  timeZone: ZONE,
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  hourCycle: 'h23',
-});
-
-function zonedParts(date: Date) {
-  const values = Object.fromEntries(partsFormatter.formatToParts(date).map((part) => [part.type, part.value]));
-  return {
-    year: Number(values.year),
-    month: Number(values.month),
-    day: Number(values.day),
-    hour: Number(values.hour),
-    minute: Number(values.minute),
-  };
-}
-
-function localDateTimeToUtc(year: number, month: number, day: number, hour: number, minute: number) {
-  let timestamp = Date.UTC(year, month - 1, day, hour, minute);
-  for (let attempt = 0; attempt < 3; attempt += 1) {
-    const actual = zonedParts(new Date(timestamp));
-    const difference = Date.UTC(actual.year, actual.month - 1, actual.day, actual.hour, actual.minute) - Date.UTC(year, month - 1, day, hour, minute);
-    if (!difference) break;
-    timestamp -= difference;
-  }
-  return timestamp;
-}
-
 function addLocalDays(date: { year: number; month: number; day: number }, days: number) {
   const shifted = new Date(Date.UTC(date.year, date.month - 1, date.day + days));
   return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth() + 1, day: shifted.getUTCDate() };
@@ -69,7 +39,7 @@ function timeParts(value: string) {
 }
 
 function localDateKey(date: Date) {
-  const parts = zonedParts(date);
+  const parts = londonDateTimeParts(date);
   return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
 }
 
@@ -130,7 +100,7 @@ export async function rebalancePublicationQueue() {
 
   const startTime = timeParts(settings.publish_window_start);
   const endTime = timeParts(settings.publish_window_end);
-  const today = zonedParts(now);
+  const today = londonDateTimeParts(now);
   let offset = 0;
   let cursor = 0;
 
@@ -139,8 +109,8 @@ export async function rebalancePublicationQueue() {
     const key = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
     const occupied = occupiedByDay.get(key) ?? 0;
     const capacity = Math.max(0, settings.max_auto_publishes_per_day - occupied);
-    let start = localDateTimeToUtc(date.year, date.month, date.day, startTime.hour, startTime.minute);
-    const end = localDateTimeToUtc(date.year, date.month, date.day, endTime.hour, endTime.minute);
+    let start = londonLocalDateTimeToUtc(date.year, date.month, date.day, startTime.hour, startTime.minute);
+    const end = londonLocalDateTimeToUtc(date.year, date.month, date.day, endTime.hour, endTime.minute);
     if (offset === 0) start = Math.max(start, now.getTime() + 10 * 60_000);
     if (capacity === 0 || end <= start) {
       offset += 1;
@@ -257,7 +227,7 @@ export async function restoreDraftToQueue(storyId: string) {
   const supabase = getSupabaseAdminClient();
   const { data: story, error: storyError } = await supabase.from('stories').select('id, status').eq('id', storyId).maybeSingle();
   if (storyError) throw storyError;
-  if (!story || story.status !== 'draft') throw new Error('Only a private draft can be added to the publishing queue.');
+  if (!story || story.status !== 'draft') throw new PublicationQueueConflict('Only a private draft can be added to the publishing queue.');
 
   await queueReadyDrafts(null, storyId, true, true, true);
   const { data: queueItem, error: queueError } = await supabase
@@ -266,7 +236,7 @@ export async function restoreDraftToQueue(storyId: string) {
     .eq('story_id', storyId)
     .maybeSingle();
   if (queueError) throw queueError;
-  if (!queueItem) throw new Error('The draft could not be added to the publishing queue.');
+  if (!queueItem) throw new PublicationQueueConflict('The draft could not be added to the publishing queue.');
   return queueItem;
 }
 
@@ -280,7 +250,7 @@ export async function cancelQueuedPublication(queueId: string) {
     .select('id, story_id')
     .maybeSingle();
   if (error) throw error;
-  if (!data) throw new Error('This article is no longer removable from the queue.');
+  if (!data) throw new PublicationQueueConflict('This article is no longer removable from the queue.');
   const result = await rebalancePublicationQueue();
   return { removed: true, storyId: data.story_id, rescheduled: result.scheduled };
 }

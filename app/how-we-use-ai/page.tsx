@@ -1,9 +1,10 @@
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation */
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { ArrowRight, CheckCircle2, Search, Sparkles } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { InlineBrand } from '@/components/inline-brand';
+import { PageHero } from '@/components/page-hero';
 import { pageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = pageMetadata({
@@ -16,13 +17,9 @@ export default function AiTransparencyPage() {
   return <main>
     <InteriorHeader />
 
-    <article className="ai-page shell">
-      <header className="ai-page-hero">
-        <p className="eyebrow">Transparency at <InlineBrand text="WILDNEWS" /></p>
-        <h1>How we use AI</h1>
-        <p><InlineBrand text="WILDNEWS" /> uses artificial intelligence to help find, organise and summarise conservation coverage. It makes a large and fragmented field easier to follow, but it does not turn a summary into original reporting.</p>
-      </header>
-
+    <article className="ai-page">
+      <PageHero eyebrow={<>Transparency at <InlineBrand text="WILDNEWS" /></>} title="How we use AI" description={<><InlineBrand text="WILDNEWS" /> uses artificial intelligence to help find, organise and summarise conservation coverage. It makes a large and fragmented field easier to follow, but it does not turn a summary into original reporting.</>} />
+      <div className="ai-page-content shell">
       <section className="ai-caution">
         <strong>The important bit</strong>
         <p>AI can misunderstand context, flatten disagreement and make mistakes. Treat every <InlineBrand text="WILDNEWS" /> briefing as a starting point, then use the linked sources to read the original reporting and evidence.</p>
@@ -38,11 +35,12 @@ export default function AiTransparencyPage() {
       </section>
 
       <div className="ai-editorial-grid">
-        <section><p className="eyebrow">What this prototype is</p><h2>Aggregation, not original reporting</h2><p>The current <InlineBrand text="WILDNEWS" /> site is an editorial prototype built with AI assistance. Article briefings are generated from publicly available reporting and linked source material. They should not be quoted as eyewitness reporting or treated as a replacement for the organisations and journalists who gathered the facts.</p><p>Names, presentation and sample editorial analysis are used to demonstrate how the finished service could work.</p></section>
+        <section><p className="eyebrow">What this service is</p><h2>Aggregation, not original reporting</h2><p><InlineBrand text="WILDNEWS" /> uses AI assistance to create article briefings from publicly available reporting and linked source material. They should not be quoted as eyewitness reporting or treated as a replacement for the organisations and journalists who gathered the facts.</p><p>Each briefing is designed to help readers understand a story quickly, compare the available coverage and find the underlying reporting.</p></section>
         <section><p className="eyebrow">Our publishing standard</p><h2>Source links stay visible</h2><p>Every article page keeps the original source links close to the summary. Readers can compare the briefing with the primary material, check other coverage and form their own view.</p><p>Where a briefing is wrong or misleading, it should be corrected clearly. AI assistance is never a reason to hide responsibility for what appears on the site.</p></section>
       </div>
 
-      <section className="ai-next-step"><div><p className="eyebrow">Keep reading critically</p><h2>Go to the evidence.</h2></div><p>Use <InlineBrand text="WILDNEWS" /> to discover what is happening, then follow the source links for the detail, uncertainty and reporting behind each story.</p><Link className="action-button" href="/">Explore the stories <ArrowRight /></Link></section>
+      <section className="ai-next-step"><div><p className="eyebrow">Keep reading critically</p><h2>Go to the evidence.</h2></div><p>Use <InlineBrand text="WILDNEWS" /> to discover what is happening, then follow the source links for the detail, uncertainty and reporting behind each story.</p><a className="action-button" href="/">Explore the stories <ArrowRight /></a></section>
+      </div>
     </article>
 
     <SiteFooter />

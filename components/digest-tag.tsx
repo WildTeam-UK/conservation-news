@@ -2,5 +2,5 @@
 import { Newspaper } from 'lucide-react';
 
 export function DigestTag({ type, className = '' }: { type: 'daily' | 'weekly'; className?: string }) {
-  return <a className={`topic-tag digest-tag ${className}`.trim()} href="/digests"><Newspaper aria-hidden="true" /><span>WildNews {type === 'weekly' ? 'Weekly' : 'Daily'}</span></a>;
+  return <a className={`topic-tag digest-tag editorial-pill ${className}`.trim()} href="/digests"><span className="editorial-pill-icon" aria-hidden="true"><Newspaper /></span><span className="editorial-pill-label">WildNews {type === 'weekly' ? 'Weekly' : 'Daily'}</span></a>;
 }

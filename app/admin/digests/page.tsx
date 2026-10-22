@@ -5,6 +5,7 @@ import { AdminNav } from '@/components/admin-nav';
 import { DigestSettings } from '@/components/digest-settings';
 import { DigestRunControls } from '@/components/digest-run-controls';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { londonCalendarDateFormatter, londonMediumDateTimeFormatter as dateTime } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -29,8 +30,6 @@ type DigestRun = {
   created_at: string;
 };
 
-const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
-const londonCalendarDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' });
 
 function previousCalendarDate(date: string) {
   const [year, month, day] = date.split('-').map(Number);
@@ -90,7 +89,7 @@ export default async function DigestsPage() {
         publishImmediately={digestSettings.publish_immediately}
       />
 
-      <DigestRunControls latestMissedDate={previousCalendarDate(londonCalendarDate.format(new Date()))} />
+      <DigestRunControls latestMissedDate={previousCalendarDate(londonCalendarDateFormatter.format(new Date()))} />
 
       <section className="digest-history">
         <div className="source-list-heading"><div><p className="eyebrow">Audit trail</p><h2>Digest history</h2></div><p>Generation, publication, social and email are tracked independently so a failed distribution can be retried safely.</p></div>

@@ -1,16 +1,13 @@
 import { queueReadyDrafts, rebalancePublicationQueue } from '@/lib/publication-queue';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
+import { isTime } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
-
 export async function PATCH(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: 'Authentication required.' }, { status: 401 });
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  if (!admin) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
+  const { supabase, user } = auth;
 
   const body = await request.json().catch(() => null) as {
     autoPublishEnabled?: boolean;
@@ -26,7 +23,7 @@ export async function PATCH(request: Request) {
   const minimumOverall = Number(body?.minOverallScore);
   const minimumEvidence = Number(body?.minEvidenceScore);
 
-  if (typeof body?.autoPublishEnabled !== 'boolean' || !timePattern.test(start) || !timePattern.test(end) || end <= start) {
+  if (typeof body?.autoPublishEnabled !== 'boolean' || !isTime(start) || !isTime(end) || end <= start) {
     return Response.json({ error: 'Choose valid publishing hours with the end later than the start.' }, { status: 400 });
   }
   if (!Number.isInteger(maximum) || maximum < 1 || maximum > 200) {
@@ -45,13 +42,16 @@ export async function PATCH(request: Request) {
     min_auto_publish_evidence_score: minimumEvidence,
     updated_by: user.id,
   }).eq('id', true);
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('Publication settings save failed', error);
+    return Response.json({ error: 'Publication settings could not be saved.' }, { status: 500 });
+  }
 
   try {
     const queue = body.autoPublishEnabled ? await queueReadyDrafts(null) : await rebalancePublicationQueue();
     return Response.json({ saved: true, queue });
   } catch (error) {
-    const detail = error instanceof Error ? error.message : 'The queue could not be refreshed.';
-    return Response.json({ saved: true, warning: `Settings were saved, but ${detail}` });
+    console.error('Publication queue refresh failed after saving settings', error);
+    return Response.json({ saved: true, warning: 'Settings were saved, but the queue could not be refreshed.' });
   }
 }

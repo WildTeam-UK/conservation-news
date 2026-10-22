@@ -6,8 +6,8 @@ import { AdminNav } from '@/components/admin-nav';
 import { RunAssessmentButton } from '@/components/run-assessment-button';
 import { RunCollectionButton } from '@/components/run-collection-button';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
-import { ArticleLinkBackfill } from '@/components/article-link-backfill';
-import { getArticleLinkBackfillStatus } from '@/lib/openai/backfill-article-links';
+import { sourceRelationName } from '@/lib/supabase/relations';
+import { londonMediumDateTimeFormatter as dateTime } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -34,20 +34,9 @@ type TopCandidate = {
   assessment: { primary_topic?: string } | null;
 };
 
-function sourceName(source: RecentItem['sources']) {
-  if (Array.isArray(source)) return source[0]?.name ?? 'Unknown source';
-  return source?.name ?? 'Unknown source';
-}
-
-const dateTime = new Intl.DateTimeFormat('en-GB', {
-  dateStyle: 'medium',
-  timeStyle: 'short',
-  timeZone: 'Europe/London',
-});
-
 export default async function PipelinePage() {
   const { supabase } = await requireContentAdmin();
-  const [itemsResult, pendingResult, processingResult, failedResult, selectedResult, rejectedResult, sourcesResult, recentItemsResult, candidatesResult, ingestionResult, editorialResult, linkingBackfillStatus] = await Promise.all([
+  const [itemsResult, pendingResult, processingResult, failedResult, selectedResult, rejectedResult, sourcesResult, recentItemsResult, candidatesResult, ingestionResult, editorialResult] = await Promise.all([
     supabase.from('source_items').select('*', { count: 'exact', head: true }),
     supabase.from('source_items').select('*', { count: 'exact', head: true }).eq('assessment_status', 'pending'),
     supabase.from('source_items').select('*', { count: 'exact', head: true }).eq('assessment_status', 'processing'),
@@ -59,7 +48,6 @@ export default async function PipelinePage() {
     supabase.from('story_clusters').select('id, working_title, overall_score, evidence_score, assessment').eq('status', 'selected').order('overall_score', { ascending: false }).limit(5),
     supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, error_summary, created_at').order('created_at', { ascending: false }).limit(1),
     supabase.from('editorial_runs').select('id, status, drafts_created, candidates_selected, estimated_cost_usd, created_at').order('created_at', { ascending: false }).limit(1),
-    getArticleLinkBackfillStatus(),
   ]);
 
   if (recentItemsResult.error || candidatesResult.error) throw new Error('Unable to load the editorial pipeline.');
@@ -99,13 +87,12 @@ export default async function PipelinePage() {
               <article><span><BrainCircuit /></span><div><h3>Assess pending items</h3><p>Group related coverage, score the stories and add qualifying recommendations to Candidates.</p></div><RunAssessmentButton /></article>
             </div>
           </section>
-          <ArticleLinkBackfill initialStatus={linkingBackfillStatus} />
         </details>
 
         <div className="pipeline-columns">
           <section className="pipeline-panel">
             <div className="overview-section-heading"><div><p className="eyebrow">Latest arrivals</p><h2>Recently collected</h2></div><a href="/admin/collected">Open inbox <ArrowRight /></a></div>
-            {recentItems.length ? <div className="pipeline-recent-list">{recentItems.map((item) => <article key={item.id}><div><span>{sourceName(item.sources)}</span><time dateTime={item.published_at ?? item.discovered_at}>{dateTime.format(new Date(item.published_at ?? item.discovered_at))}</time></div><a href={item.url} target="_blank" rel="noreferrer">{item.title} <ExternalLink /></a><strong className={`assessment-status ${item.assessment_status}`}>{item.assessment_status}</strong></article>)}</div> : <div className="overview-calm-state"><Inbox /><p>No source items have been collected yet.</p></div>}
+            {recentItems.length ? <div className="pipeline-recent-list">{recentItems.map((item) => <article key={item.id}><div><span>{sourceRelationName(item.sources)}</span><time dateTime={item.published_at ?? item.discovered_at}>{dateTime.format(new Date(item.published_at ?? item.discovered_at))}</time></div><a href={item.url} target="_blank" rel="noopener noreferrer">{item.title} <ExternalLink /></a><strong className={`assessment-status ${item.assessment_status}`}>{item.assessment_status}</strong></article>)}</div> : <div className="overview-calm-state"><Inbox /><p>No source items have been collected yet.</p></div>}
           </section>
 
           <section className="pipeline-panel">

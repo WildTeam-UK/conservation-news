@@ -3,6 +3,8 @@ import { estimateLunaTokenCost } from '@/lib/openai/pricing';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
+import { normalizeTaxonomyKey, tagSlug } from '@/lib/taxonomy-text';
+import { clampScore } from '@/lib/scores';
 import { aiInstructions, parseAiJson } from '@/lib/openai/house-style';
 
 const MODEL = 'gpt-6-luna';
@@ -30,18 +32,6 @@ type ReconciledStory = {
 
 type StoredTag = { id: string; name: string; slug: string; tag_type: SuggestedTag['tag_type']; status: string };
 
-function normalize(value: string) {
-  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-}
-
-function slugify(value: string) {
-  return normalize(value).replace(/\s+/g, '-') || 'tag';
-}
-
-function clamp(value: number) {
-  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
-}
-
 export type TaxonomyReconciliationResult = {
   processed: number;
   ready: number;
@@ -65,7 +55,7 @@ export async function reconcileExistingTaxonomy(): Promise<TaxonomyReconciliatio
   const topicByName = new Map((topics ?? []).map((topic) => [topic.name, topic]));
   const tags = (storedTagRows ?? []) as StoredTag[];
   const tagById = new Map(tags.map((tag) => [tag.id, tag]));
-  const tagByName = new Map(tags.map((tag) => [normalize(tag.name), tag]));
+  const tagByName = new Map(tags.map((tag) => [normalizeTaxonomyKey(tag.name), tag]));
   const tagBySlug = new Map(tags.map((tag) => [tag.slug, tag]));
   const aliasesByTag = new Map<string, string[]>();
   for (const alias of aliasRows ?? []) {
@@ -176,7 +166,7 @@ Return every supplied story ID exactly once. Use neutral British English for rat
 
     for (const item of results) {
       const story = storyById.get(item.story_id)!;
-      const confidence = clamp(item.topic_confidence);
+      const confidence = clampScore(item.topic_confidence);
       const requiresReview = item.review_required || !item.primary_topic || confidence < REVIEW_CONFIDENCE;
       const classifiedTopics = item.primary_topic ? normalizeEditorialTopics([item.primary_topic, ...item.secondary_topics]).slice(0, 3) : [];
       const metadata = (story.generation_metadata ?? {}) as Record<string, unknown>;
@@ -217,14 +207,14 @@ Return every supplied story ID exactly once. Use neutral British English for rat
 
       const resolvedTags: { tag: StoredTag; confidence: number; rationale: string }[] = [];
       for (const suggestion of item.tags.slice(0, 6)) {
-        const normalized = normalize(suggestion.name);
+        const normalized = normalizeTaxonomyKey(suggestion.name);
         if (!normalized) continue;
-        let tag = tagByName.get(normalized) ?? tagBySlug.get(slugify(suggestion.name));
+        let tag = tagByName.get(normalized) ?? tagBySlug.get(tagSlug(suggestion.name));
         if (tag?.status === 'retired') continue;
         if (!tag) {
           const { data: created, error: createError } = await supabase.from('content_tags').insert({
             name: suggestion.name.trim(),
-            slug: slugify(suggestion.name),
+            slug: tagSlug(suggestion.name),
             tag_type: suggestion.tag_type,
             status: 'proposed',
           }).select('id, name, slug, tag_type, status').single();
@@ -235,10 +225,10 @@ Return every supplied story ID exactly once. Use neutral British English for rat
           tagByName.set(normalized, tag);
           tagBySlug.set(tag.slug, tag);
           tagsCreated += 1;
-          const aliases = suggestion.aliases.map((alias) => ({ tag_id: tag!.id, alias: alias.trim(), normalized_alias: normalize(alias) })).filter((alias) => alias.alias && alias.normalized_alias);
+          const aliases = suggestion.aliases.map((alias) => ({ tag_id: tag!.id, alias: alias.trim(), normalized_alias: normalizeTaxonomyKey(alias) })).filter((alias) => alias.alias && alias.normalized_alias);
           if (aliases.length) await supabase.from('content_tag_aliases').upsert(aliases, { onConflict: 'normalized_alias', ignoreDuplicates: true });
         }
-        resolvedTags.push({ tag, confidence: clamp(suggestion.confidence), rationale: suggestion.rationale.trim() });
+        resolvedTags.push({ tag, confidence: clampScore(suggestion.confidence), rationale: suggestion.rationale.trim() });
       }
       const uniqueTags = [...new Map(resolvedTags.map((item) => [item.tag.id, item])).values()];
       const { error: clearTagsError } = await supabase.from('story_tags').delete().eq('story_id', story.id);

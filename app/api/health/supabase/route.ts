@@ -1,13 +1,8 @@
-import { createClient } from '@supabase/supabase-js';
-import { getPublicSupabaseConfig } from '@/lib/supabase/config';
+import { getSupabasePublicClient } from '@/lib/supabase/public';
 
 export async function GET() {
   try {
-    const { url, publishableKey } = getPublicSupabaseConfig();
-    const supabase = createClient(url, publishableKey, {
-      auth: { persistSession: false },
-    });
-    const { count, error } = await supabase
+    const { count, error } = await getSupabasePublicClient()
       .from('topics')
       .select('id', { count: 'exact', head: true });
 
@@ -15,11 +10,11 @@ export async function GET() {
 
     return Response.json({ ok: true, topics: count ?? 0 });
   } catch (error) {
-    console.error('Supabase health check failed');
+    console.error('Supabase health check failed', error);
     return Response.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : 'Unknown database error',
+        error: 'Database health check failed.',
       },
       { status: 503 },
     );

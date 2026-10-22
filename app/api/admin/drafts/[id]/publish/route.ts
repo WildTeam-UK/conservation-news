@@ -1,25 +1,17 @@
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
 import { publicationChecks } from '@/lib/publishing';
 import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
+import { isUuid } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-async function adminUser() {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return null;
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  return admin ? user : null;
-}
-
 export async function POST(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!uuidPattern.test(id)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
-  const user = await adminUser();
-  if (!user) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if (!isUuid(id)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
+  const { user } = auth;
   const supabase = getSupabaseAdminClient();
   const [{ data: story, error: storyError }, { count: sourceCount, error: sourcesError }] = await Promise.all([
     supabase.from('stories').select('id, status, generation_metadata, taxonomy_review_required, taxonomy_review_reason').eq('id', id).single(),
@@ -50,9 +42,10 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
 
 export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!uuidPattern.test(id)) return Response.json({ error: 'A valid article is required.' }, { status: 400 });
-  const user = await adminUser();
-  if (!user) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  if (!isUuid(id)) return Response.json({ error: 'A valid article is required.' }, { status: 400 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
+  const { user } = auth;
   const supabase = getSupabaseAdminClient();
   const { error } = await supabase.from('stories').update({ status: 'draft', published_at: null, reviewer_id: user.id }).eq('id', id).eq('status', 'published');
   if (error) return Response.json({ error: 'The article could not be unpublished.' }, { status: 500 });

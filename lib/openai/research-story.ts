@@ -4,6 +4,10 @@ import { estimateLunaTokenCost } from './pricing';
 import { PRIMARY_TOPICS, SECONDARY_TOPICS, TAXONOMY_REVIEW_TOPIC } from '@/lib/taxonomy';
 import { recordResearchSourceSuggestions } from '@/lib/source-discovery';
 import { aiInstructions, parseAiJson } from './house-style';
+import { sourceRelationName } from '@/lib/supabase/relations';
+import { normalizeTaxonomyKey, tagSlug } from '@/lib/taxonomy-text';
+import { normalizeFractionalScore } from '@/lib/scores';
+import { safeHttpUrl } from '@/lib/urls';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'research-v3-conservation-outlook';
@@ -69,45 +73,13 @@ export type ResearchResult = {
   alreadyCompleted: boolean;
 };
 
-function sourceName(source: OriginalSource['sources']) {
-  if (Array.isArray(source)) return source[0]?.name ?? 'Unknown source';
-  return source?.name ?? 'Unknown source';
-}
-
-function safeUrl(value: string) {
-  try {
-    const url = new URL(value);
-    return url.protocol === 'http:' || url.protocol === 'https:' ? url.toString() : null;
-  } catch {
-    return null;
-  }
-}
-
 function comparableUrl(value: string) {
-  const safe = safeUrl(value);
+  const safe = safeHttpUrl(value);
   if (!safe) return null;
   const url = new URL(safe);
   url.hash = '';
   ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content'].forEach((key) => url.searchParams.delete(key));
   return `${url.hostname.replace(/^www\./, '')}${url.pathname.replace(/\/$/, '')}${url.search}`.toLowerCase();
-}
-
-const clampScore = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
-
-function normalizeConfidence(value: number) {
-  return value > 0 && value <= 1 ? clampScore(value * 100) : clampScore(value);
-}
-
-function normalizeCoverageScore(value: number) {
-  return value > 0 && value <= 1 ? clampScore(value * 100) : clampScore(value);
-}
-
-function normalizeTag(value: string) {
-  return value.normalize('NFKD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
-}
-
-function tagSlug(value: string) {
-  return normalizeTag(value).replace(/\s+/g, '-') || 'tag';
 }
 
 async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) {
@@ -121,7 +93,7 @@ async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) 
 
   type StoredTag = { id: string; name: string; slug: string; tag_type: ResearchTag['tag_type']; status: string };
   const tags = (existingTags ?? []) as StoredTag[];
-  const byName = new Map(tags.map((tag) => [normalizeTag(tag.name), tag]));
+  const byName = new Map(tags.map((tag) => [normalizeTaxonomyKey(tag.name), tag]));
   const byId = new Map(tags.map((tag) => [tag.id, tag]));
   const bySlug = new Map(tags.map((tag) => [tag.slug, tag]));
   for (const alias of aliases ?? []) {
@@ -130,7 +102,7 @@ async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) 
   }
 
   for (const suggestion of suggestions.slice(0, 6)) {
-    const normalized = normalizeTag(suggestion.name);
+    const normalized = normalizeTaxonomyKey(suggestion.name);
     if (!normalized) continue;
     let tag = byName.get(normalized) ?? bySlug.get(tagSlug(suggestion.name));
     // A retired tag is an editorial decision not to use that concept again.
@@ -154,7 +126,7 @@ async function saveCandidateTags(clusterId: string, suggestions: ResearchTag[]) 
     const { error: linkError } = await supabase.from('story_cluster_tags').upsert({
       cluster_id: clusterId,
       tag_id: tag.id,
-      confidence: normalizeConfidence(suggestion.confidence),
+      confidence: normalizeFractionalScore(suggestion.confidence),
       rationale: suggestion.rationale,
     }, { onConflict: 'cluster_id,tag_id' });
     if (linkError) throw linkError;
@@ -250,7 +222,7 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
           assessment: cluster.assessment,
           original_sources: originalSources.map((item) => ({
             title: item.title,
-            publisher: sourceName(item.sources),
+            publisher: sourceRelationName(item.sources),
             url: item.url,
             summary: item.summary?.slice(0, 4000) ?? '',
             published_at: item.published_at,
@@ -364,7 +336,7 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
 
     const validSourceUrls = new Set<string>();
     const sources = raw.sources.flatMap((source) => {
-      const safe = safeUrl(source.url);
+      const safe = safeHttpUrl(source.url);
       const comparable = safe ? comparableUrl(safe) : null;
       if (!safe || !comparable || !consultedUrls.has(comparable)) return [];
       validSourceUrls.add(comparable);
@@ -374,16 +346,16 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
     for (const original of originalSources) {
       const comparable = comparableUrl(original.url);
       if (!comparable || validSourceUrls.has(comparable)) continue;
-      const safe = safeUrl(original.url);
+      const safe = safeHttpUrl(original.url);
       if (!safe) continue;
       validSourceUrls.add(comparable);
-      sources.push({ title: original.title, publisher: sourceName(original.sources), url: safe, source_type: 'news', why_relevant: 'Original collected reporting used to identify this candidate.' });
+      sources.push({ title: original.title, publisher: sourceRelationName(original.sources), url: safe, source_type: 'news', why_relevant: 'Original collected reporting used to identify this candidate.' });
     }
 
     const cleanClaims = (claims: ResearchClaim[]) => claims.map((claim) => ({
       claim: claim.claim,
       source_urls: claim.source_urls.flatMap((url) => {
-        const safe = safeUrl(url);
+        const safe = safeHttpUrl(url);
         return safe && validSourceUrls.has(comparableUrl(safe) ?? '') ? [safe] : [];
       }),
     })).filter((claim) => claim.source_urls.length > 0);
@@ -394,15 +366,15 @@ Use concise, neutral British English suitable for an editor's research pack. Thi
       key_facts: cleanClaims(raw.key_facts),
       areas_of_agreement: cleanClaims(raw.areas_of_agreement),
       disputed_points: cleanClaims(raw.disputed_points),
-      topic_classification: { ...raw.topic_classification, confidence: normalizeConfidence(raw.topic_classification.confidence), secondary_topics: raw.topic_classification.secondary_topics.filter((topic) => topic !== raw.topic_classification.primary_topic).slice(0, 2) },
-      tags: raw.tags.slice(0, 6).map((tag) => ({ ...tag, name: tag.name.trim(), aliases: tag.aliases.map((alias) => alias.trim()).filter(Boolean).slice(0, 8), confidence: normalizeConfidence(tag.confidence) })).filter((tag) => tag.name.length > 0),
+      topic_classification: { ...raw.topic_classification, confidence: normalizeFractionalScore(raw.topic_classification.confidence), secondary_topics: raw.topic_classification.secondary_topics.filter((topic) => topic !== raw.topic_classification.primary_topic).slice(0, 2) },
+      tags: raw.tags.slice(0, 6).map((tag) => ({ ...tag, name: tag.name.trim(), aliases: tag.aliases.map((alias) => alias.trim()).filter(Boolean).slice(0, 8), confidence: normalizeFractionalScore(tag.confidence) })).filter((tag) => tag.name.length > 0),
       coverage_analysis: {
         ...raw.coverage_analysis,
-        ecological: normalizeCoverageScore(raw.coverage_analysis.ecological),
-        evidence: normalizeCoverageScore(raw.coverage_analysis.evidence),
-        consensus: normalizeCoverageScore(raw.coverage_analysis.consensus),
-        conservation_outlook_score: normalizeCoverageScore(raw.coverage_analysis.conservation_outlook_score),
-        conservation_outlook_confidence: normalizeConfidence(raw.coverage_analysis.conservation_outlook_confidence),
+        ecological: normalizeFractionalScore(raw.coverage_analysis.ecological),
+        evidence: normalizeFractionalScore(raw.coverage_analysis.evidence),
+        consensus: normalizeFractionalScore(raw.coverage_analysis.consensus),
+        conservation_outlook_score: normalizeFractionalScore(raw.coverage_analysis.conservation_outlook_score),
+        conservation_outlook_confidence: normalizeFractionalScore(raw.coverage_analysis.conservation_outlook_confidence),
       },
     };
 

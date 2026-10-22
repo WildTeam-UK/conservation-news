@@ -3,8 +3,9 @@ import { HeartHandshake } from 'lucide-react';
 import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
 import { GoodNewsControls } from '@/components/good-news-controls';
-import { getGoodNewsBackfillStatus } from '@/lib/openai/backfill-conservation-outlooks';
+import { getGoodNewsStatus } from '@/lib/good-news-status';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { firstRelation } from '@/lib/supabase/relations';
 
 export const dynamic = 'force-dynamic';
 export const metadata: Metadata = { title: 'Good News | WILDNEWS editorial', robots: { index: false, follow: false } };
@@ -20,14 +21,14 @@ type OutlookRow = {
 };
 
 function relatedStory(row: OutlookRow) {
-  return Array.isArray(row.stories) ? row.stories[0] : row.stories;
+  return firstRelation(row.stories);
 }
 
 export default async function GoodNewsAdminPage() {
   const { supabase } = await requireContentAdmin();
   const [{ data: settings, error }, status, { data: outlookData, error: outlookError }] = await Promise.all([
     supabase.from('good_news_settings').select('minimum_score, minimum_confidence').eq('id', true).single(),
-    getGoodNewsBackfillStatus(),
+    getGoodNewsStatus(),
     supabase.from('story_conservation_outlooks').select('story_id, classification, score, confidence, rationale, assessed_at, stories!inner(headline, slug, status, published_at)').order('score', { ascending: false }).order('confidence', { ascending: false }).limit(1000),
   ]);
   if (error || !settings || outlookError) throw new Error('Unable to load Good News settings. Run the Good News migration first.');

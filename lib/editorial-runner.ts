@@ -6,6 +6,7 @@ import { researchCandidate } from '@/lib/openai/research-story';
 import { queueReadyDrafts } from '@/lib/publication-queue';
 import { enrichSourceSuggestionDescriptions, rebuildSourceSuggestionsFromResearch, scanBestSourceSuggestions } from '@/lib/source-discovery';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
+import { firstRelation } from '@/lib/supabase/relations';
 
 const ASSESSMENT_RESERVE_USD = 0.03;
 const RESEARCH_RESERVE_USD = 0.06;
@@ -70,8 +71,7 @@ export type EditorialRunSnapshot = {
 const money = (value: number | string | null | undefined) => Number(value ?? 0);
 
 function itemTitle(item: RunItem) {
-  if (Array.isArray(item.story_clusters)) return item.story_clusters[0]?.working_title ?? 'Story candidate';
-  return item.story_clusters?.working_title ?? 'Story candidate';
+  return firstRelation(item.story_clusters)?.working_title ?? 'Story candidate';
 }
 
 type RankedCandidate = {

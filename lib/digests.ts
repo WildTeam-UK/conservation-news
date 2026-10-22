@@ -1,7 +1,7 @@
-import { createClient } from '@supabase/supabase-js';
-import { getPublicSupabaseConfig } from '@/lib/supabase/config';
 import type { EditorialImageCredit } from '@/lib/images/types';
+import type { ArticleContextualLink } from '@/lib/article-linking';
 import { cleanAiText } from '@/lib/openai/house-style';
+import { getSupabasePublicClient } from '@/lib/supabase/public';
 
 export type DigestType = 'daily' | 'weekly';
 
@@ -11,8 +11,13 @@ export type DigestSection = {
   story_ids: string[];
 };
 
+export type DigestContextualLink = ArticleContextualLink & {
+  section_index: number;
+  paragraph_index: number;
+};
+
 export type DigestContent = {
-  template_version: 1;
+  template_version: 1 | 2;
   digest_type: DigestType;
   edition_label: string;
   headline: string;
@@ -21,6 +26,7 @@ export type DigestContent = {
   topics?: string[];
   introduction: string[];
   sections: DigestSection[];
+  contextual_links?: DigestContextualLink[];
   what_to_watch: string[];
   closing_note?: string;
   seo_title: string;
@@ -49,6 +55,7 @@ export type DigestStoryRecord = {
   image_url: string | null;
   image_alt: string | null;
   published_at: string | null;
+  updated_at: string;
   digest_period_start: string;
   digest_period_end: string;
   generation_metadata: { digest_content?: DigestContent; digest_source_stories?: DigestSourceStory[] };
@@ -58,11 +65,6 @@ export function cleanDigestText(value: string) {
   return cleanAiText(value)
     .replace(/\[([^\]]+)\]\(\s*\(wrong\)\s*\)/gi, '$1')
     .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1');
-}
-
-function publicClient() {
-  const { url, publishableKey } = getPublicSupabaseConfig();
-  return createClient(url, publishableKey, { auth: { autoRefreshToken: false, detectSessionInUrl: false, persistSession: false } });
 }
 
 export function digestPath(type: DigestType, date: string) {
@@ -75,7 +77,7 @@ type SourceImageMetadata = {
 
 export async function hydrateDigestSourceStories(stories: DigestSourceStory[]) {
   if (!stories.length) return stories;
-  const { data, error } = await publicClient().from('stories')
+  const { data, error } = await getSupabasePublicClient().from('stories')
     .select('id, image_url, image_alt, generation_metadata, story_topics(topics(name))')
     .in('id', stories.map((story) => story.id));
   if (error) throw error;
@@ -97,8 +99,8 @@ export async function hydrateDigestSourceStories(stories: DigestSourceStory[]) {
 }
 
 export async function getPublishedDigest(type: DigestType, date: string) {
-  const { data, error } = await publicClient().from('stories')
-    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, digest_period_start, digest_period_end, generation_metadata')
+  const { data, error } = await getSupabasePublicClient().from('stories')
+    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, updated_at, digest_period_start, digest_period_end, generation_metadata')
     .eq('slug', `${type}-digest-${date}`)
     .eq('content_type', `${type}_digest`)
     .eq('status', 'published')
@@ -117,10 +119,10 @@ export async function getPublishedDigest(type: DigestType, date: string) {
   };
 }
 
-export async function getPublishedWeeklyDigests(limit = 52) {
-  const { data, error } = await publicClient().from('stories')
-    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, digest_period_start, digest_period_end, generation_metadata')
-    .eq('content_type', 'weekly_digest')
+async function getPublishedDigests(type: DigestType, limit: number) {
+  const { data, error } = await getSupabasePublicClient().from('stories')
+    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, updated_at, digest_period_start, digest_period_end, generation_metadata')
+    .eq('content_type', `${type}_digest`)
     .eq('status', 'published')
     .lte('published_at', new Date().toISOString())
     .order('published_at', { ascending: false })
@@ -129,15 +131,11 @@ export async function getPublishedWeeklyDigests(limit = 52) {
   return (data ?? []) as DigestStoryRecord[];
 }
 
+export async function getPublishedWeeklyDigests(limit = 52) {
+  return getPublishedDigests('weekly', limit);
+}
+
 export async function getPublishedDailyDigests(limit = 12) {
-  const { data, error } = await publicClient().from('stories')
-    .select('id, slug, status, content_type, headline, standfirst, image_url, image_alt, published_at, digest_period_start, digest_period_end, generation_metadata')
-    .eq('content_type', 'daily_digest')
-    .eq('status', 'published')
-    .lte('published_at', new Date().toISOString())
-    .order('published_at', { ascending: false })
-    .limit(limit);
-  if (error) throw error;
-  return (data ?? []) as DigestStoryRecord[];
+  return getPublishedDigests('daily', limit);
 }
 

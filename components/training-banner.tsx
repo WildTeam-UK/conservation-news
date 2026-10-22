@@ -17,12 +17,14 @@ export function TrainingBanner({
   href = 'https://training.wildteam.org.uk/',
   linkLabel = 'Explore WildTeam training',
 }: TrainingBannerProps) {
+  const external = href.startsWith('http');
+
   return <aside className={`training-banner ${className}`.trim()}>
     <div>
       <p className="eyebrow">{eyebrow}</p>
       <h2>{title}</h2>
       <p>{description}</p>
     </div>
-    <a href={href}>{linkLabel} <ArrowRight /></a>
+    <a href={href} target={external ? '_blank' : undefined} rel={external ? 'noopener noreferrer' : undefined}>{linkLabel} <ArrowRight /></a>
   </aside>;
 }

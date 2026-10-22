@@ -7,6 +7,8 @@ import { DailyEditorialRun } from '@/components/daily-editorial-run';
 import { RunCollectionButton } from '@/components/run-collection-button';
 import { buildAdminProfile } from '@/lib/admin-profile';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { firstRelation } from '@/lib/supabase/relations';
+import { londonMediumDateTimeFormatter as dateTime, londonTimeFormatter as timeOnly } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -25,11 +27,9 @@ type QueueOverviewItem = {
 };
 
 function queueStory(item: QueueOverviewItem) {
-  return Array.isArray(item.stories) ? item.stories[0] : item.stories;
+  return firstRelation(item.stories);
 }
 
-const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
-const timeOnly = new Intl.DateTimeFormat('en-GB', { hour: '2-digit', minute: '2-digit', timeZone: 'Europe/London' });
 const greetings = [
   { text: 'Hey', language: 'English', lang: 'en' },
   { text: 'Bonjour', language: 'French', lang: 'fr' },
@@ -110,7 +110,7 @@ export default async function AdminDashboard() {
           <div className="overview-flow-track">
             <a href="/admin/collected"><span><Radio /></span><strong>{itemsResult.count ?? 0}</strong><small>Collected</small></a><ArrowRight />
             <a href="/admin/candidates"><span><Activity /></span><strong>{candidatesResult.count ?? 0}</strong><small>Candidates</small></a><ArrowRight />
-            <a href="/admin/drafts?view=drafts"><span><FileText /></span><strong>{draftsResult.count ?? 0}</strong><small>Drafts</small></a><ArrowRight />
+            <a href="/admin/drafts"><span><FileText /></span><strong>{draftsResult.count ?? 0}</strong><small>Drafts</small></a><ArrowRight />
             <a href="/admin/queue"><span><CalendarClock /></span><strong>{upcoming.length}</strong><small>Scheduled</small></a><ArrowRight />
             <a href="/admin/drafts?view=published"><span><Newspaper /></span><strong>{publishedResult.count ?? 0}</strong><small>Published</small></a>
           </div>

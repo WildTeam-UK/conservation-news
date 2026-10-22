@@ -3,6 +3,7 @@ import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { getOpenAIClient } from '@/lib/openai/client';
 import { aiInstructions, parseAiJson } from '@/lib/openai/house-style';
 import type { ResearchSource } from '@/lib/openai/research-story';
+import { safePublicHttpUrl } from '@/lib/urls';
 
 type SourceType = ResearchSource['source_type'];
 type ResearchPackRow = { cluster_id: string; content: { sources?: ResearchSource[] } | null };
@@ -37,22 +38,9 @@ function isSyndicatedPublisher(name: string) {
 }
 
 function isEditorialFeedUrl(value: string) {
-  const url = safeWebUrl(value);
+  const url = safePublicHttpUrl(value);
   if (!url) return false;
   return !/(^|\/)(comments?|responses?)(\/|$)/i.test(url.pathname) && !/comments?/i.test(url.search);
-}
-
-function safeWebUrl(value: string) {
-  try {
-    const url = new URL(value);
-    const host = url.hostname.toLowerCase();
-    const blocked = host === 'localhost' || host === '::1' || host.endsWith('.local') ||
-      host.startsWith('127.') || host.startsWith('10.') || host.startsWith('192.168.') ||
-      host.startsWith('169.254.') || /^172\.(1[6-9]|2\d|3[01])\./.test(host);
-    return ['http:', 'https:'].includes(url.protocol) && !blocked ? url : null;
-  } catch {
-    return null;
-  }
 }
 
 function siteDomain(hostname: string) {
@@ -64,7 +52,7 @@ function siteDomain(hostname: string) {
 }
 
 function sourceSite(value: string) {
-  const url = safeWebUrl(value);
+  const url = safePublicHttpUrl(value);
   if (!url) return null;
   const domain = url.hostname.toLowerCase().replace(/^www\./, '');
   return { domain, siteKey: siteDomain(domain), homepageUrl: `${url.protocol}//${domain}/` };
@@ -257,18 +245,18 @@ export async function enrichSourceSuggestionDescriptions(limit = 60) {
 }
 
 async function fetchPublic(urlValue: string, accept: string) {
-  let url = safeWebUrl(urlValue);
+  let url = safePublicHttpUrl(urlValue);
   if (!url) throw new Error('The site URL is not permitted.');
   for (let redirect = 0; redirect < 4; redirect += 1) {
     const response = await fetch(url, {
-      headers: { Accept: accept, 'User-Agent': 'WildNews Source Discovery/1.0 (+https://conservation-news.vercel.app)' },
+      headers: { Accept: accept, 'User-Agent': 'WildNews Source Discovery/1.0 (+https://news.wildteam.org.uk)' },
       redirect: 'manual',
       signal: AbortSignal.timeout(7_000),
     });
     if (response.status < 300 || response.status >= 400) return response;
     const location = response.headers.get('location');
     if (!location) return response;
-    url = safeWebUrl(new URL(location, url).toString());
+    url = safePublicHttpUrl(new URL(location, url).toString());
     if (!url) throw new Error('The site redirected to a URL that is not permitted.');
   }
   throw new Error('The site redirected too many times.');
@@ -281,7 +269,7 @@ function feedLinks(html: string, baseUrl: string) {
     const type = link.match(/\btype=["']([^"']+)["']/i)?.[1]?.toLowerCase() ?? '';
     const href = link.match(/\bhref=["']([^"']+)["']/i)?.[1];
     if (!href || !rel.includes('alternate') || !/(rss|atom|feed|xml)/.test(type)) continue;
-    const resolved = safeWebUrl(new URL(href, baseUrl).toString());
+    const resolved = safePublicHttpUrl(new URL(href, baseUrl).toString());
     if (resolved) candidates.push(resolved.toString());
   }
   return candidates;

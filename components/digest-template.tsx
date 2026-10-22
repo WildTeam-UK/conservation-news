@@ -1,25 +1,27 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic public routes */
 import { ArrowRight } from 'lucide-react';
 import { Fragment } from 'react';
+import { ContextualLinkedText } from '@/components/contextual-linked-text';
 import { DigestHeroImage } from '@/components/digest-hero-image';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
-import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
+import { cleanDigestText, type DigestContent, type DigestContextualLink, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
+import { cleanArticleLinks, contextualLinkOccurrence, type ArticleContextualLink } from '@/lib/article-linking';
 import { FALLBACK_HERO_COLOUR } from '@/lib/images/colour';
-import { StreamlinedNewsletterCta, WeeklyDigestNewsletterCta } from '@/components/newsletter-cta';
+import { NewsletterCta } from '@/components/newsletter-cta';
 import { SocialShare } from '@/components/social-share';
 import { InlineBrand } from '@/components/inline-brand';
 import { TopicTag } from '@/components/topic-tag';
 import { TrainingBanner } from '@/components/training-banner';
 import { DigestTag } from '@/components/digest-tag';
+import { londonCalendarDateFormatter, londonLongDateFormatter } from '@/lib/date-format';
 
 function longDate(value: string) {
-  return new Intl.DateTimeFormat('en-GB', { dateStyle: 'long', timeZone: 'Europe/London' }).format(new Date(value));
+  return londonLongDateFormatter.format(new Date(value));
 }
 
 const linkStopWords = new Set(['about', 'after', 'again', 'against', 'could', 'finds', 'first', 'further', 'into', 'over', 'report', 'reports', 'study', 'their', 'these', 'this', 'with']);
 
 function legacyLinkRanges(text: string, referenced: DigestSourceStory[]) {
-  const lowerText = text.toLocaleLowerCase('en-GB');
   const ranges: Array<{ start: number; end: number; story: DigestSourceStory }> = [];
   for (const story of referenced) {
     const words = story.headline.match(/[\p{L}\p{N}’'-]+/gu) ?? [];
@@ -28,7 +30,7 @@ function legacyLinkRanges(text: string, referenced: DigestSourceStory[]) {
       for (let index = 0; index <= words.length - size && !match; index += 1) {
         const phrase = words.slice(index, index + size).join(' ');
         if (size === 1 && (phrase.length < 7 || linkStopWords.has(phrase.toLocaleLowerCase('en-GB')))) continue;
-        const start = lowerText.indexOf(phrase.toLocaleLowerCase('en-GB'));
+        const start = contextualLinkOccurrence(text, phrase);
         if (start >= 0 && !ranges.some((range) => start < range.end && start + phrase.length > range.start)) match = { start, end: start + phrase.length };
       }
     }
@@ -37,29 +39,59 @@ function legacyLinkRanges(text: string, referenced: DigestSourceStory[]) {
   return ranges.sort((a, b) => a.start - b.start);
 }
 
-function LinkedParagraph({ text, stories, referenced = [] }: { text: string; stories: Map<string, DigestSourceStory>; referenced?: DigestSourceStory[] }) {
-  const cleanText = cleanDigestText(text);
+function legacyMarkerLinks(text: string, stories: Map<string, DigestSourceStory>) {
   const marker = /\[\[(story-[1-9][0-9]*)\|([^\]]+)\]\]/g;
-  const parts: React.ReactNode[] = [];
+  const links: ArticleContextualLink[] = [];
+  let plainText = '';
   let cursor = 0;
   let match: RegExpExecArray | null;
 
-  while ((match = marker.exec(cleanText)) !== null) {
-    parts.push(cleanText.slice(cursor, match.index));
-    const story = stories.get(match[1]);
-    parts.push(story ? <a href={`/stories/${story.slug}`} key={`${match.index}-${match[1]}`}>{match[2]}</a> : match[2]);
-    cursor = match.index + match[0].length;
-  }
-  if (cursor === 0) {
-    const ranges = legacyLinkRanges(cleanText, referenced);
-    for (const range of ranges) {
-      parts.push(cleanText.slice(cursor, range.start));
-      parts.push(<a href={`/stories/${range.story.slug}`} key={`${range.start}-${range.story.id}`}>{cleanText.slice(range.start, range.end)}</a>);
-      cursor = range.end;
+  while ((match = marker.exec(text)) !== null) {
+    plainText += text.slice(cursor, match.index);
+    let anchor = match[2];
+    const suffix = text.slice(marker.lastIndex).match(/^[\p{L}\p{M}\p{N}_’'-]+/u)?.[0] ?? '';
+    if (suffix) {
+      anchor += suffix;
+      marker.lastIndex += suffix.length;
     }
+    const prefix = plainText.match(/[\p{L}\p{M}\p{N}_’'-]+$/u)?.[0] ?? '';
+    const anchorStart = plainText.length - prefix.length;
+    plainText += anchor;
+    const story = stories.get(match[1]);
+    if (story) links.push({
+      type: 'article',
+      target_id: story.id,
+      href: `/stories/${story.slug}`,
+      anchor_text: plainText.slice(anchorStart),
+      external: false,
+      confidence: 100,
+      rationale: 'Legacy digest article reference.',
+    });
+    cursor = marker.lastIndex;
   }
-  parts.push(cleanText.slice(cursor));
-  return <p>{parts}</p>;
+  plainText += text.slice(cursor);
+  return { text: plainText, links: cleanArticleLinks(plainText, links) };
+}
+
+function legacyInferredLinks(text: string, referenced: DigestSourceStory[]) {
+  return cleanArticleLinks(text, legacyLinkRanges(text, referenced).map((range) => ({
+    type: 'article' as const,
+    target_id: range.story.id,
+    href: `/stories/${range.story.slug}`,
+    anchor_text: text.slice(range.start, range.end),
+    external: false,
+    confidence: 100,
+    rationale: 'Legacy digest article reference.',
+  })));
+}
+
+function LinkedParagraph({ text, links, stories, referenced = [], allowLegacy }: { text: string; links?: DigestContextualLink[]; stories: Map<string, DigestSourceStory>; referenced?: DigestSourceStory[]; allowLegacy: boolean }) {
+  const cleanText = cleanDigestText(text);
+  if (links?.length) return <p><ContextualLinkedText text={cleanText} links={links} /></p>;
+  if (!allowLegacy) return <p>{cleanText}</p>;
+  const marked = legacyMarkerLinks(cleanText, stories);
+  const legacyLinks = marked.links.length ? marked.links : legacyInferredLinks(marked.text, referenced);
+  return <p><ContextualLinkedText text={marked.text} links={legacyLinks} /></p>;
 }
 
 function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
@@ -69,7 +101,7 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
     <div className="digest-more-grid">{digests.map((digest) => {
       const date = digest.slug.replace('daily-digest-', '');
       return <article key={digest.id}>
-        <a className="digest-more-image" href={`/daily-digest/${date}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt={digest.image_alt ?? ''} /></> : null}</a>
+        <a className="digest-more-image" href={`/daily-digest/${date}`} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt="" loading="lazy" decoding="async" /></> : null}</a>
         <time dateTime={digest.digest_period_end}>{longDate(digest.digest_period_end)}</time>
         <h3><a href={`/daily-digest/${date}`}>{cleanDigestText(digest.headline)}</a></h3>
       </article>;
@@ -94,14 +126,16 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
   const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
   const resolvedImageUrl = imageUrl ?? heroStory?.image_url ?? null;
-  const resolvedImageAlt = imageAlt ?? heroStory?.image_alt ?? '';
+  const resolvedImageAlt = imageAlt?.trim() || heroStory?.image_alt?.trim() || `Illustrative image for ${cleanDigestText(content.headline)}`;
   const sourceTopics = stories.flatMap((story) => story.topics ?? []);
   const displayTopics = (content.topics?.length ? content.topics : [...new Set(sourceTopics)]).slice(0, 3);
-  const currentDate = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/London', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(periodEnd));
+  const currentDate = londonCalendarDateFormatter.format(new Date(periodEnd));
   const recentDailyDigests = content.digest_type === 'daily' ? moreDigests.filter((digest) => digest.slug !== `daily-digest-${currentDate}`).slice(0, 6) : [];
   const referencedStories = [...new Set(content.sections.flatMap((section) => section.story_ids ?? []))].flatMap((id) => storyByReference.get(id) ?? []);
   const usedImages = new Set(resolvedImageUrl ? [resolvedImageUrl] : []);
   const heroColourTargetId = `digest-hero-colour-${content.digest_type}-${currentDate}`;
+  const allowLegacyLinks = content.template_version === 1;
+  const linksFor = (sectionIndex: number, paragraphIndex: number) => content.contextual_links?.filter((link) => link.section_index === sectionIndex && link.paragraph_index === paragraphIndex);
 
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
@@ -111,7 +145,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
         <p>{cleanDigestText(content.standfirst)}</p>
         <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
       </div>
-      {resolvedImageUrl ? <figure className="digest-lead-image"><DigestHeroImage src={resolvedImageUrl} alt={resolvedImageAlt} colourTargetId={heroColourTargetId} /><EditorialImageCredit credit={heroStory?.image_credit} className="digest-image-credit" /></figure> : null}
+      {resolvedImageUrl ? <figure className="digest-lead-image"><DigestHeroImage src={resolvedImageUrl} alt={resolvedImageAlt} colourTargetId={heroColourTargetId} /><EditorialImageCredit credit={heroStory?.image_credit} /></figure> : null}
     </header>
 
     <div className="digest-article-body shell">
@@ -122,7 +156,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
         </div>
         <div className="digest-introduction-layout">
           {sharePath ? <SocialShare path={sharePath} title={cleanDigestText(content.headline)} label="Share this digest" /> : null}
-          <section className="digest-introduction">{content.introduction.map((paragraph, index) => <LinkedParagraph text={paragraph} stories={storyByReference} key={index} />)}</section>
+          <section className="digest-introduction">{content.introduction.map((paragraph, index) => <LinkedParagraph text={paragraph} stories={storyByReference} allowLegacy={allowLegacyLinks} key={index} />)}</section>
         </div>
         {content.sections.map((section, index) => {
           const referenced = section.story_ids.flatMap((id) => storyByReference.get(id) ?? []);
@@ -130,15 +164,15 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           if (sectionImage?.image_url) usedImages.add(sectionImage.image_url);
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
-            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt ?? ''} /><EditorialImageCredit credit={sectionImage.image_credit} className="digest-image-credit" /></figure> : null}
-            {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} stories={storyByReference} referenced={referenced} />{index === 1 && paragraphIndex === 0 ? <StreamlinedNewsletterCta id="digest-email-inline" /> : null}</Fragment>)}
+            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt?.trim() || `Illustrative image for ${cleanDigestText(section.heading)}`} loading="lazy" decoding="async" /><EditorialImageCredit credit={sectionImage.image_credit} /></figure> : null}
+            {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} links={linksFor(index, paragraphIndex)} stories={storyByReference} referenced={referenced} allowLegacy={allowLegacyLinks} />{index === 1 && paragraphIndex === 0 ? <NewsletterCta id="digest-email-inline" variant="streamlined" /> : null}</Fragment>)}
           </section>;
         })}
         <DigestSources stories={referencedStories.length ? referencedStories : stories} />
       </div>
 
       <TrainingBanner />
-      <WeeklyDigestNewsletterCta id="digest-email" />
+      <NewsletterCta id="digest-email" />
     </div>
 
     <MoreDailyDigests digests={recentDailyDigests} />

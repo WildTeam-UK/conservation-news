@@ -1,15 +1,12 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
+import { isTime } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
-
 export async function PATCH(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: 'Authentication required.' }, { status: 401 });
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  if (!admin) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
+  const { supabase, user } = auth;
 
   const body = await request.json().catch(() => null) as {
     automationEnabled?: boolean;
@@ -21,7 +18,7 @@ export async function PATCH(request: Request) {
   const maxEstimatedCostUsd = Number(body?.maxEstimatedCostUsd);
   const dailyRunTime = body?.dailyRunTime?.slice(0, 5) ?? '';
 
-  if (typeof body?.automationEnabled !== 'boolean' || !timePattern.test(dailyRunTime)) {
+  if (typeof body?.automationEnabled !== 'boolean' || !isTime(dailyRunTime)) {
     return Response.json({ error: 'Choose a valid automation status and daily run time.' }, { status: 400 });
   }
   if (!Number.isInteger(maxNewDrafts) || maxNewDrafts < 1 || maxNewDrafts > 25) {
@@ -40,7 +37,10 @@ export async function PATCH(request: Request) {
     max_estimated_cost_usd: Math.round(maxEstimatedCostUsd * 100) / 100,
     updated_by: user.id,
   });
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('Editorial settings save failed', error);
+    return Response.json({ error: 'Editorial settings could not be saved.' }, { status: 500 });
+  }
 
   return Response.json({ saved: true });
 }

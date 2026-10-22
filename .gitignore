@@ -8,7 +8,6 @@ dist/
 .next/
 .output/
 .vercel/
-.wrangler/
 next-env.d.ts
 .env
 .env.*

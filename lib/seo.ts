@@ -14,6 +14,11 @@ export function absoluteUrl(path = '/') {
   return new URL(path, SITE_URL).toString();
 }
 
+export function withSiteName(title: string) {
+  const unbrandedTitle = title.trim().replace(/(?:\s*(?:\||-|:)\s*wild\s*news)+\s*$/i, '').trim();
+  return unbrandedTitle ? `${unbrandedTitle} | ${SITE_NAME}` : SITE_NAME;
+}
+
 export function pageMetadata({ title, description, path, image = DEFAULT_SOCIAL_IMAGE }: { title: string; description: string; path: string; image?: string | null }): Metadata {
   const images = image ? [{ url: image, alt: title }] : [];
   return {

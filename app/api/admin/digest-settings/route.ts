@@ -1,15 +1,12 @@
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
+import { isTime } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-const timePattern = /^([01]\d|2[0-3]):([0-5]\d)$/;
-
 export async function PATCH(request: Request) {
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: 'Authentication required.' }, { status: 401 });
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  if (!admin) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
+  const { supabase, user } = auth;
 
   const body = await request.json().catch(() => null) as {
     runTime?: string;
@@ -29,7 +26,7 @@ export async function PATCH(request: Request) {
   const weeklyMax = Number(body?.weeklyMaxStories);
   const maxCost = Number(body?.maxEstimatedCostUsd);
 
-  if (!timePattern.test(runTime)) return Response.json({ error: 'Choose a valid digest time.' }, { status: 400 });
+  if (!isTime(runTime)) return Response.json({ error: 'Choose a valid digest time.' }, { status: 400 });
   if (!Number.isInteger(dailyMin) || !Number.isInteger(dailyMax) || dailyMin < 1 || dailyMax > 50 || dailyMax < dailyMin) {
     return Response.json({ error: 'Daily story limits must be between 1 and 50, with the maximum no lower than the minimum.' }, { status: 400 });
   }
@@ -56,7 +53,10 @@ export async function PATCH(request: Request) {
     email_distribution_enabled: false,
     updated_by: user.id,
   }).eq('id', true);
-  if (error) return Response.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('Digest settings save failed', error);
+    return Response.json({ error: 'Digest settings could not be saved.' }, { status: 500 });
+  }
 
   return Response.json({ saved: true, automationEnabled: body.automationEnabled });
 }

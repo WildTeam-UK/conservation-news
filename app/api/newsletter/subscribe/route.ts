@@ -1,15 +1,18 @@
+import { positiveIntegerEnvironmentValue, requireEnvironmentValue } from '@/lib/environment';
+
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 function configuration() {
-  const apiKey = process.env.BREVO_API_KEY?.trim();
-  const listId = Number.parseInt(process.env.BREVO_LIST_ID ?? '', 10);
-  if (!apiKey || !Number.isInteger(listId) || listId < 1) throw new Error('Newsletter configuration is incomplete.');
+  const apiKey = requireEnvironmentValue('BREVO_API_KEY', process.env.BREVO_API_KEY);
+  const listId = positiveIntegerEnvironmentValue('BREVO_LIST_ID', process.env.BREVO_LIST_ID);
   return { apiKey, listId };
 }
 
 export async function POST(request: Request) {
+  const body = await request.json().catch(() => null) as { email?: unknown; website?: unknown } | null;
+  if (!body) return Response.json({ error: 'Enter your email address.' }, { status: 400 });
+
   try {
-    const body = await request.json() as { email?: unknown; website?: unknown };
     if (typeof body.website === 'string' && body.website.trim()) {
       return Response.json({ ok: true, message: 'You are subscribed to the WildNews Weekly Digest.' });
     }

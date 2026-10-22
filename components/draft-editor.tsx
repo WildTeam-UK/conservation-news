@@ -14,13 +14,13 @@ export type DraftSource = { id: string; title: string; publisher: string; url: s
 function SourceReferences({ ids, sources }: { ids: string[]; sources: Map<string, DraftSource> }) {
   return <span className="draft-source-refs">{ids.map((id) => {
     const source = sources.get(id);
-    return source ? <a href={source.url} target="_blank" rel="noreferrer" title={`${source.publisher}: ${source.title}`} key={id}>{id.replace('source-', '')}</a> : null;
+    return source ? <a href={source.url} target="_blank" rel="noopener noreferrer" title={`${source.publisher}: ${source.title}`} key={id}>{id.replace('source-', '')}</a> : null;
   })}</span>;
 }
 
 function SourcedFields({ label, items, sources, onChange }: { label: string; items: SourcedDraftText[]; sources: Map<string, DraftSource>; onChange: (items: SourcedDraftText[]) => void }) {
   return <fieldset className="draft-fieldset"><legend>{label}</legend>{items.map((item, index) => <div className="draft-sourced-field" key={`${label}-${index}`}>
-    <textarea value={item.text} onChange={(event) => onChange(items.map((current, currentIndex) => currentIndex === index ? { ...current, text: event.target.value } : current))} rows={3} />
+    <textarea aria-label={`${label}, item ${index + 1}`} value={item.text} onChange={(event) => onChange(items.map((current, currentIndex) => currentIndex === index ? { ...current, text: event.target.value } : current))} rows={3} />
     <div><span>Supporting sources</span><SourceReferences ids={item.source_ids} sources={sources} /></div>
   </div>)}</fieldset>;
 }

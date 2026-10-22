@@ -5,6 +5,7 @@ import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
 import { stripSourceMarkers } from '@/lib/article-text';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
+import { londonMediumDateTimeFormatter as dateTime } from '@/lib/date-format';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,8 +16,6 @@ export const metadata: Metadata = {
 
 type ArticleView = 'all' | 'scheduled' | 'unscheduled' | 'held' | 'published';
 type QueueGroup = 'scheduled' | 'unscheduled' | 'held';
-
-const dateTime = new Intl.DateTimeFormat('en-GB', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'Europe/London' });
 
 function queueGroup(status?: string): QueueGroup {
   if (status === 'held') return 'held';
@@ -38,7 +37,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
   const search = (filters.q ?? '').trim();
   const { supabase } = await requireContentAdmin();
   const { data: stories, error } = await supabase.from('stories').select('id, cluster_id, headline, standfirst, status, updated_at, published_at, generation_metadata').eq('content_type', 'news').in('status', ['draft', 'published']).order('updated_at', { ascending: false });
-  if (error) throw new Error('Unable to load article drafts.');
+  if (error) throw new Error('Unable to load articles.');
   const clusterIds = (stories ?? []).flatMap((story) => story.cluster_id ? [story.cluster_id] : []);
   const { data: updateRows } = clusterIds.length ? await supabase.from('story_cluster_updates').select('cluster_id').in('cluster_id', clusterIds).eq('status', 'pending_review') : { data: [] };
   const updateCounts = new Map<string, number>();
@@ -73,7 +72,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
     <AdminNav active="drafts" />
     <div className="admin-shell admin-drafts-shell">
       <section className="admin-welcome candidates-heading"><div><p className="eyebrow">Editorial workspace</p><h1>Articles</h1><p>Search and manage every private, scheduled, held and published article in one place.</p></div><div className="candidate-summary"><FilePenLine /><strong>{stories?.length ?? 0}</strong><span>total articles</span></div></section>
-      {stories?.length ? <div className="draft-library-tools"><nav aria-label="Filter articles">{(['all', 'scheduled', 'unscheduled', 'held', 'published'] as ArticleView[]).map((option) => { const query = new URLSearchParams(); if (option !== 'all') query.set('view', option); if (search) query.set('q', search); return <a className={view === option ? 'active' : ''} href={`/admin/drafts${query.size ? `?${query}` : ''}`} key={option}>{option === 'unscheduled' ? 'Not scheduled' : option}<span>{counts[option]}</span></a>; })}</nav><form action="/admin/drafts"><input type="hidden" name="view" value={view === 'all' ? '' : view} /><label><Search /><input aria-label="Search articles" name="q" defaultValue={search} placeholder="Search article titles…" /></label><button type="submit">Search</button>{search ? <a href={`/admin/drafts${view === 'all' ? '' : `?view=${view}`}`}>Clear</a> : null}</form></div> : null}
+      {stories?.length ? <div className="draft-library-tools"><nav aria-label="Filter articles">{(['all', 'scheduled', 'unscheduled', 'held', 'published'] as ArticleView[]).map((option) => { const query = new URLSearchParams(); if (option !== 'all') query.set('view', option); if (search) query.set('q', search); return <a className={view === option ? 'active' : ''} href={`/admin/drafts${query.size ? `?${query}` : ''}`} aria-current={view === option ? 'page' : undefined} key={option}>{option === 'unscheduled' ? 'Not scheduled' : option}<span>{counts[option]}</span></a>; })}</nav><form action="/admin/drafts"><input type="hidden" name="view" value={view === 'all' ? '' : view} /><label><Search /><input aria-label="Search articles" name="q" defaultValue={search} placeholder="Search article titles…" /></label><button type="submit">Search</button>{search ? <a href={`/admin/drafts${view === 'all' ? '' : `?view=${view}`}`}>Clear</a> : null}</form></div> : null}
       {!stories?.length ? <section className="source-empty candidate-empty"><FilePenLine /><h2>No articles yet</h2><p>Research a candidate, then choose Generate draft.</p></section> : visibleArticles.length ? <section className="draft-list">{visibleArticles.map((article) => {
         const metadata = article.generation_metadata as { topic_classification?: { primary_topic?: string }; model?: string };
         const updates = article.cluster_id ? updateCounts.get(article.cluster_id) ?? 0 : 0;

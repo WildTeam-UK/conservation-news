@@ -1,17 +1,16 @@
 type FooterLink = {
   label: string;
   href?: string;
-  newTab?: boolean;
 };
 
 const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
   {
     title: 'About',
     links: [
-      { label: 'Our team', href: 'https://www.wildteam.org.uk/team', newTab: true },
-      { label: 'Our plan', href: 'https://www.wildteam.org.uk/conservation-plan', newTab: true },
-      { label: 'Our impact', href: 'https://www.wildteam.org.uk/conservation-impact', newTab: true },
-      { label: 'Our partners', href: 'https://www.wildteam.org.uk/conservation-partners', newTab: true },
+      { label: 'Our team', href: 'https://www.wildteam.org.uk/team' },
+      { label: 'Our plan', href: 'https://www.wildteam.org.uk/conservation-plan' },
+      { label: 'Our impact', href: 'https://www.wildteam.org.uk/conservation-impact' },
+      { label: 'Our partners', href: 'https://www.wildteam.org.uk/conservation-partners' },
       { label: 'Get in touch', href: 'https://training.wildteam.org.uk/contact-us' },
       { label: 'Community', href: 'https://training.wildteam.org.uk/social' },
       { label: 'Newsletter', href: 'https://training.wildteam.org.uk/newsletter' },
@@ -35,7 +34,7 @@ const footerColumns: Array<{ title: string; links: FooterLink[] }> = [
       { label: 'Terms and conditions', href: 'https://training.wildteam.org.uk/terms' },
       { label: 'Cookies', href: 'https://training.wildteam.org.uk/cookies' },
       { label: 'Privacy Policy', href: 'https://training.wildteam.org.uk/privacy' },
-      { label: 'Annual report', href: 'https://register-of-charities.charitycommission.gov.uk/charity-search/-/charity-details/5031203', newTab: true },
+      { label: 'Annual report', href: 'https://register-of-charities.charitycommission.gov.uk/charity-search/-/charity-details/5031203' },
       { label: 'CPD', href: 'https://training.wildteam.org.uk/cpd-certification' },
     ],
   },
@@ -63,7 +62,7 @@ function FooterColumn({ title, links }: { title: string; links: FooterLink[] }) 
   return <section className="wildteam-footer-column">
     <h2>{title}</h2>
     {links.map((link) => link.href
-      ? <a href={link.href} target={link.newTab ? '_blank' : undefined} rel={link.newTab ? 'noreferrer' : undefined} key={link.label}>{link.label}</a>
+      ? <a href={link.href} target="_blank" rel="noopener noreferrer" key={link.label}>{link.label}</a>
       : <span key={link.label}>{link.label}</span>)}
   </section>;
 }
@@ -73,14 +72,14 @@ export function SiteFooter() {
     <div className="shell wildteam-footer-inner">
       <div className="wildteam-footer-grid">
         {footerColumns.map((column) => <FooterColumn {...column} key={column.title} />)}
-        <section className="wildteam-footer-column wildteam-socials">
+        <section className="wildteam-footer-column">
           <h2>Join the conversation</h2>
           <div className="wildteam-social-links">
-            {socialLinks.map(({ label, href, network }) => <a href={href} target="_blank" rel="noreferrer" aria-label={label} key={label}><SocialIcon network={network} /></a>)}
+            {socialLinks.map(({ label, href, network }) => <a href={href} target="_blank" rel="noopener noreferrer" aria-label={label} key={label}><SocialIcon network={network} /></a>)}
           </div>
-          <a className="wildteam-cpd-link" href="https://training.wildteam.org.uk/cpd-certification" target="_blank" rel="noreferrer">
+          <a className="wildteam-cpd-link" href="https://training.wildteam.org.uk/cpd-certification" target="_blank" rel="noopener noreferrer">
             {/* oxlint-disable-next-line next/no-img-element -- shared WildTeam certification asset */}
-            <img src="https://lwfiles.mycourse.app/6874ec826e31c5cf606cc001-public/24d306bb870071d95fb156827191ca00.png" alt="CPD Member certification" />
+            <img src="https://lwfiles.mycourse.app/6874ec826e31c5cf606cc001-public/24d306bb870071d95fb156827191ca00.png" alt="CPD Member certification" loading="lazy" decoding="async" />
           </a>
         </section>
       </div>

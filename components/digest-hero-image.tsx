@@ -69,5 +69,5 @@ export function DigestHeroImage({ src, alt, colourTargetId }: { src: string; alt
   }, [canRequestPalette, colourTargetId, src]);
 
   // oxlint-disable-next-line next/no-img-element -- external editorial images are hotlinked under the provider licence
-  return <img src={src} alt={alt} onError={applyFallbackColour} />;
+  return <img src={src} alt={alt} loading="eager" fetchPriority="high" decoding="async" onError={applyFallbackColour} />;
 }

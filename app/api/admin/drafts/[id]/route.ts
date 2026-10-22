@@ -1,23 +1,21 @@
 import { cleanDraftContent, type StoryDraftContent } from '@/lib/openai/draft-story';
+import { unexpectedErrorResponse } from '@/lib/api-errors';
 import { recordUnsplashSelection } from '@/lib/images/unsplash';
-import { createSupabaseServerClient } from '@/lib/supabase/server';
+import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { queueReadyDrafts } from '@/lib/publication-queue';
 import { normalizeEditorialTopics } from '@/lib/taxonomy';
 import { articleLinkRows } from '@/lib/article-linking';
+import { isUuid } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  if (!uuidPattern.test(id)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
+  if (!isUuid(id)) return Response.json({ error: 'A valid draft is required.' }, { status: 400 });
 
-  const supabase = await createSupabaseServerClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return Response.json({ error: 'Authentication required.' }, { status: 401 });
-  const { data: admin } = await supabase.from('admin_users').select('user_id').eq('user_id', user.id).eq('active', true).maybeSingle();
-  if (!admin) return Response.json({ error: 'Editorial access required.' }, { status: 403 });
+  const auth = await requireApiAdmin();
+  if ('response' in auth) return auth.response;
+  const { supabase, user } = auth;
 
   const { data: story, error: storyError } = await supabase.from('stories').select('id, status, generation_metadata').eq('id', id).single();
   if (storyError || !story) return Response.json({ error: 'Draft not found.' }, { status: 404 });
@@ -52,7 +50,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       open_questions: content.what_we_dont_know.map((item) => item.text),
       image_url: content.image_url || null,
       image_alt: content.image_alt || null,
-      byline: content.byline,
       reviewer_id: user.id,
       primary_topic_id: primaryTopic?.id ?? null,
       taxonomy_review_required: !taxonomyReady,
@@ -90,7 +87,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       return Response.json({ saved: true, queueWarning });
     }
   } catch (error) {
-    console.error('Draft save failed', error);
-    return Response.json({ error: error instanceof Error ? error.message : 'The draft could not be saved.' }, { status: 500 });
+    return unexpectedErrorResponse('Draft save failed', error, 'The draft could not be saved.');
   }
 }

@@ -1,9 +1,10 @@
+/* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation */
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { ArrowRight, CircleCheckBig, CircleDotDashed, CircleMinus, TriangleAlert } from 'lucide-react';
 import { InteriorHeader } from '@/components/interior-header';
 import { SiteFooter } from '@/components/site-footer';
 import { InlineBrand } from '@/components/inline-brand';
+import { PageHero } from '@/components/page-hero';
 import { pageMetadata } from '@/lib/seo';
 
 export const metadata: Metadata = pageMetadata({
@@ -15,13 +16,9 @@ export const metadata: Metadata = pageMetadata({
 export default function GoodNewsMethodPage() {
   return <main>
     <InteriorHeader />
-    <article className="ai-page shell good-news-method">
-      <header className="ai-page-hero">
-        <p className="eyebrow">A transparent classification</p>
-        <h1>What counts as good news?</h1>
-        <p><InlineBrand text="WILDNEWS" /> looks for demonstrated conservation progress, not simply positive language. A story only enters the Good News archive when the reported evidence supports both a strong positive outlook and a confident classification.</p>
-      </header>
-
+    <article className="ai-page good-news-method">
+      <PageHero eyebrow="A transparent classification" title="What counts as good news?" description={<><InlineBrand text="WILDNEWS" /> looks for demonstrated conservation progress, not simply positive language. A story only enters the Good News archive when the reported evidence supports both a strong positive outlook and a confident classification.</>} />
+      <div className="ai-page-content shell">
       <section className="ai-caution"><strong>The short version</strong><p>Announcements, pledges and planned projects are not automatically good news. We look for delivery, credible evidence or outcomes that benefit nature or conservation practice.</p></section>
 
       <section className="ai-process" aria-labelledby="outlook-classes">
@@ -39,7 +36,8 @@ export default function GoodNewsMethodPage() {
         <section><p className="eyebrow">AI-assisted, openly stated</p><h2>A useful signal, not a verdict</h2><p>AI applies the same editorial rubric to each source-backed article. It can still miss context or make mistakes, so the label should help discovery rather than replace the original evidence.</p><p>Every briefing retains its source links so readers can check the reporting behind the classification.</p></section>
       </div>
 
-      <section className="ai-next-step"><div><p className="eyebrow">See the results</p><h2>Find progress worth following.</h2></div><p>Explore the conservation stories that currently meet the <InlineBrand text="WILDNEWS" /> evidence and confidence thresholds.</p><Link className="action-button" href="/good-news-in-conservation">Read Good News <ArrowRight /></Link></section>
+      <section className="ai-next-step"><div><p className="eyebrow">See the results</p><h2>Find progress worth following.</h2></div><p>Explore the conservation stories that currently meet the <InlineBrand text="WILDNEWS" /> evidence and confidence thresholds.</p><a className="action-button" href="/good-news-in-conservation">Read Good News <ArrowRight /></a></section>
+      </div>
     </article>
     <SiteFooter />
   </main>;

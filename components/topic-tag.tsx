@@ -31,5 +31,5 @@ export const iconForTopic = (topic: string) => {
 
 export function TopicTag({ topic, className = '', tabIndex }: { topic: string; className?: string; tabIndex?: number }) {
   const Icon = iconForTopic(topic);
-  return <a className={`topic-tag ${className}`.trim()} href={`/topics/${topicSlug(topic)}`} draggable={false} tabIndex={tabIndex}>{createElement(Icon, { 'aria-hidden': true })}<span>{topic}</span></a>;
+  return <a className={`topic-tag editorial-pill ${className}`.trim()} href={`/topics/${topicSlug(topic)}`} draggable={false} tabIndex={tabIndex}><span className="editorial-pill-icon" aria-hidden="true">{createElement(Icon)}</span><span className="editorial-pill-label">{topic}</span></a>;
 }
