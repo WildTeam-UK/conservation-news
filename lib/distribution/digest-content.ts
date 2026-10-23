@@ -118,7 +118,7 @@ export function buildEmailDistributionPayload({ runId, type, editionDate, conten
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <style>@media only screen and (max-width:620px){.email-shell{padding-left:10px!important;padding-right:10px!important}.email-card{border-radius:14px!important}.email-pad{padding-left:22px!important;padding-right:22px!important}.email-title{font-size:34px!important}.email-header{padding:28px 22px!important}.story-image-cell,.story-copy{display:block!important;width:100%!important}.story-table{height:auto!important}.story-image-cell{height:220px!important;min-height:220px!important;border-radius:16px 16px 0 0!important}.story-image-link{height:220px!important;min-height:220px!important}.story-copy{box-sizing:border-box!important;padding:20px 22px 22px!important}}</style>
+  <style>@media only screen and (max-width:620px){.email-shell{padding-left:0!important;padding-right:0!important}.email-card{border-radius:14px!important}.email-pad{padding-left:12px!important;padding-right:12px!important}.email-title{font-size:34px!important}.email-header{padding:28px 12px!important}.story-image-cell,.story-copy{display:block!important;width:100%!important}.story-table{height:auto!important}.story-image-cell{height:220px!important;min-height:220px!important;border-radius:16px 16px 0 0!important}.story-image-link{height:220px!important;min-height:220px!important}.story-copy{box-sizing:border-box!important;padding:20px 22px 22px!important}}</style>
 </head>
 <body style="margin:0;background:#ffffff;color:#080808;">
   <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;">${escapeHtml(content.standfirst)}</div>
