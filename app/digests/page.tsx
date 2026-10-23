@@ -34,7 +34,7 @@ export default async function DigestArchive() {
       label={<div className="digest-archive-type-tags"><DigestTag type="daily" /><DigestTag type="weekly" /></div>}
       title={<><InlineBrand text="WILDNEWS" /> digests</>}
       description="Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week."
-      descriptionLink={<a className="digest-archive-subscribe-link" href="#digest-archive-newsletter">Subscribe to the <InlineBrand text="WILDNEWS" /> weekly <ArrowRight /></a>}
+      descriptionLink={<a href="#digest-archive-newsletter">Subscribe to the <InlineBrand text="WILDNEWS" /> weekly <ArrowRight /></a>}
       meta={`${digests.length} ${digests.length === 1 ? 'edition' : 'editions'}`}
     />
     {digests.length ? <section className="topic-page-grid shell">
