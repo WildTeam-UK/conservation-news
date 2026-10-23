@@ -12,7 +12,7 @@ import { londonLocalDateTimeToUtc } from '@/lib/london-time';
 import { assessStoryContextualLinks } from '@/lib/openai/assess-contextual-links';
 
 const MODEL = 'gpt-6-luna';
-const PROMPT_VERSION = 'digest-v6-social-copy';
+const PROMPT_VERSION = 'digest-v7-distribution-copy';
 
 type DigestSettings = {
   daily_min_stories: number;
@@ -32,6 +32,7 @@ type GeneratedDigest = Omit<DigestContent, 'template_version' | 'digest_type' | 
   image_search_query: string;
   image_search_fallbacks: string[];
   social_post: string;
+  email_overview: string[];
 };
 
 type SourceMetadata = {
@@ -195,6 +196,8 @@ Also supply three concise, visually literal Unsplash search queries for a new fe
 
 Write one short social post for this edition in the established WILDNEWS voice. It should feel warm, informed and human, give a useful overview rather than repeat the headline, and end with an inviting call to read the digest. Use one or two relevant emojis only where they feel natural. Do not include a URL, hashtags, image attribution, unsupported claims or phrases about AI. Keep the complete social post to 140 characters or fewer so the application can append the link and image credit.
 
+Also write exactly two short paragraphs for the weekly email overview. Together they should be 80–130 words, introduce the most useful themes and connections from the edition in a warm, direct, email-friendly voice, and make the reader want to explore the selected articles or full digest. Do not repeat the headline or standfirst verbatim. Do not use a greeting, sign-off, bullet list, URL, emoji, source list, unsupported claim or phrase about AI. Supply this copy for both digest types so the data contract remains consistent, although only weekly editions are emailed.
+
 This is a private editorial draft for review. Return only the requested structured data.`),
       input: JSON.stringify({ digest_type: type, edition: editionLabel(type, end), period_start: start.toISOString(), period_end: end.toISOString(), topic_vocabulary: EDITORIAL_TOPICS, stories: inputStories }),
       text: { format: {
@@ -213,10 +216,11 @@ This is a private editorial draft for review. Return only the requested structur
             seo_title: { type: 'string' },
             seo_description: { type: 'string' },
             social_post: { type: 'string' },
+            email_overview: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'string' } },
             image_search_query: { type: 'string' },
             image_search_fallbacks: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'string' } },
           },
-          required: ['headline', 'standfirst', 'topics', 'introduction', 'sections', 'what_to_watch', 'seo_title', 'seo_description', 'social_post', 'image_search_query', 'image_search_fallbacks'],
+          required: ['headline', 'standfirst', 'topics', 'introduction', 'sections', 'what_to_watch', 'seo_title', 'seo_description', 'social_post', 'email_overview', 'image_search_query', 'image_search_fallbacks'],
           additionalProperties: false,
         },
       } },
@@ -230,6 +234,7 @@ This is a private editorial draft for review. Return only the requested structur
     generated.seo_title = cleanGeneratedDigestText(generated.seo_title);
     generated.seo_description = cleanGeneratedDigestText(generated.seo_description);
     generated.social_post = digestTextGraphemes(cleanGeneratedDigestText(generated.social_post)).slice(0, 140).join('');
+    generated.email_overview = generated.email_overview.map(cleanGeneratedDigestText);
     generated.image_search_query = cleanGeneratedDigestText(generated.image_search_query).slice(0, 120);
     generated.image_search_fallbacks = generated.image_search_fallbacks.map((query) => cleanGeneratedDigestText(query).slice(0, 120));
     for (const section of generated.sections) {
