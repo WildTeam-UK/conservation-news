@@ -94,7 +94,7 @@ The `WILDNEWS` wordmark uses weight 950, tight tracking and separate purple `WIL
 
 The main public grids are:
 
-- Homepage hero: asymmetric two-column layout with the lead image on the left and story copy on the right. The linked title uses the same font-relative underline hover cue as large archive titles; smaller card titles retain their finer underline treatment. At the shared mobile breakpoint, the image remains first and the story copy stacks underneath it.
+- Homepage hero: asymmetric two-column layout with the lead image on the left and story copy on the right. On desktop, the image occupies one third of the grid and stretches to the content-defined row height, while the copy occupies two thirds. Tablet retains the balanced existing split. At the shared mobile breakpoint, the image remains first and the story copy stacks underneath it. The linked title uses the same font-relative underline hover cue as large archive titles; smaller card titles retain their finer underline treatment.
 - Latest stories: primary list plus compact secondary column.
 - Standard listings: two-column card grid on desktop.
 - Topic shelves: horizontal snap-scrolling card tracks.
