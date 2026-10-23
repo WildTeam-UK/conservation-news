@@ -190,7 +190,7 @@ button svg{width:16px}
 .archive-page .topic-story-image{display:block;height:180px;overflow:hidden;border-radius:var(--radius-card)}
 .archive-page .topic-story-featured .topic-story-image{height:420px}
 .archive-page .topic-story-content{display:flex;align-items:flex-start;flex-direction:column;min-width:0}
-.archive-page .topic-story-content>.text-link{margin-top:16px}
+.archive-page .topic-story-content>.text-link{margin-top:auto;padding-top:16px}
 .archive-page .topic-story h2{margin:0;font-size:28px;font-weight:var(--font-weight-black);line-height:1.06}
 .archive-page .topic-story-featured h2{font-size:clamp(40px,5vw,64px)}
 .archive-page .topic-story h2 a:hover{text-decoration:underline}
