@@ -194,7 +194,7 @@ Story discovery uses a small set of repeated patterns:
 - `compact-story`: smaller image/title rows.
 - `carousel-card`: horizontal topic-shelf cards.
 - `TopicStoryShelf`: reusable homepage topic carousel containing up to 12 recent matching stories.
-- `topic-story`: archive cards, with the first item promoted to `topic-story-featured`. The copy column uses a consistent 16px title-to-description gap. Its explicit read link is aligned to the bottom of the card, with 16px of minimum separation from the preceding content at every breakpoint. `EditorialArchiveCard` derives its action label from `digestType`, using “Read this edition” for daily and weekly digests and “Read story” for news.
+- `topic-story`: archive cards, with the first item promoted to `topic-story-featured`. Descriptions are clamped to three lines at every breakpoint. The copy column uses a consistent 16px title-to-description gap. Its explicit read link is aligned to the bottom of the card, with 16px of minimum separation from the preceding content. `EditorialArchiveCard` derives its action label from `digestType`, using “Read this edition” for daily and weekly digests and “Read story” for news.
 - `related` / `SimilarStories`: three-card discovery section.
 - `digest-more`: six most recent daily digest cards on daily digest pages.
 

@@ -194,7 +194,7 @@ button svg{width:16px}
 .archive-page .topic-story h2{margin:0;font-size:28px;font-weight:var(--font-weight-black);line-height:1.06}
 .archive-page .topic-story-featured h2{font-size:clamp(40px,5vw,64px)}
 .archive-page .topic-story h2 a:hover{text-decoration:underline}
-.archive-page .topic-story p:not(.eyebrow){margin:16px 0 0;color:var(--muted);font-size:14px;line-height:1.55}
+.archive-page .topic-story p:not(.eyebrow){display:-webkit-box;overflow:hidden;margin:16px 0 0;color:var(--muted);font-size:14px;line-height:1.55;-webkit-box-orient:vertical;-webkit-line-clamp:3}
 
 /* Coverage-analysis methodology */
 .methodology-page{padding-bottom:110px}
