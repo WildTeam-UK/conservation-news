@@ -15,6 +15,8 @@ type DigestStory = {
   id: string;
   slug: string;
   content_type: 'weekly_digest';
+  image_url: string | null;
+  image_alt: string | null;
   generation_metadata: {
     digest_content?: DigestContent;
     digest_source_stories?: DigestSourceStory[];
@@ -32,7 +34,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
   if (email.length > 254 || !emailPattern.test(email)) return Response.json({ error: 'Enter a valid test email address.' }, { status: 400 });
 
   const [{ data: story, error: storyError }, { data: run, error: runError }] = await Promise.all([
-    auth.supabase.from('stories').select('id, slug, content_type, generation_metadata').eq('id', storyId).eq('content_type', 'weekly_digest').maybeSingle(),
+    auth.supabase.from('stories').select('id, slug, content_type, image_url, image_alt, generation_metadata').eq('id', storyId).eq('content_type', 'weekly_digest').maybeSingle(),
     auth.supabase.from('digest_runs').select('id').eq('story_id', storyId).eq('digest_type', 'weekly').maybeSingle(),
   ]);
   if (storyError || runError || !story || !run) return Response.json({ error: 'The weekly digest could not be found.' }, { status: 404 });
@@ -51,6 +53,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       editionDate,
       content,
       sources: digestStory.generation_metadata.digest_source_stories ?? [],
+      imageUrl: digestStory.image_url,
+      imageAlt: digestStory.image_alt,
       listId,
     });
     payload.subject = digestTextGraphemes(`[TEST] ${payload.subject}`).slice(0, 150).join('');

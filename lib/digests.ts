@@ -35,6 +35,7 @@ export type DigestContent = {
   seo_description: string;
   social_post?: string;
   email_overview?: string[];
+  email_sections?: Array<{ heading: string; paragraphs: string[] }>;
 };
 
 export type DigestSourceStory = {
