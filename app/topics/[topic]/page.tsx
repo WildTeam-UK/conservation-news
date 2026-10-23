@@ -53,10 +53,10 @@ export default async function TopicPage({ params }: { params: Promise<{ topic: s
         href={storyHref(story)}
         image={storyImage(story)}
         goodNews={story.goodNews}
+        digestType={story.digestType}
         labels={<StoryTags story={story} />}
         title={cleanCopy(story.title)}
         summary={cleanCopy(story.summary)}
-        linkLabel="Read story"
         key={story.slug}
       />)}
     </section>

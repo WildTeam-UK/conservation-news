@@ -45,7 +45,6 @@ export default async function GoodNewsPage() {
         labels={<TopicTag topic={story.topic} />}
         title={cleanCopy(story.title)}
         summary={cleanCopy(story.summary)}
-        linkLabel="Read story"
         key={story.slug}
       />)}
     </section> : <section className="good-news-empty shell"><h2>The threshold is doing its job.</h2><p>No published story currently has enough evidence to qualify. New stories will appear here automatically when they meet the standard.</p></section>}
