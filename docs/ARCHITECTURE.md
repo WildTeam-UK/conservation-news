@@ -221,7 +221,7 @@ All generated editorial prompts should include `AI_HOUSE_STYLE`. Estimated usage
 
 ### Unsplash
 
-Used server-side to search for landscape editorial images. The application hotlinks transformed Unsplash URLs, stores creator/licence attribution, and calls the download endpoint when a selection is used. Articles and digests perform separate searches: a digest selects a new image for its overall editorial theme and excludes images attached to its source stories and recent digests. Digest hero colour uses the selected image's stored Unsplash colour, with WildTeam purple as fallback.
+Used server-side to search for landscape editorial images. The application hotlinks transformed Unsplash URLs, stores creator/licence attribution, and calls the download endpoint when a selection is used. Articles and digests perform separate searches: a digest selects a new image for its overall editorial theme and excludes images attached to its source stories and recent digests. Digest generation converts the selected image's stored Unsplash colour into an accessible hero background, which the page renders directly without another browser-side palette request. Older editions fall back to the colour stored with their image attribution, then to WildTeam purple.
 
 ### Brevo
 
