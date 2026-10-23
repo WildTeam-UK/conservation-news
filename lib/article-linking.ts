@@ -35,6 +35,24 @@ export type ArticleLinkTarget = {
   external: boolean;
 };
 
+export type LinkPlanRejectionReason =
+  | 'below_confidence'
+  | 'type_limit'
+  | 'taxonomy_limit'
+  | 'target_missing'
+  | 'location_missing'
+  | 'duplicate_target'
+  | 'invalid_anchor'
+  | 'total_limit';
+
+export type LinkPlanDiagnostics = {
+  proposedCount: number;
+  acceptedCount: number;
+  rejectedCount: number;
+  rejectionReasons: Partial<Record<LinkPlanRejectionReason, number>>;
+  acceptedTypes: Partial<Record<ArticleLinkType, number>>;
+};
+
 export type StoredArticleContextualLink = ArticleContextualLink & {
   section_key: ArticleLinkSection;
   item_index: number;
@@ -52,6 +70,20 @@ type LinkableArticle = {
 const GENERIC_ANCHORS = new Set(['click here', 'read more', 'learn more', 'this article', 'this story', 'website', 'source']);
 export const CONTEXTUAL_LINK_TYPE_LIMITS: Record<ArticleLinkType, number> = { article: 2, topic: 1, tag: 1, course: 1, source: 1 };
 export const MAX_CONTEXTUAL_LINKS = 5;
+
+export function createLinkPlanDiagnostics(proposedCount: number): LinkPlanDiagnostics {
+  return { proposedCount, acceptedCount: 0, rejectedCount: 0, rejectionReasons: {}, acceptedTypes: {} };
+}
+
+export function recordLinkPlanRejection(diagnostics: LinkPlanDiagnostics, reason: LinkPlanRejectionReason) {
+  diagnostics.rejectedCount += 1;
+  diagnostics.rejectionReasons[reason] = (diagnostics.rejectionReasons[reason] ?? 0) + 1;
+}
+
+export function recordAcceptedLink(diagnostics: LinkPlanDiagnostics, type: ArticleLinkType) {
+  diagnostics.acceptedCount += 1;
+  diagnostics.acceptedTypes[type] = (diagnostics.acceptedTypes[type] ?? 0) + 1;
+}
 
 function safeHref(value: string) {
   if (value.startsWith('/') && !value.startsWith('//')) return value;
@@ -115,33 +147,66 @@ function sectionItem(article: LinkableArticle, section: ArticleLinkSection, item
   return article[section][itemIndex] ?? null;
 }
 
-export function applyArticleLinkPlan<T extends LinkableArticle>(article: T, plan: ArticleLinkPlanItem[], targets: ArticleLinkTarget[]): T {
+export function evaluateArticleLinkPlan<T extends LinkableArticle>(article: T, plan: ArticleLinkPlanItem[], targets: ArticleLinkTarget[]) {
   const targetMap = new Map(targets.map((target) => [`${target.type}:${target.id}`, target]));
   const typeCounts: Record<ArticleLinkType, number> = { article: 0, topic: 0, tag: 0, course: 0, source: 0 };
   const usedTargets = new Set<string>();
   const taxonomyCount = () => typeCounts.topic + typeCounts.tag;
+  const diagnostics = createLinkPlanDiagnostics(plan.length);
   let total = 0;
 
   for (const proposed of [...plan].sort((a, b) => Number(b.confidence) - Number(a.confidence))) {
-    if (total >= MAX_CONTEXTUAL_LINKS) break;
+    if (total >= MAX_CONTEXTUAL_LINKS) {
+      recordLinkPlanRejection(diagnostics, 'total_limit');
+      continue;
+    }
     const confidence = clampScore(proposed.confidence);
     const threshold = contextualLinkMinimumConfidence(proposed.target_type);
-    if (confidence < threshold || typeCounts[proposed.target_type] >= CONTEXTUAL_LINK_TYPE_LIMITS[proposed.target_type]) continue;
-    if ((proposed.target_type === 'topic' || proposed.target_type === 'tag') && taxonomyCount() >= 1) continue;
+    if (confidence < threshold) {
+      recordLinkPlanRejection(diagnostics, 'below_confidence');
+      continue;
+    }
+    if (typeCounts[proposed.target_type] >= CONTEXTUAL_LINK_TYPE_LIMITS[proposed.target_type]) {
+      recordLinkPlanRejection(diagnostics, 'type_limit');
+      continue;
+    }
+    if ((proposed.target_type === 'topic' || proposed.target_type === 'tag') && taxonomyCount() >= 1) {
+      recordLinkPlanRejection(diagnostics, 'taxonomy_limit');
+      continue;
+    }
     const targetKey = `${proposed.target_type}:${proposed.target_id}`;
     const target = targetMap.get(targetKey);
     const item = sectionItem(article, proposed.section, Math.max(0, Math.round(Number(proposed.item_index) || 0)));
-    if (!target || !item || usedTargets.has(targetKey)) continue;
+    if (!target) {
+      recordLinkPlanRejection(diagnostics, 'target_missing');
+      continue;
+    }
+    if (!item) {
+      recordLinkPlanRejection(diagnostics, 'location_missing');
+      continue;
+    }
+    if (usedTargets.has(targetKey)) {
+      recordLinkPlanRejection(diagnostics, 'duplicate_target');
+      continue;
+    }
     const candidate: ArticleContextualLink = { type: target.type, target_id: target.id, href: target.href, anchor_text: proposed.anchor_text, external: target.external, confidence, rationale: proposed.rationale };
     const existing = cleanArticleLinks(item.text, item.links);
     const accepted = cleanArticleLinks(item.text, [...existing, candidate]);
-    if (accepted.length === existing.length) continue;
+    if (accepted.length === existing.length) {
+      recordLinkPlanRejection(diagnostics, 'invalid_anchor');
+      continue;
+    }
     item.links = accepted;
     usedTargets.add(targetKey);
     typeCounts[target.type] += 1;
     total += 1;
+    recordAcceptedLink(diagnostics, target.type);
   }
-  return article;
+  return { article, diagnostics };
+}
+
+export function applyArticleLinkPlan<T extends LinkableArticle>(article: T, plan: ArticleLinkPlanItem[], targets: ArticleLinkTarget[]): T {
+  return evaluateArticleLinkPlan(article, plan, targets).article;
 }
 
 export function countArticleLinks(article: Partial<LinkableArticle>) {

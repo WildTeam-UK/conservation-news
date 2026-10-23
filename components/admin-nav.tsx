@@ -7,7 +7,7 @@ import { AdminSignOutButton } from '@/components/admin-sign-out-button';
 
 type AdminNavProps = {
   active: 'dashboard' | 'pipeline' | 'drafts' | 'queue' | 'digests' | 'sources' | 'tags' | 'training' | 'settings';
-  subview?: 'pipeline-status' | 'collected' | 'candidates' | 'monitored' | 'recommendations' | 'topics' | 'tags' | 'good-news' | 'courses';
+  subview?: 'pipeline-status' | 'collected' | 'candidates' | 'linking' | 'monitored' | 'recommendations' | 'topics' | 'tags' | 'good-news' | 'courses';
 };
 
 export function AdminNav({ active, subview }: AdminNavProps) {
@@ -19,7 +19,7 @@ export function AdminNav({ active, subview }: AdminNavProps) {
       {/* Full page loads reliably refresh the protected Supabase session in Vinext. */}
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'dashboard' ? 'active' : ''} href="/admin" title="Overview" aria-current={active === 'dashboard' ? 'page' : undefined}><LayoutDashboard /><span><strong>Overview</strong><small>Health and activity</small></span></a>
-      <AdminNavSection icon="pipeline" label="Pipeline" description="Collection and assessment" active={active === 'pipeline'} items={[{ label: 'Pipeline status', href: '/admin/pipeline', active: subview === 'pipeline-status' }, { label: 'Collected items', href: '/admin/collected', active: subview === 'collected' }, { label: 'Candidates', href: '/admin/candidates', active: subview === 'candidates' }]} />
+      <AdminNavSection icon="pipeline" label="Pipeline" description="Collection and assessment" active={active === 'pipeline'} items={[{ label: 'Pipeline status', href: '/admin/pipeline', active: subview === 'pipeline-status' }, { label: 'Collected items', href: '/admin/collected', active: subview === 'collected' }, { label: 'Candidates', href: '/admin/candidates', active: subview === 'candidates' }, { label: 'Link health', href: '/admin/linking', active: subview === 'linking' }]} />
       <span className="admin-nav-group">Publishing</span>
       {/* oxlint-disable-next-line next/no-html-link-for-pages */}
       <a className={active === 'drafts' ? 'active' : ''} href="/admin/drafts" title="Articles" aria-current={active === 'drafts' ? 'page' : undefined}><FilePenLine /><span><strong>Articles</strong><small>Every article status</small></span></a>

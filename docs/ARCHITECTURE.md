@@ -118,6 +118,7 @@ The admin workspace covers:
 - Overview and system activity
 - Collection pipeline, collected items and ranked candidates
 - Articles and draft editing
+- Contextual-link health, diagnostics and controlled reassessment
 - Publication schedule
 - Daily and weekly digests
 - Monitored sources and source recommendations
@@ -171,8 +172,10 @@ Database changes are append-only migrations. Existing production migrations must
 1. A selected candidate receives a research pack using its source coverage and web research.
 2. Source suggestions discovered during research are accumulated for later feed review.
 3. OpenAI generates a structured article conforming to the shared article template and house style.
-4. Taxonomy, conservation outlook, course recommendation and contextual-link records are attached.
-5. The result remains a private draft until queued or manually published.
+4. Taxonomy, conservation outlook and the featured course recommendation are attached.
+5. A separate OpenAI link-editor pass examines the final copy against approved related articles, active topics, approved tags, courses and verified sources. Deterministic validation then enforces exact complete-word anchors, confidence thresholds, destination limits and duplicate prevention before accepted links are stored.
+6. Proposed, accepted and rejected counts, rejection categories, token usage, cost and retryable failures are recorded in `story_linking_assessments`.
+7. The result remains a private draft until queued or manually published.
 
 ### Publication
 
@@ -182,7 +185,7 @@ Published content is read dynamically for the homepage, archives, related storie
 
 ### Digests
 
-At the configured digest time, published stories from the relevant period are selected. Monday–Thursday and weekend runs create daily digests; Friday creates a weekly digest instead. Digest generation receives bounded candidates for related articles, active topics, approved tags, active courses and underlying reporting, then stores a validated contextual-link plan with the structured digest content. Digests publish immediately when that setting is enabled. Social and email distribution states exist in the schema but external distribution is currently disabled.
+At the configured digest time, published stories from the relevant period are selected. Monday–Thursday and weekend runs create daily digests; Friday creates a weekly digest instead. Once the connected editorial copy is final, the same dedicated link-editor and deterministic validation process assesses approved source stories, related articles, active topics, approved tags, courses and underlying reporting. Accepted digest links remain in the structured digest content while their assessment diagnostics are stored in `story_linking_assessments`. Digests publish immediately when that setting is enabled. Social and email distribution states exist in the schema but external distribution is currently disabled.
 
 ## Scheduling and recovery
 

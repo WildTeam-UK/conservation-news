@@ -8,15 +8,15 @@ import { estimateLunaTokenCost } from './pricing';
 import { normalizeEditorialTopics, TAXONOMY_REVIEW_TOPIC } from '@/lib/taxonomy';
 import { aiInstructions, parseAiJson } from './house-style';
 import type { TrainingCoursePromotion } from '@/lib/training-courses';
-import { buildArticleLinkTargets } from '@/lib/article-link-candidates';
-import { applyArticleLinkPlan, articleLinkRows, cleanArticleLinks, countArticleLinks, type ArticleContextualLink, type ArticleLinkPlanItem } from '@/lib/article-linking';
+import { cleanArticleLinks, type ArticleContextualLink } from '@/lib/article-linking';
+import { assessStoryContextualLinks } from '@/lib/openai/assess-contextual-links';
 import { slugify } from '@/lib/stories';
 import { clampScore } from '@/lib/scores';
 import { safeHttpUrl } from '@/lib/urls';
 import { isHexColour } from '@/lib/validation';
 
 const MODEL = 'gpt-6-luna';
-const PROMPT_VERSION = 'draft-v6-conservation-outlook-fallback';
+const PROMPT_VERSION = 'draft-v7-dedicated-contextual-links';
 
 export type SourcedDraftText = { text: string; source_ids: string[]; links?: ArticleContextualLink[] };
 
@@ -63,7 +63,6 @@ type GeneratedDraftContent = Pick<StoryDraftContent,
     confidence: number;
     rationale: string;
   };
-  link_plan: ArticleLinkPlanItem[];
 };
 
 export type DraftResult = {
@@ -265,13 +264,6 @@ export async function generateStoryDraft(clusterId: string, userId: string | nul
     || research.topic_classification.primary_topic === TAXONOMY_REVIEW_TOPIC
     || research.topic_classification.confidence < 65;
   const topics = taxonomyReviewRequired ? [] : normalizeEditorialTopics([research.topic_classification.primary_topic, ...research.topic_classification.secondary_topics]).slice(0, 3);
-  const linkTargets = await buildArticleLinkTargets({
-    topics,
-    tagIds: (clusterTags ?? []).map((tag) => tag.tag_id),
-    courses,
-    sources: sourceContext.map((source) => ({ id: source.id, title: source.title, publisher: source.publisher, url: source.url })),
-  });
-
   const response = await getOpenAIClient().responses.create({
     model: MODEL,
     store: false,
@@ -283,8 +275,6 @@ Write a clear, neutral article of roughly 500 words in British English using onl
 The public article template is fixed. Supply exactly two short paragraphs for "The story at a glance", exactly five substantial points for "What you need to know", one concise paragraph for "Why this matters", one concise paragraph for "What happens next", 3-5 points for "What we know", and 3-5 points for "What we don't know". Do not create arbitrary headings or additional article sections. Avoid repeating the same point. The SEO title must not include the site name or append “WildNews”; the application adds that consistently.
 
 Choose the single most relevant course from approved_training_courses for the article's featured training advert. Use only a supplied course ID. Judge the article's practical subject, not loose keyword overlap. If no supplied course is genuinely relevant, return an empty course_id, a confidence below 60 and explain why. Never force a course into an unrelated article or invent a course, offer, price or claim.
-
-Create a restrained contextual link plan using only approved_link_targets. Links must help a reader understand the article or explore a directly relevant next step. Never add wording for the sake of creating a link. The anchor_text must be an exact, naturally descriptive phrase already present in the article text you return. Do not use generic anchors such as "click here", "read more", "learn more", "this article" or "website". Choose no more than two article links, one topic or live-tag link in total, one course link and one named source link. Usually return fewer. Prefer a specific relevant article over a broad archive. Topic and tag pills already appear on the page, so only propose an archive link when it adds real value. Propose a course only when the copy already discusses a skill that course teaches, with confidence of at least 85. Do not link headlines, headings or the story-at-a-glance introduction. Use only the supplied section names and zero-based item indexes. It is correct to return an empty link plan.
 
 Also supply three concise, visually literal Unsplash search queries. The primary query must be 2-4 words and identify the clearest established species, habitat or place in the story. Supply exactly two distinct fallbacks that become progressively broader: first the broader species group or subject, then the habitat or ecosystem. Do not use a named individual, organisation, abstract policy concept or an event that a stock photograph could falsely appear to document.
 
@@ -313,7 +303,6 @@ This is a private first draft for human review, never a finished or published ar
         matching_terms: course.matching_terms,
         matching_guidance: course.matching_guidance,
       })),
-      approved_link_targets: linkTargets.map((target) => ({ id: target.id, type: target.type, title: target.title, description: target.description })),
     }),
     text: { format: {
       type: 'json_schema', name: 'wildnews_article_template_draft', strict: true,
@@ -353,25 +342,8 @@ This is a private first draft for human review, never a finished or published ar
             required: ['course_id', 'confidence', 'rationale'],
             additionalProperties: false,
           },
-          link_plan: {
-            type: 'array', maxItems: 5,
-            items: {
-              type: 'object',
-              properties: {
-                section: { type: 'string', enum: ['key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know'] },
-                item_index: { type: 'integer', minimum: 0, maximum: 5 },
-                anchor_text: { type: 'string' },
-                target_type: { type: 'string', enum: ['article', 'topic', 'tag', 'course', 'source'] },
-                target_id: { type: 'string' },
-                confidence: { type: 'integer', minimum: 0, maximum: 100 },
-                rationale: { type: 'string' },
-              },
-              required: ['section', 'item_index', 'anchor_text', 'target_type', 'target_id', 'confidence', 'rationale'],
-              additionalProperties: false,
-            },
-          },
         },
-        required: ['headline', 'standfirst', 'story_at_a_glance', 'key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know', 'seo_title', 'seo_description', 'image_search_query', 'image_search_fallbacks', 'conservation_outlook', 'course_recommendation', 'link_plan'],
+        required: ['headline', 'standfirst', 'story_at_a_glance', 'key_takeaways', 'why_it_matters', 'what_happens_next', 'what_we_know', 'what_we_dont_know', 'seo_title', 'seo_description', 'image_search_query', 'image_search_fallbacks', 'conservation_outlook', 'course_recommendation'],
         additionalProperties: false,
         $defs: { sourced_text: { type: 'object', properties: { text: { type: 'string' }, source_ids: { type: 'array', minItems: 1, items: { type: 'string', pattern: '^source-[1-9][0-9]*$' } } }, required: ['text', 'source_ids'], additionalProperties: false } },
       },
@@ -415,7 +387,7 @@ This is a private first draft for human review, never a finished or published ar
       console.warn('Draft created without an Unsplash image', error);
     }
   }
-  const content = applyArticleLinkPlan(cleanDraftContent({
+  const content = cleanDraftContent({
     template_version: 2,
     topics,
     ...generated,
@@ -424,7 +396,7 @@ This is a private first draft for human review, never a finished or published ar
     image_alt: selectedImage?.alt_text || (selectedImage ? `Illustrative image related to ${selectedImageQuery}` : ''),
     image_search_query: selectedImageQuery,
     image_credit: selectedImage?.credit ?? null,
-  }, validSourceIds), generated.link_plan ?? [], linkTargets);
+  }, validSourceIds);
   const slug = await uniqueSlug(content.headline);
   const inputTokens = response.usage?.input_tokens ?? 0;
   const outputTokens = response.usage?.output_tokens ?? 0;
@@ -448,9 +420,6 @@ This is a private first draft for human review, never a finished or published ar
       confidence: courseConfidence,
       rationale: cleanText(generated.course_recommendation.rationale, 600),
     } : null,
-    linking_assessed_at: new Date().toISOString(),
-    linking_prompt_version: PROMPT_VERSION,
-    contextual_link_count: countArticleLinks(content),
   };
   const body = [
     `Why this matters\n${content.why_it_matters.text}`,
@@ -525,32 +494,16 @@ This is a private first draft for human review, never a finished or published ar
     });
     if (recommendationError) throw recommendationError;
   }
-  const contextualLinkRows = articleLinkRows(story.id, content);
-  const contextualCourse = contextualLinkRows.find((link) => link.link_type === 'course');
-  if (contextualCourse) {
-    const { error: contextualCourseError } = await supabase.from('story_course_recommendations').upsert({
-      story_id: story.id,
-      course_id: contextualCourse.target_id,
-      placement: 'contextual',
-      confidence: contextualCourse.confidence,
-      rationale: contextualCourse.rationale,
-      anchor_text: contextualCourse.anchor_text,
-      target_section: contextualCourse.section_key,
-    }, { onConflict: 'story_id,placement' });
-    if (contextualCourseError) throw contextualCourseError;
-  }
-  if (contextualLinkRows.length) {
-    const { error: contextualLinksError } = await supabase.from('story_contextual_links').insert(contextualLinkRows);
-    if (contextualLinksError) throw contextualLinksError;
-  }
-  const { error: linkingAssessmentError } = await supabase.from('story_linking_assessments').upsert({ story_id: story.id, prompt_version: PROMPT_VERSION, link_count: contextualLinkRows.length, estimated_cost_usd: 0 }, { onConflict: 'story_id' });
-  if (linkingAssessmentError) throw linkingAssessmentError;
+  const linking = await assessStoryContextualLinks(story.id);
+  const totalInputTokens = inputTokens + linking.inputTokens;
+  const totalOutputTokens = outputTokens + linking.outputTokens;
+  const totalEstimatedCostUsd = estimatedCostUsd + linking.estimatedCostUsd;
   await Promise.all([
     supabase.from('story_clusters').update({ status: 'drafted' }).eq('id', clusterId),
-    supabase.from('ai_generations').insert({ story_id: story.id, cluster_id: clusterId, purpose: 'draft', provider: 'openai', model: MODEL, prompt_version: PROMPT_VERSION, input_tokens: inputTokens, output_tokens: outputTokens, estimated_cost_usd: estimatedCostUsd, warnings: [] }),
+    supabase.from('ai_generations').insert({ story_id: story.id, cluster_id: clusterId, purpose: 'draft', provider: 'openai', model: MODEL, prompt_version: PROMPT_VERSION, input_tokens: totalInputTokens, output_tokens: totalOutputTokens, estimated_cost_usd: totalEstimatedCostUsd, warnings: linking.status === 'failed' ? [`Contextual linking failed: ${linking.error ?? 'Unknown error'}`] : [] }),
     supabase.from('editorial_actions').insert({ story_id: story.id, user_id: userId, action: 'created', notes: 'AI-generated first draft created in the shared WildNews article template.' }),
   ]);
-  return { storyId: story.id, headline: content.headline, inputTokens, outputTokens, estimatedCostUsd, alreadyCompleted: false };
+  return { storyId: story.id, headline: content.headline, inputTokens: totalInputTokens, outputTokens: totalOutputTokens, estimatedCostUsd: totalEstimatedCostUsd, alreadyCompleted: false };
 }
 
 export async function recalculateStoryCoverage(storyId: string, userId: string): Promise<CoverageRecalculationResult> {
