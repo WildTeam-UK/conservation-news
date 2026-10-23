@@ -143,7 +143,7 @@ The admin surface standardises card borders and shadows through `--admin-card-bo
 - The Good News navigation button uses the primary treatment plus a periodic shine. Reduced-motion users do not receive the animation.
 - Topic pills: cream with purple text; pink with white text on hover.
 - Fancy digest and Good News pills: white centre, 1px gradient border and gradient text; pink with white text on hover.
-- Editorial text links: purple, frequently with a pink underline or arrow.
+- Editorial `.text-link` actions are purple and change to brand pink on hover while retaining their underline and arrow treatment.
 - Images in prominent story links use a subtle scale-up hover.
 - Source-number circles use a grey border/text and change to pink on hover or focus.
 - Links, buttons, form controls and disclosure summaries use a 2px pink keyboard-focus outline with a 3px offset. Components on dark surfaces may override this with a white ring, and newsletter inputs expose focus on their shared outer control.
