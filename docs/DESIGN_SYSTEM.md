@@ -94,7 +94,7 @@ The `WILDNEWS` wordmark uses weight 950, tight tracking and separate purple `WIL
 
 The main public grids are:
 
-- Homepage hero: asymmetric two-column copy and image layout.
+- Homepage hero: asymmetric two-column layout with the lead image on the left and story copy on the right. At the shared mobile breakpoint, the image remains first and the story copy stacks underneath it.
 - Latest stories: primary list plus compact secondary column.
 - Standard listings: two-column card grid on desktop.
 - Topic shelves: horizontal snap-scrolling card tracks.
@@ -159,7 +159,7 @@ The admin surface standardises card borders and shadows through `--admin-card-bo
 
 ### Editorial heroes
 
-`ArchiveHero` and `PageHero` share the `editorial-hero` foundation. Both use the same shell width, vertical spacing, divider, title scale and full-width description. Archive heroes begin with a taxonomy or editorial pill and may include archive metadata; general-page heroes begin with an eyebrow. New public informational pages should use `PageHero` rather than defining page-specific hero spacing or typography.
+`ArchiveHero` and `PageHero` share the `editorial-hero` foundation. Both use the same shell width, vertical spacing, divider, title scale and full-width description. Archive heroes begin with a taxonomy or editorial pill and may include archive metadata; general-page heroes begin with an eyebrow. An archive description's optional trailing link uses the shared `descriptionLink` slot: it remains inline on larger screens and starts on a clean new line without leading or trailing whitespace on phones. New public informational pages should use `PageHero` rather than defining page-specific hero spacing or typography.
 
 The closing editorial action panel used by the AI-transparency and Good News methodology pages is a borderless cream section.
 

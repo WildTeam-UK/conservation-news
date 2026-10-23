@@ -32,7 +32,8 @@ export default async function GoodNewsPage() {
     <ArchiveHero
       label={<GoodNewsBadge />}
       title="Progress worth following."
-      description={<>Conservation can be difficult work, so there is always room for some good news. Here you will find evidence-led stories showing clear progress for nature and conservation practice. <a className="good-news-method-link" href="/how-we-classify-good-news">See how <InlineBrand text="WILDNEWS" /> classifies good news <ArrowRight /></a></>}
+      description="Conservation can be difficult work, so there is always room for some good news. Here you will find evidence-led stories showing clear progress for nature and conservation practice."
+      descriptionLink={<a className="good-news-method-link" href="/how-we-classify-good-news">See how <InlineBrand text="WILDNEWS" /> classifies good news <ArrowRight /></a>}
       meta={`${stories.length} ${stories.length === 1 ? 'story' : 'stories'}`}
     />
     {stories.length ? <section className="topic-page-grid shell">
