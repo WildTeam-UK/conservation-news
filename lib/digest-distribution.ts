@@ -29,6 +29,7 @@ type DigestStory = {
   status: string;
   content_type: 'daily_digest' | 'weekly_digest';
   image_url: string | null;
+  image_alt: string | null;
   generation_metadata: {
     digest_content?: DigestContent;
     digest_source_stories?: DigestSourceStory[];
@@ -61,7 +62,7 @@ export async function prepareDigestDistributions(runId: string, storyId: string)
   const supabase = getSupabaseAdminClient();
   const [{ data: settings, error: settingsError }, { data: story, error: storyError }] = await Promise.all([
     supabase.from('digest_settings').select('social_distribution_enabled, social_distribution_mode, email_distribution_enabled').eq('id', true).single(),
-    supabase.from('stories').select('id, slug, status, content_type, image_url, generation_metadata').eq('id', storyId).single(),
+    supabase.from('stories').select('id, slug, status, content_type, image_url, image_alt, generation_metadata').eq('id', storyId).single(),
   ]);
   if (settingsError || storyError || !settings || !story) throw settingsError ?? storyError ?? new Error('Digest distribution could not be prepared.');
   const digestStory = story as DigestStory;
@@ -99,7 +100,7 @@ export async function prepareDigestDistributions(runId: string, storyId: string)
       positiveIntegerEnvironmentValue('BREVO_SENDER_ID', process.env.BREVO_SENDER_ID);
       if (!(process.env.BREVO_API_KEY ?? '').trim()) throw new Error('BREVO_API_KEY is not configured.');
       const id = randomUUID();
-      const payload = buildEmailDistributionPayload({ runId, type, editionDate, content, sources: digestStory.generation_metadata.digest_source_stories ?? [], listId });
+      const payload = buildEmailDistributionPayload({ runId, type, editionDate, content, sources: digestStory.generation_metadata.digest_source_stories ?? [], imageUrl: digestStory.image_url, imageAlt: digestStory.image_alt, listId });
       rows.push({ id, run_id: runId, story_id: storyId, provider: 'brevo', destination: String(listId), payload });
       emailContent = { subject: payload.subject, preview_text: payload.previewText, public_url: payload.publicUrl };
       emailStatus = 'pending';
