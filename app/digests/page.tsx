@@ -34,7 +34,7 @@ export default async function DigestArchive() {
       label={<div className="digest-archive-type-tags"><DigestTag type="daily" /><DigestTag type="weekly" /></div>}
       title={<><InlineBrand text="WILDNEWS" /> digests</>}
       description="Connected editorial briefings that make a large and fragmented field easier to follow, with daily context and a deeper Friday view of the week."
-      descriptionLink={<a className="digest-archive-subscribe-link" href="#digest-archive-newsletter">Subscribe to the <InlineBrand text="WILDNEWS" /> weekly <ArrowRight /></a>}
+      descriptionLink={<a href="#digest-archive-newsletter">Subscribe to the <InlineBrand text="WILDNEWS" /> weekly <ArrowRight /></a>}
       meta={`${digests.length} ${digests.length === 1 ? 'edition' : 'editions'}`}
     />
     {digests.length ? <section className="topic-page-grid shell">
@@ -47,10 +47,10 @@ export default async function DigestArchive() {
           href={path}
           image={digest.image_url}
           imageAlt={digest.image_alt ?? ''}
+          digestType={type}
           labels={<div className="digest-archive-meta"><DigestTag type={type} /><time dateTime={digest.digest_period_end}>{londonLongDateFormatter.format(new Date(digest.digest_period_end))}</time></div>}
           title={cleanDigestText(digest.headline)}
           summary={index === 0 ? cleanDigestText(digest.standfirst) : null}
-          linkLabel="Read this edition"
           key={digest.id}
         />;
       })}

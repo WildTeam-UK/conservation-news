@@ -143,7 +143,7 @@ The admin surface standardises card borders and shadows through `--admin-card-bo
 - The Good News navigation button uses the primary treatment plus a periodic shine. Reduced-motion users do not receive the animation.
 - Topic pills: cream with purple text; pink with white text on hover.
 - Fancy digest and Good News pills: white centre, 1px gradient border and gradient text; pink with white text on hover.
-- Editorial text links: purple, frequently with a pink underline or arrow.
+- Editorial `.text-link` actions are purple and change to brand pink on hover while retaining their underline and arrow treatment.
 - Images in prominent story links use a subtle scale-up hover.
 - Source-number circles use a grey border/text and change to pink on hover or focus.
 - Links, buttons, form controls and disclosure summaries use a 2px pink keyboard-focus outline with a 3px offset. Components on dark surfaces may override this with a white ring, and newsletter inputs expose focus on their shared outer control.
@@ -190,11 +190,11 @@ Use existing button classes or component-owned styles:
 
 Story discovery uses a small set of repeated patterns:
 
-- `story-card`: image and copy rows used in the main latest-stories list.
+- `story-card`: image and copy rows used in the main latest-stories list. The primary left-column cards clamp summaries to three lines and show an explicit read link on desktop and tablet; digest links say “Read this edition”. On phones, summaries clamp to two lines and the explicit link is hidden. The compact right-column stories remain title-led.
 - `compact-story`: smaller image/title rows.
 - `carousel-card`: horizontal topic-shelf cards.
 - `TopicStoryShelf`: reusable homepage topic carousel containing up to 12 recent matching stories.
-- `topic-story`: archive cards, with the first item promoted to `topic-story-featured`. The copy column is a vertical layout and keeps the explicit read link at its bottom with a 16px minimum gap from the preceding content, matching the title-to-description spacing.
+- `topic-story`: archive cards, with the first item promoted to `topic-story-featured`. Descriptions are clamped to three lines at every breakpoint. The copy column uses a consistent 16px title-to-description gap. Its explicit read link is aligned to the bottom of the card, with 16px of minimum separation from the preceding content. `EditorialArchiveCard` derives its action label from `digestType`, using “Read this edition” for daily and weekly digests and “Read story” for news.
 - `related` / `SimilarStories`: three-card discovery section.
 - `digest-more`: six most recent daily digest cards on daily digest pages.
 

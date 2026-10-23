@@ -44,10 +44,10 @@ export default async function TagPage({ params }: { params: Promise<{ tag: strin
       href={storyHref(story)}
       image={storyImage(story)}
       goodNews={story.goodNews}
+      digestType={story.digestType}
       labels={<StoryTags story={story} />}
       title={cleanCopy(story.title)}
       summary={cleanCopy(story.summary)}
-      linkLabel="Read story"
       key={story.slug}
     />)}</section>
     <EditorialPageEnd newsletterId={`tag-${slug}-digest-email`} stories={related} />

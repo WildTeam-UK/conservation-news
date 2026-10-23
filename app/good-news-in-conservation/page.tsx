@@ -33,7 +33,7 @@ export default async function GoodNewsPage() {
       label={<GoodNewsBadge />}
       title="Progress worth following."
       description="Conservation can be difficult work, so there is always room for some good news. Here you will find evidence-led stories showing clear progress for nature and conservation practice."
-      descriptionLink={<a className="good-news-method-link" href="/how-we-classify-good-news">See how <InlineBrand text="WILDNEWS" /> classifies good news <ArrowRight /></a>}
+      descriptionLink={<a href="/how-we-classify-good-news">See how <InlineBrand text="WILDNEWS" /> classifies good news <ArrowRight /></a>}
       meta={`${stories.length} ${stories.length === 1 ? 'story' : 'stories'}`}
     />
     {stories.length ? <section className="topic-page-grid shell">
@@ -45,7 +45,6 @@ export default async function GoodNewsPage() {
         labels={<TopicTag topic={story.topic} />}
         title={cleanCopy(story.title)}
         summary={cleanCopy(story.summary)}
-        linkLabel="Read story"
         key={story.slug}
       />)}
     </section> : <section className="good-news-empty shell"><h2>The threshold is doing its job.</h2><p>No published story currently has enough evidence to qualify. New stories will appear here automatically when they meet the standard.</p></section>}
