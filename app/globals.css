@@ -74,7 +74,7 @@ button svg{width:16px}
 .ai-disclosure a{display:inline-flex;align-items:center;gap:5px;margin-left:5px;color:var(--brand-purple);font-weight:var(--font-weight-black)}
 .ai-disclosure a:hover{text-decoration:underline;text-underline-offset:3px}
 .ai-disclosure svg{width:14px}
-.hero{padding-top:18px;padding-bottom:64px}
+.hero{padding-block:64px}
 .hero-grid{display:grid;grid-template-columns:1.1fr .9fr;grid-auto-rows:auto;align-items:center}
 .hero-copy{grid-column:2;grid-row:1;display:flex;align-items:flex-start;flex-direction:column;height:auto;padding:clamp(21px,3vw,42px) 0 48px clamp(32px,5vw,72px)}
 .hero-meta{display:flex;align-items:center;gap:12px;margin-bottom:18px}
