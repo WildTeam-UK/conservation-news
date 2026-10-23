@@ -5,7 +5,6 @@ import { ContextualLinkedText } from '@/components/contextual-linked-text';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { cleanDigestText, type DigestContent, type DigestContextualLink, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import { cleanArticleLinks, contextualLinkOccurrence, type ArticleContextualLink } from '@/lib/article-linking';
-import { readableHeroColour } from '@/lib/images/colour';
 import { NewsletterCta } from '@/components/newsletter-cta';
 import { SocialShare } from '@/components/social-share';
 import { InlineBrand } from '@/components/inline-brand';
@@ -128,7 +127,6 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   const resolvedImageUrl = imageUrl ?? heroStory?.image_url ?? null;
   const resolvedImageAlt = imageAlt?.trim() || heroStory?.image_alt?.trim() || `Illustrative image for ${cleanDigestText(content.headline)}`;
   const heroImageCredit = content.image_credit ?? (heroStory?.image_url === resolvedImageUrl ? heroStory.image_credit : null);
-  const heroColour = readableHeroColour(content.hero_colour ?? heroImageCredit?.colour);
   const sourceTopics = stories.flatMap((story) => story.topics ?? []);
   const displayTopics = (content.topics?.length ? content.topics : [...new Set(sourceTopics)]).slice(0, 3);
   const currentDate = londonCalendarDateFormatter.format(new Date(periodEnd));
@@ -140,7 +138,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
 
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
-      <div className="digest-hero-copy" style={{ backgroundColor: heroColour }}>
+      <div className="digest-hero-copy">
         <div className="digest-hero-meta"><time dateTime={periodEnd}>{longDate(periodEnd)}</time><span aria-hidden="true">·</span><span><InlineBrand text="WILDNEWS" /> {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span></div>
         <h1>{cleanDigestText(content.headline)}</h1>
         <p>{cleanDigestText(content.standfirst)}</p>

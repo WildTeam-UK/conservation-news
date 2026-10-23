@@ -5,7 +5,6 @@ import { aiInstructions, parseAiJson } from './house-style';
 import { isCalendarDate } from '@/lib/validation';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
-import { readableHeroColour } from '@/lib/images/colour';
 import { recordUnsplashSelection, searchUnsplashImages, unsplashIsConfigured } from '@/lib/images/unsplash';
 import type { UnsplashImageCandidate } from '@/lib/images/types';
 import { londonCalendarDateFormatter, londonLongDateFormatter } from '@/lib/date-format';
@@ -29,7 +28,7 @@ type GenerateDigestOptions = {
   triggerType?: 'manual' | 'scheduled' | 'retry';
 };
 
-type GeneratedDigest = Omit<DigestContent, 'template_version' | 'digest_type' | 'edition_label' | 'contextual_links' | 'hero_colour' | 'image_search_query' | 'image_search_fallbacks' | 'image_credit'> & {
+type GeneratedDigest = Omit<DigestContent, 'template_version' | 'digest_type' | 'edition_label' | 'contextual_links' | 'image_search_query' | 'image_search_fallbacks' | 'image_credit'> & {
   image_search_query: string;
   image_search_fallbacks: string[];
 };
@@ -274,7 +273,6 @@ This is a private editorial draft for review. Return only the requested structur
     }
     content.image_search_query = selectedImageQuery;
     content.image_credit = selectedImage.credit;
-    content.hero_colour = readableHeroColour(selectedImage.colour);
     const { data: topicRows, error: topicsError } = await supabase.from('topics').select('id, name').in('name', content.topics).eq('active', true);
     if (topicsError) throw topicsError;
     const topicsByName = new Map((topicRows ?? []).map((topic) => [topic.name, topic]));

@@ -18,7 +18,7 @@ The public application defines its core tokens in `app/globals.css`.
 | `--paper` | `#ffffff` | Page and card surfaces |
 | `--rule` | `#d6d1d3` | Standard dividers and quiet borders |
 | `--muted` | `#5d5d61` | Secondary copy, dates and metadata |
-| `--footer-surface` | `#2a2f34` | Shared WildTeam footer background |
+| `--surface-charcoal` | `#2a2f34` | Shared charcoal surface for the WildTeam footer and digest hero copy |
 | `--footer-muted` | `#f5f5f5` | Secondary footer links and legal copy |
 | `--text-on-purple-muted` / `--text-on-ink-muted` | `#eadbea` / `#d9d5d7` | Supporting copy on the two dark CTA surfaces |
 | `--text-placeholder` | `#777378` | Form placeholder copy |
@@ -235,7 +235,7 @@ Inline source references are numbered circles. Contextual links may point to rel
 
 Daily and weekly digests share one template:
 
-1. Full-width split hero using the accessible colour stored when its dedicated featured image is selected, with an attribution-stored colour for older editions and WildTeam purple as the final fallback.
+1. Full-width split hero with a consistent charcoal copy panel and the edition's dedicated featured image.
 2. Edition/date metadata, title, standfirst and AI-method link.
 3. Digest and topic pills above the editorial introduction. Sharing remains a vertical rail beside the introduction on desktop, then moves into a horizontal row above these pills at 1000px and below.
 4. Flowing editorial sections with wider supporting images.

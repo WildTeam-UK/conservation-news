@@ -22,7 +22,6 @@ export type DigestContent = {
   edition_label: string;
   headline: string;
   standfirst: string;
-  hero_colour?: string;
   image_search_query?: string;
   image_search_fallbacks?: string[];
   image_credit?: EditorialImageCredit | null;
