@@ -185,7 +185,7 @@ Published content is read dynamically for the homepage, archives, related storie
 
 ### Digests
 
-At the configured digest time, published stories from the relevant period are selected. Monday–Thursday and weekend runs create daily digests; Friday creates a weekly digest instead. Once the connected editorial copy is final, the same dedicated link-editor and deterministic validation process assesses approved source stories, related articles, active topics, approved tags, courses and underlying reporting. Accepted digest links remain in the structured digest content while their assessment diagnostics are stored in `story_linking_assessments`. Digests publish immediately when that setting is enabled. Social and email distribution states exist in the schema but external distribution is currently disabled.
+At the configured digest time, published stories from the relevant period are selected. Monday–Thursday and weekend runs create daily digests; Friday creates a weekly digest instead. Digest generation supplies one primary and two progressively broader visual search terms for the edition's overarching theme. The server searches Unsplash independently, rejects images already attached to the digest's source articles or recent digests, records the selected image and attribution, triggers Unsplash download tracking, and derives the digest hero colour from that new image. It does not repurpose a source article's featured image for the digest. Once the connected editorial copy is final, the same dedicated link-editor and deterministic validation process assesses approved source stories, related articles, active topics, approved tags, courses and underlying reporting. Accepted digest links remain in the structured digest content while their assessment diagnostics are stored in `story_linking_assessments`. Digests publish immediately when that setting is enabled. Social and email distribution states exist in the schema but external distribution is currently disabled.
 
 ## Scheduling and recovery
 
@@ -221,7 +221,7 @@ All generated editorial prompts should include `AI_HOUSE_STYLE`. Estimated usage
 
 ### Unsplash
 
-Used server-side to search for landscape editorial images. The application hotlinks transformed Unsplash URLs, stores creator/licence attribution, and calls the download endpoint when a selection is used. Digest hero colour may use the stored or fetched Unsplash colour, with WildTeam purple as fallback.
+Used server-side to search for landscape editorial images. The application hotlinks transformed Unsplash URLs, stores creator/licence attribution, and calls the download endpoint when a selection is used. Articles and digests perform separate searches: a digest selects a new image for its overall editorial theme and excludes images attached to its source stories and recent digests. Digest hero colour uses the selected image's stored Unsplash colour, with WildTeam purple as fallback.
 
 ### Brevo
 

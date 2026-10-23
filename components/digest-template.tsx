@@ -124,9 +124,11 @@ function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
 
 export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
-  const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
+  const matchingHeroStory = stories.find((story) => story.image_url === imageUrl);
+  const heroStory = matchingHeroStory ?? stories.find((story) => story.image_url) ?? stories[0];
   const resolvedImageUrl = imageUrl ?? heroStory?.image_url ?? null;
   const resolvedImageAlt = imageAlt?.trim() || heroStory?.image_alt?.trim() || `Illustrative image for ${cleanDigestText(content.headline)}`;
+  const heroImageCredit = content.image_credit ?? (heroStory?.image_url === resolvedImageUrl ? heroStory.image_credit : null);
   const sourceTopics = stories.flatMap((story) => story.topics ?? []);
   const displayTopics = (content.topics?.length ? content.topics : [...new Set(sourceTopics)]).slice(0, 3);
   const currentDate = londonCalendarDateFormatter.format(new Date(periodEnd));
@@ -145,7 +147,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
         <p>{cleanDigestText(content.standfirst)}</p>
         <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
       </div>
-      {resolvedImageUrl ? <figure className="digest-lead-image"><DigestHeroImage src={resolvedImageUrl} alt={resolvedImageAlt} colourTargetId={heroColourTargetId} /><EditorialImageCredit credit={heroStory?.image_credit} /></figure> : null}
+      {resolvedImageUrl ? <figure className="digest-lead-image"><DigestHeroImage src={resolvedImageUrl} alt={resolvedImageAlt} colourTargetId={heroColourTargetId} /><EditorialImageCredit credit={heroImageCredit} /></figure> : null}
     </header>
 
     <div className="digest-article-body shell">
