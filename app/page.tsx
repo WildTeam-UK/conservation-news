@@ -46,7 +46,7 @@ export default async function Home() {
           <div className="hero-meta"><StoryTags story={lead} /></div>
           <h1 id="lead-story"><a href={storyHref(lead)}>{cleanCopy(lead.title)}</a></h1>
           <p className="standfirst">{cleanCopy(lead.summary)}</p>
-          <a className="read-more-button" href={storyHref(lead)}>Read more <ArrowRight /></a>
+          <a className="read-more-button" href={storyHref(lead)}>Read story <ArrowRight /></a>
         </div>
         <a href={storyHref(lead)} className="hero-image" aria-label={`Read: ${cleanCopy(lead.title)}`}><img src={storyImage(lead)} alt="" loading="eager" fetchPriority="high" decoding="async" />{lead.goodNews ? <GoodNewsBadge overlay /> : null}</a>
       </div>
