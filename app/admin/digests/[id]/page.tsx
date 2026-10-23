@@ -5,6 +5,7 @@ import { ArrowLeft, ExternalLink, Eye, Globe2, LockKeyhole } from 'lucide-react'
 import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
 import { DigestTemplate } from '@/components/digest-template';
+import { DigestDeliveryStatus } from '@/components/digest-delivery-status';
 import { InteriorHeader } from '@/components/interior-header';
 import { PublishDigestButton } from '@/components/publish-digest-button';
 import { SiteFooter } from '@/components/site-footer';
@@ -23,8 +24,14 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   const { supabase } = await requireContentAdmin();
   const { data: story, error } = await supabase.from('stories').select('id, slug, status, headline, image_url, image_alt, digest_period_end, generation_metadata').eq('id', id).in('content_type', ['daily_digest', 'weekly_digest']).maybeSingle();
   if (error || !story) notFound();
-  const { data: run } = await supabase.from('digest_runs').select('id').eq('story_id', story.id).maybeSingle();
-  const { data: links } = run ? await supabase.from('digest_run_stories').select('display_order, stories(id, slug, headline, standfirst, image_url, image_alt, published_at)').eq('run_id', run.id).order('display_order') : { data: [] };
+  const [{ data: run }, { data: settings }] = await Promise.all([
+    supabase.from('digest_runs').select('id').eq('story_id', story.id).maybeSingle(),
+    supabase.from('digest_settings').select('social_distribution_enabled, email_distribution_enabled').eq('id', true).maybeSingle(),
+  ]);
+  const [{ data: links }, { data: deliveries }] = run ? await Promise.all([
+    supabase.from('digest_run_stories').select('display_order, stories(id, slug, headline, standfirst, image_url, image_alt, published_at)').eq('run_id', run.id).order('display_order'),
+    supabase.from('digest_deliveries').select('id, provider, destination, status, provider_reference, attempt_count, last_error').eq('run_id', run.id).order('created_at'),
+  ]) : [{ data: [] }, { data: [] }];
   const linkedStories = ((links ?? []) as unknown as LinkedStory[]).flatMap((link) => firstRelation(link.stories) ?? []);
   const sourceStories = await hydrateDigestSourceStories(linkedStories);
   const content = (story.generation_metadata as { digest_content?: DigestContent }).digest_content;
@@ -33,13 +40,16 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   const editionDate = story.slug.replace(`${content.digest_type}-digest-`, '');
   const publicPath = `/${content.digest_type === 'weekly' ? 'weekly-digest' : 'daily-digest'}/${editionDate}`;
   const historicalPublicationDate = editionDate < londonCalendarDateFormatter.format(new Date()) ? editionDate : undefined;
+  const distributionParts = [settings?.social_distribution_enabled ? 'Buffer social posts will be queued.' : '', settings?.email_distribution_enabled && content.digest_type === 'weekly' ? 'The Brevo weekly campaign will be scheduled.' : ''].filter(Boolean);
+  const distributionSummary = historicalPublicationDate ? 'External distribution remains paused for recovered historical editions.' : distributionParts.length ? distributionParts.join(' ') : 'External distribution is paused.';
 
   return <main className="admin-page digest-preview-page">
     <AdminHeader />
     <AdminNav active="digests" />
     <div className="admin-shell digest-preview-shell">
       <a className="admin-back-link" href="/admin/digests"><ArrowLeft /> All digests</a>
-      <section className={`digest-preview-status ${story.status === 'published' ? 'published' : ''}`}><span>{story.status === 'published' ? <Globe2 /> : <LockKeyhole />}</span><div><p className="eyebrow">Editorial preview</p><h1>{story.status === 'published' ? 'Published edition' : 'Private digest draft'}</h1><p>{story.status === 'published' ? 'This edition is live on the public site.' : historicalPublicationDate ? `This recovered edition will publish with a 14:00 UK timestamp on ${historicalPublicationDate}. Social and email distribution are disabled.` : 'Only signed-in editors can see this page. Social and email distribution are disabled.'}</p></div><div className="digest-preview-actions">{story.status === 'published' ? <a href={publicPath} target="_blank" rel="noopener noreferrer"><Eye /> View public edition</a> : <><a href={`/admin/digests/${story.id}/full-preview`} target="_blank" rel="noopener noreferrer"><ExternalLink /> Full-page preview</a><PublishDigestButton storyId={story.id} publicationDate={historicalPublicationDate} /></>}</div></section>
+      <section className={`digest-preview-status ${story.status === 'published' ? 'published' : ''}`}><span>{story.status === 'published' ? <Globe2 /> : <LockKeyhole />}</span><div><p className="eyebrow">Editorial preview</p><h1>{story.status === 'published' ? 'Published edition' : 'Private digest draft'}</h1><p>{story.status === 'published' ? `This edition is live on the public site. ${distributionSummary}` : historicalPublicationDate ? `This recovered edition will publish with a 14:00 UK timestamp on ${historicalPublicationDate}. ${distributionSummary}` : `Only signed-in editors can see this page. ${distributionSummary}`}</p></div><div className="digest-preview-actions">{story.status === 'published' ? <a href={publicPath} target="_blank" rel="noopener noreferrer"><Eye /> View public edition</a> : <><a href={`/admin/digests/${story.id}/full-preview`} target="_blank" rel="noopener noreferrer"><ExternalLink /> Full-page preview</a><PublishDigestButton storyId={story.id} publicationDate={historicalPublicationDate} distributionSummary={distributionSummary} /></>}</div></section>
+      <DigestDeliveryStatus storyId={story.id} deliveries={(deliveries ?? []) as Array<{ id: string; provider: 'buffer' | 'brevo'; destination: string; status: string; provider_reference: string | null; attempt_count: number; last_error: string | null }>} />
       <div className="digest-preview-canvas"><InteriorHeader /><DigestTemplate content={content} stories={sourceStories} periodEnd={story.digest_period_end} imageUrl={story.image_url} imageAlt={story.image_alt} moreDigests={moreDigests} /><SiteFooter /></div>
     </div>
   </main>;

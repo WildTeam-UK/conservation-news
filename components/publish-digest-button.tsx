@@ -4,14 +4,14 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Globe2, LoaderCircle } from 'lucide-react';
 
-export function PublishDigestButton({ storyId, publicationDate }: { storyId: string; publicationDate?: string }) {
+export function PublishDigestButton({ storyId, publicationDate, distributionSummary }: { storyId: string; publicationDate?: string; distributionSummary: string }) {
   const router = useRouter();
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState('');
 
   async function publish() {
     const dateNote = publicationDate ? ` Its publication time will be recorded as 14:00 Europe/London on ${publicationDate}.` : '';
-    if (!window.confirm(`Publish this digest now? It will become publicly accessible immediately.${dateNote} Social posting and email distribution will remain disabled.`)) return;
+    if (!window.confirm(`Publish this digest now? It will become publicly accessible immediately.${dateNote} ${distributionSummary}`)) return;
     setWorking(true);
     setMessage('');
     try {

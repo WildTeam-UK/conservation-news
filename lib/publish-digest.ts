@@ -5,6 +5,7 @@ import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
 import { isCalendarDate } from '@/lib/validation';
 import { londonCalendarDateFormatter } from '@/lib/date-format';
 import { londonLocalDateTimeToUtc } from '@/lib/london-time';
+import { prepareDigestDistributions } from '@/lib/digest-distribution';
 
 function londonPublicationTime(date: string) {
   const [year, month, day] = date.split('-').map(Number);
@@ -76,13 +77,27 @@ export async function publishDigest(storyId: string, { reviewerId, publicationDa
     .maybeSingle();
   if (updateError || !updated) throw updateError ?? new Error('The digest could not be published.');
 
-  await supabase.from('editorial_actions').insert({ story_id: storyId, user_id: reviewerId, action: 'published', notes: automated ? 'Digest generated and published automatically. External distribution remained disabled.' : 'Digest reviewed and published manually. Social and email distribution remained disabled.' });
+  await supabase.from('editorial_actions').insert({ story_id: storyId, user_id: reviewerId, action: 'published', notes: automated ? 'Digest generated and published automatically.' : 'Digest reviewed and published manually.' });
+  let distribution: Awaited<ReturnType<typeof prepareDigestDistributions>> | null = null;
   if (run) {
     await Promise.all([
       supabase.from('digest_runs').update({ status: 'published', completed_at: actionAt }).eq('id', run.id),
-      supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'publishing', message: automated ? 'Digest published automatically. External distribution remained disabled.' : publicationDate ? `Digest published manually with a historical publication time of 14:00 Europe/London on ${publicationDate}. External distribution remained disabled.` : 'Digest published manually. External distribution remained disabled.', details: { published_at: publishedAt } }),
+      supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'publishing', message: automated ? 'Digest published automatically.' : publicationDate ? `Digest published manually with a historical publication time of 14:00 Europe/London on ${publicationDate}.` : 'Digest published manually.', details: { published_at: publishedAt } }),
     ]);
+    if (publicationDate) {
+      await supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'distribution', message: 'External distribution skipped for a recovered historical edition.' });
+    } else {
+      try {
+        distribution = await prepareDigestDistributions(run.id, storyId);
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : 'Digest distribution could not be prepared.';
+        await Promise.all([
+          supabase.from('digest_runs').update({ status: 'partial', error_summary: detail.slice(0, 1000) }).eq('id', run.id),
+          supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'distribution', level: 'error', message: detail.slice(0, 1000) }),
+        ]);
+      }
+    }
   }
 
-  return { saved: true, alreadyPublished: false, publishedAt, publicPath: `/${type}-digest/${editionDate}` };
+  return { saved: true, alreadyPublished: false, publishedAt, publicPath: `/${type}-digest/${editionDate}`, distribution };
 }

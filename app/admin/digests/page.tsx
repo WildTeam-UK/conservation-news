@@ -45,6 +45,8 @@ const defaultSettings = {
   weekly_max_stories: 25,
   max_estimated_cost_usd: 0.5,
   publish_immediately: false,
+  social_distribution_enabled: false,
+  email_distribution_enabled: false,
   last_automation_error: null,
 };
 
@@ -87,6 +89,10 @@ export default async function DigestsPage() {
         maxEstimatedCostUsd={Number(digestSettings.max_estimated_cost_usd)}
         automationEnabled={digestSettings.automation_enabled}
         publishImmediately={digestSettings.publish_immediately}
+        socialDistributionEnabled={digestSettings.social_distribution_enabled}
+        emailDistributionEnabled={digestSettings.email_distribution_enabled}
+        bufferConfigured={Boolean(process.env.BUFFER_API_KEY?.trim() && process.env.BUFFER_CHANNEL_IDS?.split(',').some((value) => value.trim()))}
+        brevoConfigured={Boolean(process.env.BREVO_API_KEY?.trim() && /^\d+$/.test(process.env.BREVO_LIST_ID?.trim() ?? '') && /^\d+$/.test(process.env.BREVO_SENDER_ID?.trim() ?? ''))}
       />
 
       <DigestRunControls latestMissedDate={previousCalendarDate(londonCalendarDateFormatter.format(new Date()))} />

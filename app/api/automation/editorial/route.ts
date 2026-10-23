@@ -3,6 +3,7 @@ import { environmentValue } from '@/lib/environment';
 import { advanceEditorialRun } from '@/lib/editorial-runner';
 import { collectEnabledSources } from '@/lib/ingestion/rss';
 import { generateDigest } from '@/lib/openai/generate-digest';
+import { processClaimedDigestDelivery } from '@/lib/digest-distribution';
 import { publishDigest } from '@/lib/publish-digest';
 import { publishClaimedQueueItem } from '@/lib/publication-queue';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
@@ -98,6 +99,18 @@ export async function POST(request: Request) {
         console.error('Digest automation failed', digestError);
         return Response.json({ action: 'digest_failed', publication, digestError: 'Scheduled digest generation failed.' });
       }
+    }
+
+    const { data: deliveryClaimRows, error: deliveryClaimError } = await supabase.rpc('claim_due_digest_delivery', { lease_seconds: 90 });
+    const deliveryFunctionMissing = deliveryClaimError && ['PGRST202', '42883'].includes(deliveryClaimError.code ?? '');
+    if (deliveryClaimError && !deliveryFunctionMissing) throw deliveryClaimError;
+    const deliveryClaim = Array.isArray(deliveryClaimRows) ? deliveryClaimRows[0] : null;
+    const distribution = deliveryClaim?.delivery_id && deliveryClaim.delivery_lease_token
+      ? await processClaimedDigestDelivery(deliveryClaim.delivery_id, deliveryClaim.delivery_lease_token)
+      : null;
+    if (distribution) {
+      await recordHeartbeatSuccess();
+      return Response.json({ action: 'distributed', publication, distribution });
     }
 
     const { data, error } = await supabase.rpc('claim_due_editorial_run');
