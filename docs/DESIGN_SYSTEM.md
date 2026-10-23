@@ -237,7 +237,7 @@ Daily and weekly digests share one template:
 
 1. Full-width split hero with a consistent charcoal copy panel, a fine slowly animated branded-gradient frame around its content and the edition's dedicated featured image. The frame becomes effectively static when reduced motion is requested.
 2. Edition/date metadata, title, standfirst and AI-method link.
-3. Digest and topic pills above the editorial introduction. Sharing remains a vertical rail beside the introduction on desktop, then moves into a horizontal row above these pills at 1000px and below.
+3. Digest and topic pills above the editorial introduction, whose opening paragraph uses an optically aligned drop cap. Sharing remains a vertical rail beside the introduction on desktop, then moves into a horizontal row above these pills at 1000px and below.
 4. Flowing editorial sections with wider supporting images.
 5. One compact newsletter CTA within the body.
 6. Source-article list, training banner and full newsletter CTA.
