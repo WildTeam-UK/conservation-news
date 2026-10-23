@@ -22,6 +22,8 @@ export const storyImage = (story: Story) => story.image;
 
 export const storyHref = (story: Story) => story.href ?? `/stories/${story.slug}`;
 
+export const storyReadLabel = (digestType?: Story['digestType']) => digestType ? 'Read this edition' : 'Read story';
+
 export const slugify = (value: string) => value
   .normalize('NFD')
   .replace(/[\u0300-\u036f]/g, '')

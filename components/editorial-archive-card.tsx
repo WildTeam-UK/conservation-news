@@ -2,7 +2,7 @@
 import type { ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { GoodNewsBadge } from '@/components/good-news-badge';
-import type { Story } from '@/lib/stories';
+import { storyReadLabel, type Story } from '@/lib/stories';
 
 type EditorialArchiveCardProps = {
   featured?: boolean;
@@ -36,7 +36,7 @@ export function EditorialArchiveCard({
       {labels}
       <h2><a href={href}>{title}</a></h2>
       {summary ? <p>{summary}</p> : null}
-      <a className="text-link" href={href}>{digestType ? 'Read this edition' : 'Read story'} <ArrowRight /></a>
+      <a className="text-link" href={href}>{storyReadLabel(digestType)} <ArrowRight /></a>
     </div>
   </article>;
 }

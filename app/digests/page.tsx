@@ -50,7 +50,7 @@ export default async function DigestArchive() {
           digestType={type}
           labels={<div className="digest-archive-meta"><DigestTag type={type} /><time dateTime={digest.digest_period_end}>{londonLongDateFormatter.format(new Date(digest.digest_period_end))}</time></div>}
           title={cleanDigestText(digest.headline)}
-          summary={index === 0 ? cleanDigestText(digest.standfirst) : null}
+          summary={cleanDigestText(digest.standfirst)}
           key={digest.id}
         />;
       })}
