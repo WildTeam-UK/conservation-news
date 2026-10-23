@@ -243,7 +243,7 @@ Daily and weekly digests share one template:
 6. Source-article list, training banner and full newsletter CTA.
 7. Six recent daily digests on daily editions.
 
-Digest prose uses the same restrained contextual-link policy as news articles: no more than two article links, one topic or approved-tag link, one genuinely relevant course link and one materially useful external source link, with five links maximum. Links use complete words or natural phrases, never repeat a target, and are omitted when they would feel forced. External links open in a new tab.
+Digest prose uses the same restrained contextual-link policy as news articles. A dedicated link-editor pass runs only after the prose is final and normally seeks two to four useful links in an article or three to five in a digest without enforcing a minimum. Standard articles accept no more than two article links; longer digests accept no more than three. Both accept one topic or approved-tag link, one genuinely relevant course link and one materially useful external source link, with five links maximum. Links use complete words or natural phrases, never repeat a target, and are omitted when they would feel forced. External links open in a new tab.
 
 Friday produces a weekly edition instead of a daily edition.
 
