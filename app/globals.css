@@ -195,6 +195,7 @@ button svg{width:16px}
 .archive-page .topic-story-featured h2{font-size:clamp(40px,5vw,64px)}
 .archive-page .topic-story h2 a:hover{text-decoration:underline}
 .archive-page .topic-story p:not(.eyebrow){display:-webkit-box;overflow:hidden;margin:16px 0 0;color:var(--muted);font-size:14px;line-height:1.55;-webkit-box-orient:vertical;-webkit-line-clamp:3}
+@media(min-width:821px){.archive-page .topic-story-featured .topic-story-image{height:auto;align-self:stretch}}
 
 /* Coverage-analysis methodology */
 .methodology-page{padding-bottom:110px}
@@ -657,8 +658,6 @@ p{margin-top:0;margin-bottom:1.25em}p:last-child{margin-bottom:0}p+p{margin-top:
 
 /* Combined digest archive */
 .digest-archive-type-tags{display:flex;align-items:center;flex-wrap:wrap;gap:8px}.digest-archive-type-tags .digest-tag{margin:0}.archive-newsletter-anchor{scroll-margin-top:110px}.digest-archive-meta{display:flex;align-items:center;gap:10px;margin-bottom:12px}.digest-archive-meta .digest-tag{display:inline-flex;align-items:center;margin:0;line-height:1}.digest-archive-page .topic-story time{display:inline-flex;align-items:center;color:var(--muted);font-size:9px;font-weight:var(--font-weight-black);line-height:1;text-transform:uppercase;letter-spacing:.05em}.digest-archive-page .wildteam-footer{margin-top:10px}
-@media(min-width:821px){.digest-archive-page .topic-story-featured .topic-story-image{height:auto;align-self:stretch}}
-
 /* Public CTA system */
 .read-more-button,.action-button{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:14px 20px;border:0;border-radius:var(--public-button-radius);box-shadow:none;font:var(--font-weight-black) 12px/1 var(--font-family),sans-serif;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
 .read-more-button{margin-top:26px}
