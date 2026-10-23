@@ -60,7 +60,7 @@ async function recordPreparationFailure(runId: string, storyId: string, provider
 export async function prepareDigestDistributions(runId: string, storyId: string) {
   const supabase = getSupabaseAdminClient();
   const [{ data: settings, error: settingsError }, { data: story, error: storyError }] = await Promise.all([
-    supabase.from('digest_settings').select('social_distribution_enabled, email_distribution_enabled').eq('id', true).single(),
+    supabase.from('digest_settings').select('social_distribution_enabled, social_distribution_mode, email_distribution_enabled').eq('id', true).single(),
     supabase.from('stories').select('id, slug, status, content_type, image_url, generation_metadata').eq('id', storyId).single(),
   ]);
   if (settingsError || storyError || !settings || !story) throw settingsError ?? storyError ?? new Error('Digest distribution could not be prepared.');
@@ -77,16 +77,17 @@ export async function prepareDigestDistributions(runId: string, storyId: string)
 
   if (settings.social_distribution_enabled) {
     const channels = bufferChannelIds();
+    const bufferMode = settings.social_distribution_mode === 'immediate' ? 'shareNow' : 'addToQueue';
     if (!channels.length || !(process.env.BUFFER_API_KEY ?? '').trim()) {
       await recordPreparationFailure(runId, storyId, 'buffer', 'Social distribution is enabled, but BUFFER_API_KEY or BUFFER_CHANNEL_IDS is not configured.');
       socialStatus = 'failed';
     } else {
       for (const channelId of channels) {
         const id = randomUUID();
-        const payload = buildSocialDistributionPayload({ deliveryId: id, type, editionDate, content, imageUrl: digestStory.image_url });
+        const payload = buildSocialDistributionPayload({ deliveryId: id, type, editionDate, content, imageUrl: digestStory.image_url, mode: bufferMode });
         rows.push({ id, run_id: runId, story_id: storyId, provider: 'buffer', destination: channelId, payload });
       }
-      socialCopy = { channel_ids: channels, text: (rows.find((row) => row.provider === 'buffer')?.payload as unknown as BufferPostPayload | undefined)?.text ?? '', public_url: buildSocialDistributionPayload({ deliveryId: runId, type, editionDate, content, imageUrl: digestStory.image_url }).publicUrl };
+      socialCopy = { channel_ids: channels, mode: settings.social_distribution_mode, text: (rows.find((row) => row.provider === 'buffer')?.payload as unknown as BufferPostPayload | undefined)?.text ?? '', public_url: buildSocialDistributionPayload({ deliveryId: runId, type, editionDate, content, imageUrl: digestStory.image_url, mode: bufferMode }).publicUrl };
       socialStatus = 'pending';
     }
   }

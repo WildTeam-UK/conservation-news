@@ -26,7 +26,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   if (error || !story) notFound();
   const [{ data: run }, { data: settings }] = await Promise.all([
     supabase.from('digest_runs').select('id').eq('story_id', story.id).maybeSingle(),
-    supabase.from('digest_settings').select('social_distribution_enabled, email_distribution_enabled').eq('id', true).maybeSingle(),
+    supabase.from('digest_settings').select('social_distribution_enabled, social_distribution_mode, email_distribution_enabled').eq('id', true).maybeSingle(),
   ]);
   const [{ data: links }, { data: deliveries }] = run ? await Promise.all([
     supabase.from('digest_run_stories').select('display_order, stories(id, slug, headline, standfirst, image_url, image_alt, published_at)').eq('run_id', run.id).order('display_order'),
@@ -40,7 +40,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   const editionDate = story.slug.replace(`${content.digest_type}-digest-`, '');
   const publicPath = `/${content.digest_type === 'weekly' ? 'weekly-digest' : 'daily-digest'}/${editionDate}`;
   const historicalPublicationDate = editionDate < londonCalendarDateFormatter.format(new Date()) ? editionDate : undefined;
-  const distributionParts = [settings?.social_distribution_enabled ? 'Buffer social posts will be queued.' : '', settings?.email_distribution_enabled && content.digest_type === 'weekly' ? 'The Brevo weekly campaign will be scheduled.' : ''].filter(Boolean);
+  const distributionParts = [settings?.social_distribution_enabled ? settings.social_distribution_mode === 'immediate' ? 'Buffer social posts will publish immediately.' : 'Buffer social posts will be queued.' : '', settings?.email_distribution_enabled && content.digest_type === 'weekly' ? 'The Brevo weekly campaign will be scheduled.' : ''].filter(Boolean);
   const distributionSummary = historicalPublicationDate ? 'External distribution remains paused for recovered historical editions.' : distributionParts.length ? distributionParts.join(' ') : 'External distribution is paused.';
 
   return <main className="admin-page digest-preview-page">

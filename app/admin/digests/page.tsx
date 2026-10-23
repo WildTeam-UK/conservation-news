@@ -46,6 +46,7 @@ const defaultSettings = {
   max_estimated_cost_usd: 0.5,
   publish_immediately: false,
   social_distribution_enabled: false,
+  social_distribution_mode: 'queue' as const,
   email_distribution_enabled: false,
   last_automation_error: null,
 };
@@ -90,6 +91,7 @@ export default async function DigestsPage() {
         automationEnabled={digestSettings.automation_enabled}
         publishImmediately={digestSettings.publish_immediately}
         socialDistributionEnabled={digestSettings.social_distribution_enabled}
+        socialDistributionMode={digestSettings.social_distribution_mode === 'immediate' ? 'immediate' : 'queue'}
         emailDistributionEnabled={digestSettings.email_distribution_enabled}
         bufferConfigured={Boolean(process.env.BUFFER_API_KEY?.trim() && process.env.BUFFER_CHANNEL_IDS?.split(',').some((value) => value.trim()))}
         brevoConfigured={Boolean(process.env.BREVO_API_KEY?.trim() && /^\d+$/.test(process.env.BREVO_LIST_ID?.trim() ?? '') && /^\d+$/.test(process.env.BREVO_SENDER_ID?.trim() ?? ''))}

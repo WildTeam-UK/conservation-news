@@ -14,12 +14,13 @@ type Props = {
   automationEnabled: boolean;
   publishImmediately: boolean;
   socialDistributionEnabled: boolean;
+  socialDistributionMode: 'queue' | 'immediate';
   emailDistributionEnabled: boolean;
   bufferConfigured: boolean;
   brevoConfigured: boolean;
 };
 
-export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, weeklyMinStories, weeklyMaxStories, maxEstimatedCostUsd, automationEnabled, publishImmediately, socialDistributionEnabled, emailDistributionEnabled, bufferConfigured, brevoConfigured }: Props) {
+export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, weeklyMinStories, weeklyMaxStories, maxEstimatedCostUsd, automationEnabled, publishImmediately, socialDistributionEnabled, socialDistributionMode, emailDistributionEnabled, bufferConfigured, brevoConfigured }: Props) {
   const router = useRouter();
   const [time, setTime] = useState(runTime.slice(0, 5));
   const [dailyMin, setDailyMin] = useState(dailyMinStories);
@@ -30,6 +31,7 @@ export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, week
   const [automationOn, setAutomationOn] = useState(automationEnabled);
   const [publishNow, setPublishNow] = useState(publishImmediately);
   const [socialOn, setSocialOn] = useState(socialDistributionEnabled);
+  const [socialMode, setSocialMode] = useState(socialDistributionMode);
   const [emailOn, setEmailOn] = useState(emailDistributionEnabled);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -53,6 +55,7 @@ export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, week
           automationEnabled: automationOn,
           publishImmediately: publishNow,
           socialDistributionEnabled: socialOn,
+          socialDistributionMode: socialMode,
           emailDistributionEnabled: emailOn,
         }),
       });
@@ -82,7 +85,8 @@ export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, week
       <fieldset><legend>Weekly edition</legend><label><span>Minimum stories</span><input type="number" min="1" max="50" value={weeklyMin} disabled={saving} onChange={(event) => setWeeklyMin(Number(event.target.value))} /></label><label><span>Maximum stories</span><input type="number" min="1" max="100" value={weeklyMax} disabled={saving} onChange={(event) => setWeeklyMax(Number(event.target.value))} /></label></fieldset>
       <label className="automation-toggle digest-publish-toggle"><span>Digest schedule</span><span className="automation-toggle-control"><input type="checkbox" checked={automationOn} disabled={saving} onChange={(event) => setAutomationOn(event.target.checked)} /> <strong>{automationOn ? 'Automation enabled' : 'Automation paused'}</strong></span><small>Friday creates the weekly edition instead of a daily edition.</small></label>
       <label className="automation-toggle digest-publish-toggle"><span>Publishing</span><span className="automation-toggle-control"><input type="checkbox" checked={publishNow} disabled={saving} onChange={(event) => setPublishNow(event.target.checked)} /> <strong>{publishNow ? 'Publish immediately' : 'Create privately'}</strong></span><small>Choose whether completed editions go live without review.</small></label>
-      <label className="automation-toggle digest-publish-toggle"><span>Buffer social distribution</span><span className="automation-toggle-control"><input type="checkbox" checked={socialOn} disabled={saving || !bufferConfigured} onChange={(event) => setSocialOn(event.target.checked)} /> <strong>{socialOn ? 'Automatic social enabled' : 'Social paused'}</strong></span><small>{bufferConfigured ? 'Every published daily and weekly edition will be added to each configured Buffer channel queue.' : 'Add BUFFER_API_KEY and BUFFER_CHANNEL_IDS before enabling this channel.'}</small></label>
+      <label className="automation-toggle digest-publish-toggle"><span>Buffer social distribution</span><span className="automation-toggle-control"><input type="checkbox" checked={socialOn} disabled={saving || !bufferConfigured} onChange={(event) => setSocialOn(event.target.checked)} /> <strong>{socialOn ? 'Automatic social enabled' : 'Social paused'}</strong></span><small>{bufferConfigured ? `Every published daily and weekly edition will be ${socialMode === 'immediate' ? 'published through Buffer immediately' : 'added to each configured Buffer channel queue'}.` : 'Add BUFFER_API_KEY and BUFFER_CHANNEL_IDS before enabling this channel.'}</small></label>
+      <label className="digest-publish-toggle"><span>Buffer delivery</span><select value={socialMode} disabled={saving || !bufferConfigured} onChange={(event) => setSocialMode(event.target.value as 'queue' | 'immediate')}><option value="queue">Add to queue</option><option value="immediate">Publish immediately</option></select><small>{socialMode === 'immediate' ? 'Buffer will publish each social post as soon as the delivery heartbeat processes it.' : 'Buffer will use the next available posting slot for each channel.'}</small></label>
       <label className="automation-toggle digest-publish-toggle"><span>Brevo email distribution</span><span className="automation-toggle-control"><input type="checkbox" checked={emailOn} disabled={saving || !brevoConfigured} onChange={(event) => setEmailOn(event.target.checked)} /> <strong>{emailOn ? 'Automatic weekly email enabled' : 'Weekly email paused'}</strong></span><small>{brevoConfigured ? 'Only the published Friday weekly edition is sent to the Weekly Digest list.' : 'Add BREVO_API_KEY, BREVO_LIST_ID and BREVO_SENDER_ID before enabling this channel.'}</small></label>
       <button className="admin-primary-button digest-save-button" type="button" disabled={saving || !valid} onClick={save}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving</> : <><Save /> Save digest settings</>}</button>
       {message ? <output className="schedule-message">{message}</output> : null}

@@ -17,7 +17,7 @@ export type DigestContextualLink = ArticleContextualLink & {
 };
 
 export type DigestContent = {
-  template_version: 1 | 2;
+  template_version: 1 | 2 | 3;
   digest_type: DigestType;
   edition_label: string;
   headline: string;
@@ -33,6 +33,7 @@ export type DigestContent = {
   closing_note?: string;
   seo_title: string;
   seo_description: string;
+  social_post?: string;
 };
 
 export type DigestSourceStory = {
@@ -62,6 +63,12 @@ export type DigestStoryRecord = {
   digest_period_end: string;
   generation_metadata: { digest_content?: DigestContent; digest_source_stories?: DigestSourceStory[] };
 };
+
+const graphemeSegmenter = new Intl.Segmenter('en-GB', { granularity: 'grapheme' });
+
+export function digestTextGraphemes(value: string) {
+  return Array.from(graphemeSegmenter.segment(value), (part) => part.segment);
+}
 
 export function cleanDigestText(value: string) {
   return cleanAiText(value)
