@@ -19,6 +19,7 @@ export async function PATCH(request: Request) {
     automationEnabled?: boolean;
     publishImmediately?: boolean;
     socialDistributionEnabled?: boolean;
+    socialDistributionMode?: string;
     emailDistributionEnabled?: boolean;
   } | null;
 
@@ -40,6 +41,7 @@ export async function PATCH(request: Request) {
     return Response.json({ error: 'The estimated cost limit must be between $0.05 and $100.' }, { status: 400 });
   }
   if (typeof body?.automationEnabled !== 'boolean' || typeof body?.publishImmediately !== 'boolean' || typeof body?.socialDistributionEnabled !== 'boolean' || typeof body?.emailDistributionEnabled !== 'boolean') return Response.json({ error: 'Choose valid automation, publishing and distribution modes.' }, { status: 400 });
+  if (body.socialDistributionMode !== 'queue' && body.socialDistributionMode !== 'immediate') return Response.json({ error: 'Choose whether Buffer should queue posts or publish them immediately.' }, { status: 400 });
   const bufferConfigured = Boolean(process.env.BUFFER_API_KEY?.trim() && process.env.BUFFER_CHANNEL_IDS?.split(',').some((value) => value.trim()));
   const brevoConfigured = Boolean(process.env.BREVO_API_KEY?.trim() && /^\d+$/.test(process.env.BREVO_LIST_ID?.trim() ?? '') && /^\d+$/.test(process.env.BREVO_SENDER_ID?.trim() ?? ''));
   if (body.socialDistributionEnabled && !bufferConfigured) return Response.json({ error: 'Configure the Buffer API key and channel IDs before enabling social distribution.' }, { status: 400 });
@@ -57,6 +59,7 @@ export async function PATCH(request: Request) {
     max_estimated_cost_usd: Math.round(maxCost * 100) / 100,
     publish_immediately: body.publishImmediately,
     social_distribution_enabled: body.socialDistributionEnabled,
+    social_distribution_mode: body.socialDistributionMode,
     email_distribution_enabled: body.emailDistributionEnabled,
     updated_by: user.id,
   }).eq('id', true);

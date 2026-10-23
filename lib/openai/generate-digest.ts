@@ -1,6 +1,6 @@
 import { getOpenAIClient } from './client';
 import { estimateLunaTokenCost } from './pricing';
-import { cleanDigestText, type DigestContent, type DigestSourceStory, type DigestType } from '@/lib/digests';
+import { cleanDigestText, digestTextGraphemes, type DigestContent, type DigestSourceStory, type DigestType } from '@/lib/digests';
 import { aiInstructions, parseAiJson } from './house-style';
 import { isCalendarDate } from '@/lib/validation';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
@@ -12,7 +12,7 @@ import { londonLocalDateTimeToUtc } from '@/lib/london-time';
 import { assessStoryContextualLinks } from '@/lib/openai/assess-contextual-links';
 
 const MODEL = 'gpt-6-luna';
-const PROMPT_VERSION = 'digest-v5-dedicated-image-search';
+const PROMPT_VERSION = 'digest-v6-social-copy';
 
 type DigestSettings = {
   daily_min_stories: number;
@@ -31,6 +31,7 @@ type GenerateDigestOptions = {
 type GeneratedDigest = Omit<DigestContent, 'template_version' | 'digest_type' | 'edition_label' | 'contextual_links' | 'image_search_query' | 'image_search_fallbacks' | 'image_credit'> & {
   image_search_query: string;
   image_search_fallbacks: string[];
+  social_post: string;
 };
 
 type SourceMetadata = {
@@ -192,6 +193,8 @@ The headline should capture the edition's overarching story, not simply say “d
 
 Also supply three concise, visually literal Unsplash search queries for a new featured image that represents the digest's overarching theme rather than any single source article. The primary query must be 2–4 words. Supply exactly two distinct fallbacks that become progressively broader. Prefer a clearly photographable species, habitat, landscape or conservation activity that genuinely reflects the edition. Do not use named individuals, organisations, abstract policy concepts or wording that could falsely imply the image documents a specific reported event.
 
+Write one short social post for this edition in the established WILDNEWS voice. It should feel warm, informed and human, give a useful overview rather than repeat the headline, and end with an inviting call to read the digest. Use one or two relevant emojis only where they feel natural. Do not include a URL, hashtags, image attribution, unsupported claims or phrases about AI. Keep the complete social post to 140 characters or fewer so the application can append the link and image credit.
+
 This is a private editorial draft for review. Return only the requested structured data.`),
       input: JSON.stringify({ digest_type: type, edition: editionLabel(type, end), period_start: start.toISOString(), period_end: end.toISOString(), topic_vocabulary: EDITORIAL_TOPICS, stories: inputStories }),
       text: { format: {
@@ -209,10 +212,11 @@ This is a private editorial draft for review. Return only the requested structur
             what_to_watch: { type: 'array', minItems: 3, maxItems: 5, items: { type: 'string' } },
             seo_title: { type: 'string' },
             seo_description: { type: 'string' },
+            social_post: { type: 'string' },
             image_search_query: { type: 'string' },
             image_search_fallbacks: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'string' } },
           },
-          required: ['headline', 'standfirst', 'topics', 'introduction', 'sections', 'what_to_watch', 'seo_title', 'seo_description', 'image_search_query', 'image_search_fallbacks'],
+          required: ['headline', 'standfirst', 'topics', 'introduction', 'sections', 'what_to_watch', 'seo_title', 'seo_description', 'social_post', 'image_search_query', 'image_search_fallbacks'],
           additionalProperties: false,
         },
       } },
@@ -225,6 +229,7 @@ This is a private editorial draft for review. Return only the requested structur
     generated.what_to_watch = generated.what_to_watch.map(cleanGeneratedDigestText);
     generated.seo_title = cleanGeneratedDigestText(generated.seo_title);
     generated.seo_description = cleanGeneratedDigestText(generated.seo_description);
+    generated.social_post = digestTextGraphemes(cleanGeneratedDigestText(generated.social_post)).slice(0, 140).join('');
     generated.image_search_query = cleanGeneratedDigestText(generated.image_search_query).slice(0, 120);
     generated.image_search_fallbacks = generated.image_search_fallbacks.map((query) => cleanGeneratedDigestText(query).slice(0, 120));
     for (const section of generated.sections) {
@@ -235,7 +240,7 @@ This is a private editorial draft for review. Return only the requested structur
     }
     const imageQueries = [...new Set([generated.image_search_query, ...generated.image_search_fallbacks].filter(Boolean))].slice(0, 3);
     if (!imageQueries.length) throw new Error('The digest did not provide a usable image search query.');
-    const content: DigestContent = { template_version: 2, digest_type: type, edition_label: editionLabel(type, end), ...generated };
+    const content: DigestContent = { template_version: 3, digest_type: type, edition_label: editionLabel(type, end), ...generated };
     content.topics = normalizeEditorialTopics(content.topics ?? []).slice(0, 3);
     if (!content.topics.length) throw new Error('The digest did not contain a valid editorial topic.');
     const inputTokens = response.usage?.input_tokens ?? 0;

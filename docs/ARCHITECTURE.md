@@ -216,7 +216,7 @@ Used server-side for:
 - Coverage analysis and conservation outlook
 - Taxonomy suggestions and descriptions
 - Course recommendations and contextual-link assessment
-- Daily and weekly digest generation
+- Daily and weekly digest generation, including purpose-written social copy
 
 All generated editorial prompts should include `AI_HOUSE_STYLE`. Estimated usage is stored with run and generation records.
 
@@ -230,7 +230,7 @@ Used server-side to search for landscape editorial images. The application hotli
 
 ### Buffer
 
-When social distribution is enabled, each published daily and weekly digest is submitted as an image post to every channel in `BUFFER_CHANNEL_IDS`. Posts use Buffer's automatic `addToQueue` mode so each connected channel retains its Buffer posting schedule. Each destination has its own delivery record, attempt count and provider post ID. Buffer credentials remain server-only.
+When social distribution is enabled, each published daily and weekly digest is submitted as an image post to every channel in `BUFFER_CHANNEL_IDS`. The digest generation response includes short, source-grounded social copy in the WILDNEWS voice, with restrained emoji use and a call to read the edition; the application appends the canonical digest URL and image attribution. Editors choose between Buffer's `addToQueue` mode, which retains each channel's posting schedule, and `shareNow`, which publishes as soon as the delivery heartbeat processes the post. The selected mode is stored in the immutable delivery payload. Each destination has its own delivery record, attempt count and provider post ID. Buffer credentials remain server-only.
 
 ### Analytics
 

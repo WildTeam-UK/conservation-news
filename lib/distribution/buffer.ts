@@ -5,6 +5,7 @@ export type BufferPostPayload = {
   text: string;
   imageUrl: string | null;
   source: string;
+  mode: 'addToQueue' | 'shareNow';
 };
 
 type BufferCreatePostResponse = {
@@ -39,7 +40,7 @@ export async function createBufferPost(channelId: string, payload: BufferPostPay
             channelId,
             text: payload.text,
             schedulingType: 'automatic',
-            mode: 'addToQueue',
+            mode: payload.mode,
             source: payload.source,
             assets: payload.imageUrl ? [{ image: { url: payload.imageUrl } }] : [],
           },

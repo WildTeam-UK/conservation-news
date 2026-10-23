@@ -1,6 +1,6 @@
 import { cleanAiText } from '@/lib/openai/house-style';
 import { absoluteUrl } from '@/lib/seo';
-import type { DigestContent, DigestSourceStory, DigestType } from '@/lib/digests';
+import { digestTextGraphemes, type DigestContent, type DigestSourceStory, type DigestType } from '@/lib/digests';
 
 export type DigestDistributionSource = Pick<DigestSourceStory, 'slug' | 'headline' | 'standfirst'>;
 
@@ -9,6 +9,7 @@ export type SocialDistributionPayload = {
   imageUrl: string | null;
   publicUrl: string;
   source: string;
+  mode: 'addToQueue' | 'shareNow';
 };
 
 export type EmailDistributionPayload = {
@@ -36,26 +37,29 @@ function escapeHtml(value: string) {
 
 function truncate(value: string, maximum: number) {
   const text = clean(value);
-  if (text.length <= maximum) return text;
-  const shortened = text.slice(0, Math.max(0, maximum - 1)).replace(/\s+\S*$/, '').trim();
-  return `${shortened || text.slice(0, maximum - 1).trim()}…`;
+  const characters = digestTextGraphemes(text);
+  if (characters.length <= maximum) return text;
+  const sliced = characters.slice(0, Math.max(0, maximum - 1)).join('');
+  const shortened = sliced.replace(/\s+\S*$/, '').trim();
+  return `${shortened || sliced.trim()}…`;
 }
 
 function digestPublicUrl(type: DigestType, editionDate: string) {
   return absoluteUrl(`/${type === 'weekly' ? 'weekly-digest' : 'daily-digest'}/${editionDate}`);
 }
 
-export function buildSocialDistributionPayload({ deliveryId, type, editionDate, content, imageUrl }: { deliveryId: string; type: DigestType; editionDate: string; content: DigestContent; imageUrl: string | null }): SocialDistributionPayload {
+export function buildSocialDistributionPayload({ deliveryId, type, editionDate, content, imageUrl, mode }: { deliveryId: string; type: DigestType; editionDate: string; content: DigestContent; imageUrl: string | null; mode: 'addToQueue' | 'shareNow' }): SocialDistributionPayload {
   const publicUrl = digestPublicUrl(type, editionDate);
-  const headline = truncate(content.headline, 110);
   const attribution = content.image_credit ? truncate(`Photo: ${content.image_credit.creator_name} / ${content.image_credit.source_name}`, 60) : '';
-  const available = Math.max(20, 280 - headline.length - publicUrl.length - attribution.length - 8);
-  const standfirst = truncate(content.standfirst, available);
+  const available = Math.max(40, 280 - publicUrl.length - attribution.length - 6);
+  const fallback = `${type === 'weekly' ? '🌍' : '🌿'} ${content.standfirst} ${type === 'weekly' ? 'Catch up with the full weekly digest' : 'Read today’s full digest'} 👇`;
+  const socialPost = truncate(content.social_post || fallback, available);
   return {
-    text: `${headline}\n\n${standfirst}\n\n${publicUrl}${attribution ? `\n\n${attribution}` : ''}`,
+    text: `${socialPost}\n\n${publicUrl}${attribution ? `\n\n${attribution}` : ''}`,
     imageUrl,
     publicUrl,
     source: `wildnews-digest-${deliveryId}`,
+    mode,
   };
 }
 
