@@ -34,6 +34,7 @@ export type DigestContent = {
   seo_title: string;
   seo_description: string;
   social_post?: string;
+  email_overview?: string[];
 };
 
 export type DigestSourceStory = {

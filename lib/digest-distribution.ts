@@ -99,7 +99,7 @@ export async function prepareDigestDistributions(runId: string, storyId: string)
       positiveIntegerEnvironmentValue('BREVO_SENDER_ID', process.env.BREVO_SENDER_ID);
       if (!(process.env.BREVO_API_KEY ?? '').trim()) throw new Error('BREVO_API_KEY is not configured.');
       const id = randomUUID();
-      const payload = buildEmailDistributionPayload({ runId, type, editionDate, content, sources: digestStory.generation_metadata.digest_source_stories ?? [], imageUrl: digestStory.image_url, listId });
+      const payload = buildEmailDistributionPayload({ runId, type, editionDate, content, sources: digestStory.generation_metadata.digest_source_stories ?? [], listId });
       rows.push({ id, run_id: runId, story_id: storyId, provider: 'brevo', destination: String(listId), payload });
       emailContent = { subject: payload.subject, preview_text: payload.previewText, public_url: payload.publicUrl };
       emailStatus = 'pending';
