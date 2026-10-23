@@ -6,6 +6,7 @@ import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
 import { DigestTemplate } from '@/components/digest-template';
 import { DigestDeliveryStatus } from '@/components/digest-delivery-status';
+import { DigestEmailTest } from '@/components/digest-email-test';
 import { InteriorHeader } from '@/components/interior-header';
 import { PublishDigestButton } from '@/components/publish-digest-button';
 import { SiteFooter } from '@/components/site-footer';
@@ -49,6 +50,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
     <div className="admin-shell digest-preview-shell">
       <a className="admin-back-link" href="/admin/digests"><ArrowLeft /> All digests</a>
       <section className={`digest-preview-status ${story.status === 'published' ? 'published' : ''}`}><span>{story.status === 'published' ? <Globe2 /> : <LockKeyhole />}</span><div><p className="eyebrow">Editorial preview</p><h1>{story.status === 'published' ? 'Published edition' : 'Private digest draft'}</h1><p>{story.status === 'published' ? `This edition is live on the public site. ${distributionSummary}` : historicalPublicationDate ? `This recovered edition will publish with a 14:00 UK timestamp on ${historicalPublicationDate}. ${distributionSummary}` : `Only signed-in editors can see this page. ${distributionSummary}`}</p></div><div className="digest-preview-actions">{story.status === 'published' ? <a href={publicPath} target="_blank" rel="noopener noreferrer"><Eye /> View public edition</a> : <><a href={`/admin/digests/${story.id}/full-preview`} target="_blank" rel="noopener noreferrer"><ExternalLink /> Full-page preview</a><PublishDigestButton storyId={story.id} publicationDate={historicalPublicationDate} distributionSummary={distributionSummary} /></>}</div></section>
+      {content.digest_type === 'weekly' ? <DigestEmailTest storyId={story.id} configured={Boolean(process.env.BREVO_API_KEY?.trim() && /^\d+$/.test(process.env.BREVO_LIST_ID?.trim() ?? '') && /^\d+$/.test(process.env.BREVO_SENDER_ID?.trim() ?? ''))} /> : null}
       <DigestDeliveryStatus storyId={story.id} deliveries={(deliveries ?? []) as Array<{ id: string; provider: 'buffer' | 'brevo'; destination: string; status: string; provider_reference: string | null; attempt_count: number; last_error: string | null }>} />
       <div className="digest-preview-canvas"><InteriorHeader /><DigestTemplate content={content} stories={sourceStories} periodEnd={story.digest_period_end} imageUrl={story.image_url} imageAlt={story.image_alt} moreDigests={moreDigests} /><SiteFooter /></div>
     </div>

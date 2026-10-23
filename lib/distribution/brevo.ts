@@ -66,6 +66,39 @@ export async function createBrevoCampaign(payload: BrevoCampaignPayload) {
   return String(result.id);
 }
 
+export async function createBrevoTestCampaign(payload: BrevoCampaignPayload) {
+  const { senderId } = configuration();
+  const response = await brevoRequest('/emailCampaigns', {
+    method: 'POST',
+    body: JSON.stringify({
+      name: `[TEST] ${payload.name}`,
+      sender: { id: senderId },
+      subject: payload.subject,
+      previewText: payload.previewText,
+      htmlContent: payload.htmlContent,
+      tag: payload.tag,
+      mirrorActive: true,
+      utmSource: 'wildnews',
+      utmMedium: 'email',
+      utmCampaign: payload.tag.replace(/[^a-zA-Z0-9 ]/g, ' ').slice(0, 100),
+    }),
+  });
+  const result = await response.json().catch(() => ({})) as { id?: number };
+  if (!Number.isSafeInteger(result.id) || Number(result.id) < 1) throw new DistributionProviderError('Brevo created no identifiable test campaign, so the outcome could not be confirmed.', 'uncertain');
+  return String(result.id);
+}
+
+export async function sendBrevoCampaignTest(campaignId: string, email: string) {
+  await brevoRequest(`/emailCampaigns/${encodeURIComponent(campaignId)}/sendTest`, {
+    method: 'POST',
+    body: JSON.stringify({ emailTo: [email] }),
+  });
+}
+
+export async function deleteBrevoCampaign(campaignId: string) {
+  await brevoRequest(`/emailCampaigns/${encodeURIComponent(campaignId)}`, { method: 'DELETE' }, 'retryable');
+}
+
 export async function sendBrevoCampaign(campaignId: string) {
   await brevoRequest(`/emailCampaigns/${encodeURIComponent(campaignId)}/sendNow`, { method: 'POST', body: '{}' });
 }
