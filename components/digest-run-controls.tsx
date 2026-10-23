@@ -29,8 +29,8 @@ export function DigestRunControls({ latestMissedDate }: { latestMissedDate: stri
   }
 
   return <section className="digest-manual-panel">
-    <div><span><Sparkles /></span><div><p className="eyebrow">Template testing</p><h2>Create a private edition</h2><p>Use the published stories from the relevant period to test the editorial digest. Buffer and Brevo remain untouched.</p></div></div>
-    <div className="digest-run-buttons"><button type="button" disabled={Boolean(running)} onClick={() => run('daily')}>{running === 'daily' ? <LoaderCircle className="admin-spinner" /> : <CalendarDays />} Test daily digest</button><button type="button" disabled={Boolean(running)} onClick={() => run('weekly')}>{running === 'weekly' ? <LoaderCircle className="admin-spinner" /> : <CalendarDays />} Test weekly digest</button></div>
+    <div><span><Sparkles /></span><div><p className="eyebrow">Manual generation</p><h2>Create a private edition</h2><p>Generate a draft from the relevant published stories without contacting Buffer or the Brevo subscriber list.</p></div></div>
+    <div className="digest-run-buttons"><button type="button" disabled={Boolean(running)} onClick={() => run('daily')}>{running === 'daily' ? <LoaderCircle className="admin-spinner" /> : <CalendarDays />} Create daily draft</button><button type="button" disabled={Boolean(running)} onClick={() => run('weekly')}>{running === 'weekly' ? <LoaderCircle className="admin-spinner" /> : <CalendarDays />} Create weekly draft</button></div>
     <div className="digest-backfill-control"><label htmlFor="missed-digest-date"><strong>Recover a missed daily edition</strong><span>Uses published stories from that exact London calendar day.</span></label><input id="missed-digest-date" type="date" max={latestMissedDate} value={missedDate} onChange={(event) => setMissedDate(event.target.value)} /><button type="button" disabled={Boolean(running) || !missedDate} onClick={() => run('daily', missedDate)}>{running === 'backfill' ? <LoaderCircle className="admin-spinner" /> : <CalendarDays />} Create missed edition</button></div>
     {message ? <output>{message}</output> : null}
   </section>;

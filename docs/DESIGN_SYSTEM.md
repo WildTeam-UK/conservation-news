@@ -259,6 +259,8 @@ Coverage-analysis dimensions use three equal editorial columns on desktop, separ
 
 The admin uses the same font and core palette with denser typography. Desktop has an expanded left navigation; mobile uses a hamburger-controlled menu. Grouped navigation sections preserve their open state when the active child belongs to that group.
 
+The current destination uses a cream surface and pink inset marker in both the desktop sidebar and mobile drawer. Every authenticated admin header includes a compact public-site shortcut alongside account controls. Operational pages keep routine status visible at a glance and place infrequent or potentially disruptive controls inside labelled native disclosures. Digest administration follows this pattern explicitly: schedule, publishing, Buffer and Brevo states appear as summary cards; configuration, manual generation, email testing and delivery diagnostics remain available in separate expandable sections; edition history uses distinct workflow and channel statuses rather than one dense metadata sentence.
+
 Admin pages use:
 
 - Compact uppercase labels and metadata.
