@@ -18,9 +18,9 @@ The public application defines its core tokens in `app/globals.css`.
 | `--paper` | `#ffffff` | Page and card surfaces |
 | `--rule` | `#d6d1d3` | Standard dividers and quiet borders |
 | `--muted` | `#5d5d61` | Secondary copy, dates and metadata |
-| `--surface-charcoal` | `#2a2f34` | Shared charcoal surface for the WildTeam footer and digest hero copy |
+| `--surface-charcoal` | `#262626` | Shared charcoal surface for digest heroes, full-width training promotions and the WildTeam footer |
 | `--footer-muted` | `#f5f5f5` | Secondary footer links and legal copy |
-| `--text-on-purple-muted` / `--text-on-ink-muted` | `#eadbea` / `#d9d5d7` | Supporting copy on the two dark CTA surfaces |
+| `--text-on-purple-muted` / `--text-on-charcoal-muted` | `#eadbea` / `#d9d5d7` | Supporting copy on the two dark CTA surfaces |
 | `--text-placeholder` | `#777378` | Form placeholder copy |
 | `--accent-coral` | `#e84a43` | Contested coverage signal |
 | `--accent-orange` | `#ff8044` | Economic coverage signal, warning progress and retained accent treatments |

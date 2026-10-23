@@ -10,10 +10,10 @@
   --paper:#ffffff;
   --rule:#d6d1d3;
   --muted:#5d5d61;
-  --surface-charcoal:#2a2f34;
+  --surface-charcoal:#262626;
   --footer-muted:#f5f5f5;
   --text-on-purple-muted:#eadbea;
-  --text-on-ink-muted:#d9d5d7;
+  --text-on-charcoal-muted:#d9d5d7;
   --text-placeholder:#777378;
   --accent-coral:#e84a43;
   --accent-orange:#ff8044;
@@ -636,10 +636,10 @@ p{margin-top:0;margin-bottom:1.25em}p:last-child{margin-bottom:0}p+p{margin-top:
 .editorial-newsletter-cta{margin-top:0;margin-bottom:90px}
 @media(max-width:600px){.homepage-inline-newsletter{width:calc(100% - 30px);margin-bottom:58px}.homepage-newsletter-cta{margin-top:52px;margin-bottom:52px}.editorial-newsletter-cta{margin-bottom:64px}}
 /* WildTeam training promotions */
-.training-banner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:60px;align-items:center;margin-top:82px;padding:48px 50px;border-radius:var(--radius-panel);background:var(--ink);color:var(--paper)}
+.training-banner{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:60px;align-items:center;margin-top:82px;padding:48px 50px;border-radius:var(--radius-panel);background:var(--surface-charcoal);color:var(--paper)}
 .training-banner .eyebrow{margin-bottom:17px;color:var(--brand-pink)}
 .training-banner h2{max-width:760px;margin:0;color:var(--paper);font-size:43px;font-weight:var(--font-weight-black);line-height:1;letter-spacing:-.035em}
-.training-banner div>p:last-child{max-width:680px;margin:18px 0 0;color:var(--text-on-ink-muted);font-size:var(--type-body-small-size);line-height:var(--type-body-small-leading)}
+.training-banner div>p:last-child{max-width:680px;margin:18px 0 0;color:var(--text-on-charcoal-muted);font-size:var(--type-body-small-size);line-height:var(--type-body-small-leading)}
 .training-banner>a{display:inline-flex;align-items:center;justify-content:center;gap:10px;padding:15px 19px;border-radius:var(--public-button-radius);font-size:11px;font-weight:var(--font-weight-black);line-height:1;text-transform:uppercase;white-space:nowrap;transition:background .15s ease}
 .training-banner>a:focus-visible{outline:2px solid var(--paper);outline-offset:3px}
 .training-banner>a svg{width:15px}
