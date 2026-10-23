@@ -226,7 +226,7 @@ Used server-side to search for landscape editorial images. The application hotli
 
 ### Brevo
 
-`/api/newsletter/subscribe` validates an email address and adds or updates the contact in the configured Brevo list. A honeypot field provides basic bot filtering. When email distribution is enabled, a published Friday digest is rendered as a responsive Brevo marketing campaign with a visible unsubscribe link, created against the same list and submitted for sending. The provider campaign ID and delivery outcome are stored against the digest run.
+`/api/newsletter/subscribe` validates an email address and adds or updates the contact in the configured Brevo list. A honeypot field provides basic bot filtering. When email distribution is enabled, a published Friday digest is rendered as a responsive Brevo marketing campaign with a visible unsubscribe link, created against the same list and submitted for sending. The provider campaign ID and delivery outcome are stored against the digest run. An authenticated editor can also send the exact rendered weekly email to one explicit test address from the digest preview. The application creates a recipient-free draft campaign, uses Brevo's test-send endpoint, deletes the draft and records an audit event without storing the test address or changing distribution status.
 
 ### Buffer
 
