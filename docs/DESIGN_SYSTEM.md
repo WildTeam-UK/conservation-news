@@ -235,7 +235,7 @@ Inline source references are numbered circles. Contextual links may point to rel
 
 Daily and weekly digests share one template:
 
-1. Full-width split hero with a consistent charcoal copy panel and the edition's dedicated featured image.
+1. Full-width split hero with a consistent charcoal copy panel, a fine branded-gradient frame around its content and the edition's dedicated featured image.
 2. Edition/date metadata, title, standfirst and AI-method link.
 3. Digest and topic pills above the editorial introduction. Sharing remains a vertical rail beside the introduction on desktop, then moves into a horizontal row above these pills at 1000px and below.
 4. Flowing editorial sections with wider supporting images.
