@@ -13,9 +13,13 @@ type Props = {
   maxEstimatedCostUsd: number;
   automationEnabled: boolean;
   publishImmediately: boolean;
+  socialDistributionEnabled: boolean;
+  emailDistributionEnabled: boolean;
+  bufferConfigured: boolean;
+  brevoConfigured: boolean;
 };
 
-export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, weeklyMinStories, weeklyMaxStories, maxEstimatedCostUsd, automationEnabled, publishImmediately }: Props) {
+export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, weeklyMinStories, weeklyMaxStories, maxEstimatedCostUsd, automationEnabled, publishImmediately, socialDistributionEnabled, emailDistributionEnabled, bufferConfigured, brevoConfigured }: Props) {
   const router = useRouter();
   const [time, setTime] = useState(runTime.slice(0, 5));
   const [dailyMin, setDailyMin] = useState(dailyMinStories);
@@ -25,6 +29,8 @@ export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, week
   const [maxCost, setMaxCost] = useState(maxEstimatedCostUsd);
   const [automationOn, setAutomationOn] = useState(automationEnabled);
   const [publishNow, setPublishNow] = useState(publishImmediately);
+  const [socialOn, setSocialOn] = useState(socialDistributionEnabled);
+  const [emailOn, setEmailOn] = useState(emailDistributionEnabled);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
@@ -46,6 +52,8 @@ export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, week
           maxEstimatedCostUsd: maxCost,
           automationEnabled: automationOn,
           publishImmediately: publishNow,
+          socialDistributionEnabled: socialOn,
+          emailDistributionEnabled: emailOn,
         }),
       });
       const result = await response.json() as { saved?: boolean; error?: string };
@@ -64,8 +72,8 @@ export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, week
       <p className="eyebrow">Digest automation</p>
       <h2 id="digest-settings-heading">Daily and weekly editions</h2>
       <p>Daily editions will cover the previous 24 hours. Every Friday, a seven-day weekly edition will replace the daily edition.</p>
-      <div className="digest-testing-mode"><ShieldCheck /><div><strong>{automationOn ? 'Digest automation enabled' : 'Setup mode'}</strong><small>{automationOn ? 'The existing heartbeat will create the due edition at the configured UK time.' : 'Nothing will generate automatically until digest automation is enabled.'} Buffer and Brevo remain off.</small></div></div>
-      <div className="digest-channel-status"><span><Send /> Social disabled</span><span><Mail /> Email disabled</span><span><Clock3 /> UK time</span></div>
+      <div className="digest-testing-mode"><ShieldCheck /><div><strong>{automationOn ? 'Digest automation enabled' : 'Setup mode'}</strong><small>{automationOn ? 'The existing heartbeat will create the due edition at the configured UK time.' : 'Nothing will generate automatically until digest automation is enabled.'} Distribution only starts after an edition is public.</small></div></div>
+      <div className="digest-channel-status"><span><Send /> Social {socialOn ? bufferConfigured ? 'enabled' : 'needs configuration' : 'disabled'}</span><span><Mail /> Weekly email {emailOn ? brevoConfigured ? 'enabled' : 'needs configuration' : 'disabled'}</span><span><Clock3 /> UK time</span></div>
     </div>
     <div className="digest-settings-controls">
       <label><span>Run time</span><input type="time" value={time} disabled={saving} onChange={(event) => setTime(event.target.value)} /><small>Daily at this time; Friday creates the weekly edition.</small></label>
@@ -74,6 +82,8 @@ export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, week
       <fieldset><legend>Weekly edition</legend><label><span>Minimum stories</span><input type="number" min="1" max="50" value={weeklyMin} disabled={saving} onChange={(event) => setWeeklyMin(Number(event.target.value))} /></label><label><span>Maximum stories</span><input type="number" min="1" max="100" value={weeklyMax} disabled={saving} onChange={(event) => setWeeklyMax(Number(event.target.value))} /></label></fieldset>
       <label className="automation-toggle digest-publish-toggle"><span>Digest schedule</span><span className="automation-toggle-control"><input type="checkbox" checked={automationOn} disabled={saving} onChange={(event) => setAutomationOn(event.target.checked)} /> <strong>{automationOn ? 'Automation enabled' : 'Automation paused'}</strong></span><small>Friday creates the weekly edition instead of a daily edition.</small></label>
       <label className="automation-toggle digest-publish-toggle"><span>Publishing</span><span className="automation-toggle-control"><input type="checkbox" checked={publishNow} disabled={saving} onChange={(event) => setPublishNow(event.target.checked)} /> <strong>{publishNow ? 'Publish immediately' : 'Create privately'}</strong></span><small>Choose whether completed editions go live without review.</small></label>
+      <label className="automation-toggle digest-publish-toggle"><span>Buffer social distribution</span><span className="automation-toggle-control"><input type="checkbox" checked={socialOn} disabled={saving || !bufferConfigured} onChange={(event) => setSocialOn(event.target.checked)} /> <strong>{socialOn ? 'Automatic social enabled' : 'Social paused'}</strong></span><small>{bufferConfigured ? 'Every published daily and weekly edition will be added to each configured Buffer channel queue.' : 'Add BUFFER_API_KEY and BUFFER_CHANNEL_IDS before enabling this channel.'}</small></label>
+      <label className="automation-toggle digest-publish-toggle"><span>Brevo email distribution</span><span className="automation-toggle-control"><input type="checkbox" checked={emailOn} disabled={saving || !brevoConfigured} onChange={(event) => setEmailOn(event.target.checked)} /> <strong>{emailOn ? 'Automatic weekly email enabled' : 'Weekly email paused'}</strong></span><small>{brevoConfigured ? 'Only the published Friday weekly edition is sent to the Weekly Digest list.' : 'Add BREVO_API_KEY, BREVO_LIST_ID and BREVO_SENDER_ID before enabling this channel.'}</small></label>
       <button className="admin-primary-button digest-save-button" type="button" disabled={saving || !valid} onClick={save}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving</> : <><Save /> Save digest settings</>}</button>
       {message ? <output className="schedule-message">{message}</output> : null}
     </div>

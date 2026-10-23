@@ -26,7 +26,7 @@ Supabase source_items -> AI assessment and clustering -> ranked candidates
                                   v                                          v
                          daily/weekly digests                       public archives/SEO
                                   |
-                         future social/email distribution
+                         Buffer social/Brevo email distribution
 ```
 
 The public application reads published records with the Supabase publishable key. Authenticated admin pages use Supabase Auth and verify membership in `admin_users`. Privileged ingestion, automation and AI operations use a server-only Supabase service-role client.
@@ -185,7 +185,7 @@ Published content is read dynamically for the homepage, archives, related storie
 
 ### Digests
 
-At the configured digest time, published stories from the relevant period are selected. Monday–Thursday and weekend runs create daily digests; Friday creates a weekly digest instead. Digest generation supplies one primary and two progressively broader visual search terms for the edition's overarching theme. The server searches Unsplash independently, rejects images already attached to the digest's source articles or recent digests, records the selected image and attribution, and triggers Unsplash download tracking. It does not repurpose a source article's featured image for the digest. Once the connected editorial copy is final, the same dedicated link-editor and deterministic validation process assesses approved source stories, related articles, active topics, approved tags, courses and underlying reporting. Accepted digest links remain in the structured digest content while their assessment diagnostics are stored in `story_linking_assessments`. Digests publish immediately when that setting is enabled. Social and email distribution states exist in the schema but external distribution is currently disabled.
+At the configured digest time, published stories from the relevant period are selected. Monday–Thursday and weekend runs create daily digests; Friday creates a weekly digest instead. Digest generation supplies one primary and two progressively broader visual search terms for the edition's overarching theme. The server searches Unsplash independently, rejects images already attached to the digest's source articles or recent digests, records the selected image and attribution, and triggers Unsplash download tracking. It does not repurpose a source article's featured image for the digest. Once the connected editorial copy is final, the same dedicated link-editor and deterministic validation process assesses approved source stories, related articles, active topics, approved tags, courses and underlying reporting. Accepted digest links remain in the structured digest content while their assessment diagnostics are stored in `story_linking_assessments`. Digests publish immediately when that setting is enabled. Once an edition is public, each configured Buffer channel can receive an independently tracked image post and Friday's weekly edition can create and send a Brevo campaign to the existing Weekly Digest list. Daily editions are not emailed because the public subscription promise is weekly. Distribution is disabled by default and can be enabled independently for Buffer and Brevo in the admin workspace.
 
 ## Scheduling and recovery
 
@@ -196,9 +196,10 @@ The heartbeat:
 - Publishes one due queued story.
 - Claims or advances the daily editorial run.
 - Claims or recovers a due digest run.
+- Claims one due external digest delivery, with each Buffer channel and Brevo campaign tracked independently.
 - Performs periodic source collection when no editorial run is active.
 
-Database row locking and short leases prevent overlapping requests from duplicating work. Editorial steps can recover after interruption; digest runs can recover after fifteen minutes. The editorial workflow enforces draft-count and estimated-cost limits.
+Database row locking and short leases prevent overlapping requests from duplicating work. Editorial steps can recover after interruption; digest runs can recover after fifteen minutes. A distribution request whose lease expires without a recorded provider response is marked uncertain and requires an explicit editor retry, because replaying it automatically could duplicate a post or campaign. The editorial workflow enforces draft-count and estimated-cost limits.
 
 The scheduled migration currently targets `https://conservation-news.vercel.app/api/automation/editorial`. Changing the production hostname requires reviewing this endpoint and the Vault configuration.
 
@@ -225,11 +226,11 @@ Used server-side to search for landscape editorial images. The application hotli
 
 ### Brevo
 
-`/api/newsletter/subscribe` validates an email address and adds or updates the contact in the configured Brevo list. A honeypot field provides basic bot filtering. Weekly campaign generation and sending are not yet implemented.
+`/api/newsletter/subscribe` validates an email address and adds or updates the contact in the configured Brevo list. A honeypot field provides basic bot filtering. When email distribution is enabled, a published Friday digest is rendered as a responsive Brevo marketing campaign with a visible unsubscribe link, created against the same list and submitted for sending. The provider campaign ID and delivery outcome are stored against the digest run.
 
 ### Buffer
 
-Buffer distribution is planned but not implemented. There is no active Buffer client or environment variable in the repository. Digest social status remains disabled.
+When social distribution is enabled, each published daily and weekly digest is submitted as an image post to every channel in `BUFFER_CHANNEL_IDS`. Posts use Buffer's automatic `addToQueue` mode so each connected channel retains its Buffer posting schedule. Each destination has its own delivery record, attempt count and provider post ID. Buffer credentials remain server-only.
 
 ### Analytics
 
@@ -241,7 +242,7 @@ Vercel Speed Insights records Core Web Vitals for public production pages only. 
 
 ### Availability and automation health
 
-`/api/health` is the production monitoring endpoint. It returns no records or error details, but verifies that Supabase is reachable, the one-minute automation heartbeat is current, and enabled editorial, publishing and digest systems have not recorded an unresolved automation failure. A required heartbeat older than ten minutes makes the endpoint return HTTP 503; a healthy or intentionally disabled system returns HTTP 200. The endpoint is uncached and excluded from search indexing so an external uptime service can use its HTTP status for alerts without receiving private operational data.
+`/api/health` is the production monitoring endpoint. It returns no records or error details, but verifies that Supabase is reachable, the one-minute automation heartbeat is current, and enabled editorial, publishing, digest and distribution systems have not recorded an unresolved automation failure. A failed or uncertain delivery makes enabled distribution unhealthy until an editor resolves or retries it. A required heartbeat older than ten minutes makes the endpoint return HTTP 503; a healthy or intentionally disabled system returns HTTP 200. The endpoint is uncached and excluded from search indexing so an external uptime service can use its HTTP status for alerts without receiving private operational data.
 
 ### Backup and recovery
 
@@ -267,6 +268,9 @@ Only names and purposes belong in source control.
 | `UNSPLASH_ACCESS_KEY` | Server only | Unsplash public image API |
 | `BREVO_API_KEY` | Server only | Brevo contact API |
 | `BREVO_LIST_ID` | Server configuration | Weekly Digest contact-list identifier |
+| `BREVO_SENDER_ID` | Server configuration | Verified Brevo sender used for Weekly Digest campaigns |
+| `BUFFER_API_KEY` | Server only | Buffer GraphQL API authentication |
+| `BUFFER_CHANNEL_IDS` | Server configuration | Comma-separated Buffer channels that receive published digests |
 | `AUTOMATION_SECRET` | Server only | Bearer secret for the scheduled automation endpoint |
 | `VERCEL_ENV` | Platform supplied | Distinguishes production from preview for indexing |
 | `NODE_ENV` | Platform supplied | Runtime mode fallback |

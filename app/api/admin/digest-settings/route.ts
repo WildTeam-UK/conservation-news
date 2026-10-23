@@ -1,5 +1,6 @@
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { isTime } from '@/lib/validation';
+import { refreshDigestDistributionStatus } from '@/lib/digest-distribution';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,8 @@ export async function PATCH(request: Request) {
     maxEstimatedCostUsd?: number;
     automationEnabled?: boolean;
     publishImmediately?: boolean;
+    socialDistributionEnabled?: boolean;
+    emailDistributionEnabled?: boolean;
   } | null;
 
   const runTime = body?.runTime?.slice(0, 5) ?? '';
@@ -36,7 +39,11 @@ export async function PATCH(request: Request) {
   if (!Number.isFinite(maxCost) || maxCost < 0.05 || maxCost > 100) {
     return Response.json({ error: 'The estimated cost limit must be between $0.05 and $100.' }, { status: 400 });
   }
-  if (typeof body?.automationEnabled !== 'boolean' || typeof body?.publishImmediately !== 'boolean') return Response.json({ error: 'Choose valid automation and publishing modes.' }, { status: 400 });
+  if (typeof body?.automationEnabled !== 'boolean' || typeof body?.publishImmediately !== 'boolean' || typeof body?.socialDistributionEnabled !== 'boolean' || typeof body?.emailDistributionEnabled !== 'boolean') return Response.json({ error: 'Choose valid automation, publishing and distribution modes.' }, { status: 400 });
+  const bufferConfigured = Boolean(process.env.BUFFER_API_KEY?.trim() && process.env.BUFFER_CHANNEL_IDS?.split(',').some((value) => value.trim()));
+  const brevoConfigured = Boolean(process.env.BREVO_API_KEY?.trim() && /^\d+$/.test(process.env.BREVO_LIST_ID?.trim() ?? '') && /^\d+$/.test(process.env.BREVO_SENDER_ID?.trim() ?? ''));
+  if (body.socialDistributionEnabled && !bufferConfigured) return Response.json({ error: 'Configure the Buffer API key and channel IDs before enabling social distribution.' }, { status: 400 });
+  if (body.emailDistributionEnabled && !brevoConfigured) return Response.json({ error: 'Configure the Brevo API key, list and sender before enabling email distribution.' }, { status: 400 });
 
   const { error } = await supabase.from('digest_settings').update({
     automation_enabled: body.automationEnabled,
@@ -49,13 +56,22 @@ export async function PATCH(request: Request) {
     weekly_max_stories: weeklyMax,
     max_estimated_cost_usd: Math.round(maxCost * 100) / 100,
     publish_immediately: body.publishImmediately,
-    social_distribution_enabled: false,
-    email_distribution_enabled: false,
+    social_distribution_enabled: body.socialDistributionEnabled,
+    email_distribution_enabled: body.emailDistributionEnabled,
     updated_by: user.id,
   }).eq('id', true);
   if (error) {
     console.error('Digest settings save failed', error);
     return Response.json({ error: 'Digest settings could not be saved.' }, { status: 500 });
+  }
+
+  const disabledProviders = [!body.socialDistributionEnabled ? 'buffer' : '', !body.emailDistributionEnabled ? 'brevo' : ''].filter(Boolean);
+  if (disabledProviders.length) {
+    const { data: pending } = await supabase.from('digest_deliveries').select('id, run_id').in('provider', disabledProviders).eq('status', 'pending');
+    if (pending?.length) {
+      await supabase.from('digest_deliveries').update({ status: 'cancelled', completed_at: new Date().toISOString(), last_error: 'Distribution channel disabled by an editor.' }).in('id', pending.map((delivery) => delivery.id)).eq('status', 'pending');
+      await Promise.all([...new Set(pending.map((delivery) => delivery.run_id))].map(refreshDigestDistributionStatus));
+    }
   }
 
   return Response.json({ saved: true, automationEnabled: body.automationEnabled });
