@@ -94,7 +94,7 @@ The `WILDNEWS` wordmark uses weight 950, tight tracking and separate purple `WIL
 
 The main public grids are:
 
-- Homepage hero: asymmetric two-column copy and image layout.
+- Homepage hero: asymmetric two-column layout with the lead image on the left and story copy on the right. At the shared mobile breakpoint, the copy returns to the first position above the image.
 - Latest stories: primary list plus compact secondary column.
 - Standard listings: two-column card grid on desktop.
 - Topic shelves: horizontal snap-scrolling card tracks.
