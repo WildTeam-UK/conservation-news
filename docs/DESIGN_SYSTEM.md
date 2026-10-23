@@ -190,7 +190,7 @@ Use existing button classes or component-owned styles:
 
 Story discovery uses a small set of repeated patterns:
 
-- `story-card`: image and copy rows used in the main latest-stories list. Their summaries remain visible on phones and are clamped to two lines; the compact right-column stories remain title-led.
+- `story-card`: image and copy rows used in the main latest-stories list. The primary left-column cards clamp summaries to three lines and show an explicit read link on desktop and tablet; digest links say “Read this edition”. On phones, summaries clamp to two lines and the explicit link is hidden. The compact right-column stories remain title-led.
 - `compact-story`: smaller image/title rows.
 - `carousel-card`: horizontal topic-shelf cards.
 - `TopicStoryShelf`: reusable homepage topic carousel containing up to 12 recent matching stories.
