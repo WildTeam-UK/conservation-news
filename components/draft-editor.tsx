@@ -122,7 +122,7 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, co
       ...current,
       image_url: candidate.image_url,
       image_alt: candidate.alt_text || candidate.description || current.image_search_query,
-      image_credit: { ...candidate.credit, colour: candidate.colour },
+      image_credit: candidate.credit,
     }));
     setImageCandidates([]);
     setImageMessage(`Selected a photograph by ${candidate.credit.creator_name}. Save the draft to keep this choice.`);

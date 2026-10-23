@@ -53,7 +53,7 @@ export async function publishDigest(storyId: string, { reviewerId, publicationDa
   content.topics = topicNames;
 
   const hydratedSources = await hydrateDigestSourceStories((metadata.digest_source_stories ?? []) as DigestSourceStory[]);
-  const leadImage = hydratedSources.find((source) => source.image_url === story.image_url) ?? hydratedSources.find((source) => source.image_url);
+  const fallbackSourceImage = hydratedSources.find((source) => source.image_url === story.image_url) ?? hydratedSources.find((source) => source.image_url);
   const { data: topicRows, error: topicError } = await supabase.from('topics').select('id, name').in('name', topicNames).eq('active', true);
   if (topicError || !topicRows?.length) throw topicError ?? new Error('The digest topics could not be prepared.');
   const byName = new Map(topicRows.map((topic) => [topic.name, topic]));
@@ -66,8 +66,10 @@ export async function publishDigest(storyId: string, { reviewerId, publicationDa
 
   const actionAt = new Date().toISOString();
   const publishedAt = publicationDate ? londonPublicationTime(publicationDate).toISOString() : actionAt;
+  const publicationImageUrl = story.image_url ?? fallbackSourceImage?.image_url ?? null;
+  const publicationImageAlt = story.image_alt ?? fallbackSourceImage?.image_alt ?? null;
   const { data: updated, error: updateError } = await supabase.from('stories')
-    .update({ status: 'published', published_at: publishedAt, reviewer_id: reviewerId, primary_topic_id: selectedTopics[0].id, image_url: leadImage?.image_url ?? null, image_alt: leadImage?.image_alt ?? null, generation_metadata: { ...metadata, digest_content: content, digest_source_stories: hydratedSources } })
+    .update({ status: 'published', published_at: publishedAt, reviewer_id: reviewerId, primary_topic_id: selectedTopics[0].id, image_url: publicationImageUrl, image_alt: publicationImageAlt, generation_metadata: { ...metadata, digest_content: content, digest_source_stories: hydratedSources } })
     .eq('id', storyId)
     .eq('status', 'draft')
     .select('id')

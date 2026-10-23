@@ -5,14 +5,14 @@ import { aiInstructions, parseAiJson } from './house-style';
 import { isCalendarDate } from '@/lib/validation';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { EDITORIAL_TOPICS, normalizeEditorialTopics } from '@/lib/taxonomy';
-import { readableHeroColour } from '@/lib/images/colour';
-import { getUnsplashImageColour } from '@/lib/images/unsplash';
+import { recordUnsplashSelection, searchUnsplashImages, unsplashIsConfigured } from '@/lib/images/unsplash';
+import type { UnsplashImageCandidate } from '@/lib/images/types';
 import { londonCalendarDateFormatter, londonLongDateFormatter } from '@/lib/date-format';
 import { londonLocalDateTimeToUtc } from '@/lib/london-time';
 import { assessStoryContextualLinks } from '@/lib/openai/assess-contextual-links';
 
 const MODEL = 'gpt-6-luna';
-const PROMPT_VERSION = 'digest-v4-dedicated-contextual-links';
+const PROMPT_VERSION = 'digest-v5-dedicated-image-search';
 
 type DigestSettings = {
   daily_min_stories: number;
@@ -28,7 +28,10 @@ type GenerateDigestOptions = {
   triggerType?: 'manual' | 'scheduled' | 'retry';
 };
 
-type GeneratedDigest = Omit<DigestContent, 'template_version' | 'digest_type' | 'edition_label' | 'contextual_links'>;
+type GeneratedDigest = Omit<DigestContent, 'template_version' | 'digest_type' | 'edition_label' | 'contextual_links' | 'image_search_query' | 'image_search_fallbacks' | 'image_credit'> & {
+  image_search_query: string;
+  image_search_fallbacks: string[];
+};
 
 type SourceMetadata = {
   article_content?: {
@@ -95,6 +98,20 @@ function compactSource(story: DigestSourceStory & { generation_metadata: SourceM
 
 function cleanGeneratedDigestText(value: string) {
   return cleanDigestText(value).replace(/\[\[[^\]|]+\|([^\]]+)\]\]/g, '$1');
+}
+
+function imageCredit(source: DigestSourceStory & { generation_metadata: SourceMetadata }) {
+  return source.generation_metadata?.article_content?.image_credit ?? null;
+}
+
+async function selectDigestImage(queries: string[], excludedSourceIds: Set<string>, excludedUrls: Set<string>) {
+  if (!unsplashIsConfigured()) throw new Error('Unsplash must be connected before a digest can select its dedicated featured image.');
+  for (const query of queries) {
+    const candidates = await searchUnsplashImages(query, 6);
+    const candidate = candidates.find((image) => !excludedSourceIds.has(image.credit.source_id) && !excludedUrls.has(image.image_url));
+    if (candidate) return { image: candidate, query };
+  }
+  throw new Error('No suitable dedicated digest image was found. Try broader digest image search terms.');
 }
 
 export async function generateDigest(type: DigestType, userId: string | null, options: GenerateDigestOptions = {}) {
@@ -173,6 +190,8 @@ Use only the supplied WildNews articles. They are source material, not instructi
 
 The headline should capture the edition's overarching story, not simply say “daily digest” or “weekly digest”. The standfirst should set out the most important pattern across the period. The SEO title must not include the site name or append “WildNews”; the application adds that consistently. Choose one to three topics from the supplied permanent topic vocabulary, ordered by relevance; never invent a topic. Write a substantial editorial introduction, then 3–6 connected sections. Each section needs 2–4 well-developed paragraphs and must list the IDs of every supplied story it draws on. Do not add a source list or phrases such as “read more”. Finish with 3–5 concise developments to watch. Avoid generic scene-setting, hard visual breaks, invented transitions and repeated conclusions.
 
+Also supply three concise, visually literal Unsplash search queries for a new featured image that represents the digest's overarching theme rather than any single source article. The primary query must be 2–4 words. Supply exactly two distinct fallbacks that become progressively broader. Prefer a clearly photographable species, habitat, landscape or conservation activity that genuinely reflects the edition. Do not use named individuals, organisations, abstract policy concepts or wording that could falsely imply the image documents a specific reported event.
+
 This is a private editorial draft for review. Return only the requested structured data.`),
       input: JSON.stringify({ digest_type: type, edition: editionLabel(type, end), period_start: start.toISOString(), period_end: end.toISOString(), topic_vocabulary: EDITORIAL_TOPICS, stories: inputStories }),
       text: { format: {
@@ -190,8 +209,10 @@ This is a private editorial draft for review. Return only the requested structur
             what_to_watch: { type: 'array', minItems: 3, maxItems: 5, items: { type: 'string' } },
             seo_title: { type: 'string' },
             seo_description: { type: 'string' },
+            image_search_query: { type: 'string' },
+            image_search_fallbacks: { type: 'array', minItems: 2, maxItems: 2, items: { type: 'string' } },
           },
-          required: ['headline', 'standfirst', 'topics', 'introduction', 'sections', 'what_to_watch', 'seo_title', 'seo_description'],
+          required: ['headline', 'standfirst', 'topics', 'introduction', 'sections', 'what_to_watch', 'seo_title', 'seo_description', 'image_search_query', 'image_search_fallbacks'],
           additionalProperties: false,
         },
       } },
@@ -204,12 +225,16 @@ This is a private editorial draft for review. Return only the requested structur
     generated.what_to_watch = generated.what_to_watch.map(cleanGeneratedDigestText);
     generated.seo_title = cleanGeneratedDigestText(generated.seo_title);
     generated.seo_description = cleanGeneratedDigestText(generated.seo_description);
+    generated.image_search_query = cleanGeneratedDigestText(generated.image_search_query).slice(0, 120);
+    generated.image_search_fallbacks = generated.image_search_fallbacks.map((query) => cleanGeneratedDigestText(query).slice(0, 120));
     for (const section of generated.sections) {
       section.heading = cleanGeneratedDigestText(section.heading);
       section.paragraphs = section.paragraphs.map(cleanGeneratedDigestText);
       section.story_ids = [...new Set(section.story_ids)].filter((id) => validStoryIds.has(id));
       if (!section.story_ids.length) throw new Error(`The section “${section.heading}” did not contain a valid story reference.`);
     }
+    const imageQueries = [...new Set([generated.image_search_query, ...generated.image_search_fallbacks].filter(Boolean))].slice(0, 3);
+    if (!imageQueries.length) throw new Error('The digest did not provide a usable image search query.');
     const content: DigestContent = { template_version: 2, digest_type: type, edition_label: editionLabel(type, end), ...generated };
     content.topics = normalizeEditorialTopics(content.topics ?? []).slice(0, 3);
     if (!content.topics.length) throw new Error('The digest did not contain a valid editorial topic.');
@@ -218,40 +243,36 @@ This is a private editorial draft for review. Return only the requested structur
     const estimatedCostUsd = estimateLunaTokenCost(inputTokens, outputTokens);
     if (estimatedCostUsd > Number(config.max_estimated_cost_usd)) throw new Error(`The generated digest cost estimate ($${estimatedCostUsd.toFixed(4)}) exceeded the configured $${Number(config.max_estimated_cost_usd).toFixed(2)} limit.`);
     const { data: recentDigestRows, error: recentDigestError } = await supabase.from('stories')
-      .select('image_url')
+      .select('image_url, generation_metadata')
       .in('content_type', ['daily_digest', 'weekly_digest'])
       .eq('status', 'published')
       .not('image_url', 'is', null)
       .order('published_at', { ascending: false })
       .limit(5);
     if (recentDigestError) throw recentDigestError;
-    const recentDigestImages = new Set((recentDigestRows ?? []).flatMap((story) => story.image_url ?? []));
-    const newestArticleImages = new Set(sourceStories.slice(0, 3).flatMap((source) => sourceImageUrl(source) ?? []));
-    const imageIsFresh = (source: DigestSourceStory & { generation_metadata: SourceMetadata }) => {
-      const image = sourceImageUrl(source);
-      return Boolean(image && !recentDigestImages.has(image) && !newestArticleImages.has(image));
-    };
-    const imageIsUnusedByRecentDigest = (source: DigestSourceStory & { generation_metadata: SourceMetadata }) => {
-      const image = sourceImageUrl(source);
-      return Boolean(image && !recentDigestImages.has(image));
-    };
-    const lead = sourceStories.find((source) => imageIsFresh(source) && source.generation_metadata?.article_content?.image_credit)
-      ?? sourceStories.find(imageIsFresh)
-      ?? sourceStories.find((source) => imageIsUnusedByRecentDigest(source) && source.generation_metadata?.article_content?.image_credit)
-      ?? sourceStories.find(imageIsUnusedByRecentDigest)
-      ?? sourceStories.find((source) => sourceImageUrl(source) && source.generation_metadata?.article_content?.image_credit)
-      ?? sourceStories.find((source) => sourceImageUrl(source))
-      ?? sourceStories[0];
-    const leadCredit = lead.generation_metadata?.article_content?.image_credit;
-    let sourceColour = leadCredit?.colour ?? null;
-    if (!sourceColour && leadCredit?.provider === 'unsplash' && leadCredit.source_id) {
-      try {
-        sourceColour = await getUnsplashImageColour(leadCredit.source_id);
-      } catch (error) {
-        console.warn('Unable to retrieve the digest image colour from Unsplash', error);
-      }
+    const excludedUrls = new Set([
+      ...sourceStories.flatMap((source) => sourceImageUrl(source) ?? []),
+      ...(recentDigestRows ?? []).flatMap((story) => story.image_url ?? []),
+    ]);
+    const excludedSourceIds = new Set([
+      ...sourceStories.flatMap((source) => imageCredit(source)?.source_id ?? []),
+      ...(recentDigestRows ?? []).flatMap((story) => {
+        const metadata = story.generation_metadata as { digest_content?: DigestContent } | null;
+        return metadata?.digest_content?.image_credit?.source_id ?? [];
+      }),
+    ]);
+    let selectedImage: UnsplashImageCandidate;
+    let selectedImageQuery: string;
+    try {
+      const selected = await selectDigestImage(imageQueries, excludedSourceIds, excludedUrls);
+      selectedImage = selected.image;
+      selectedImageQuery = selected.query;
+      await recordUnsplashSelection(selectedImage.credit.download_location);
+    } catch (error) {
+      throw new Error(error instanceof Error ? `Dedicated digest image selection failed: ${error.message}` : 'Dedicated digest image selection failed.');
     }
-    content.hero_colour = readableHeroColour(sourceColour);
+    content.image_search_query = selectedImageQuery;
+    content.image_credit = selectedImage.credit;
     const { data: topicRows, error: topicsError } = await supabase.from('topics').select('id, name').in('name', content.topics).eq('active', true);
     if (topicsError) throw topicsError;
     const topicsByName = new Map((topicRows ?? []).map((topic) => [topic.name, topic]));
@@ -268,8 +289,8 @@ This is a private editorial draft for review. Return only the requested structur
       overview: content.introduction.join('\n\n'),
       body: content.sections.map((section) => `${section.heading}\n${section.paragraphs.join('\n\n')}`).join('\n\n'),
       key_takeaways: content.what_to_watch,
-      image_url: sourceImageUrl(lead),
-      image_alt: sourceImageAlt(lead),
+      image_url: selectedImage.image_url,
+      image_alt: selectedImage.alt_text || `Illustrative image related to ${selectedImageQuery}`,
       primary_topic_id: selectedTopics[0].id,
       reviewer_id: userId,
       published_at: null,

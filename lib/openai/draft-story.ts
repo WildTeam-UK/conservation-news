@@ -13,7 +13,6 @@ import { assessStoryContextualLinks } from '@/lib/openai/assess-contextual-links
 import { slugify } from '@/lib/stories';
 import { clampScore } from '@/lib/scores';
 import { safeHttpUrl } from '@/lib/urls';
-import { isHexColour } from '@/lib/validation';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'draft-v7-dedicated-contextual-links';
@@ -122,7 +121,6 @@ function cleanImageCredit(value: unknown): EditorialImageCredit | null {
     licence_url: safeImageUrl(credit.licence_url),
     download_location: provider === 'unsplash' ? safeImageUrl(credit.download_location) : '',
     illustrative: Boolean(credit.illustrative),
-    colour: isHexColour(credit.colour) ? credit.colour : undefined,
   };
   return cleaned.creator_name || cleaned.source_name ? cleaned : null;
 }

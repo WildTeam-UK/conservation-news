@@ -18,9 +18,9 @@ The public application defines its core tokens in `app/globals.css`.
 | `--paper` | `#ffffff` | Page and card surfaces |
 | `--rule` | `#d6d1d3` | Standard dividers and quiet borders |
 | `--muted` | `#5d5d61` | Secondary copy, dates and metadata |
-| `--footer-surface` | `#2a2f34` | Shared WildTeam footer background |
+| `--surface-charcoal` | `#262626` | Shared charcoal surface for digest heroes, full-width training promotions and the WildTeam footer |
 | `--footer-muted` | `#f5f5f5` | Secondary footer links and legal copy |
-| `--text-on-purple-muted` / `--text-on-ink-muted` | `#eadbea` / `#d9d5d7` | Supporting copy on the two dark CTA surfaces |
+| `--text-on-purple-muted` / `--text-on-charcoal-muted` | `#eadbea` / `#d9d5d7` | Supporting copy on the two dark CTA surfaces |
 | `--text-placeholder` | `#777378` | Form placeholder copy |
 | `--accent-coral` | `#e84a43` | Contested coverage signal |
 | `--accent-orange` | `#ff8044` | Economic coverage signal, warning progress and retained accent treatments |
@@ -235,9 +235,9 @@ Inline source references are numbered circles. Contextual links may point to rel
 
 Daily and weekly digests share one template:
 
-1. Full-width split hero with colour derived from the featured image and WildTeam purple as fallback.
+1. Full-width split hero with a consistent charcoal copy panel, a fine slowly animated branded-gradient frame around its content and the edition's dedicated featured image. The frame becomes effectively static when reduced motion is requested.
 2. Edition/date metadata, title, standfirst and AI-method link.
-3. Digest and topic pills above the editorial introduction. Sharing remains a vertical rail beside the introduction on desktop, then moves into a horizontal row above these pills at 1000px and below.
+3. Digest and topic pills above the editorial introduction, whose opening paragraph uses an optically aligned drop cap. Sharing remains a vertical rail beside the introduction on desktop, then moves into a horizontal row above these pills at 1000px and below.
 4. Flowing editorial sections with wider supporting images.
 5. One compact newsletter CTA within the body.
 6. Source-article list, training banner and full newsletter CTA.

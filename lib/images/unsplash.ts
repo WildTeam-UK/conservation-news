@@ -1,6 +1,5 @@
 import type { UnsplashImageCandidate } from './types';
 import { environmentValue } from '@/lib/environment';
-import { isHexColour } from '@/lib/validation';
 
 const API_URL = 'https://api.unsplash.com';
 const REQUEST_TIMEOUT_MS = 10_000;
@@ -10,7 +9,6 @@ type UnsplashPhoto = {
   id: string;
   width: number;
   height: number;
-  color: string | null;
   description: string | null;
   alt_description: string | null;
   urls: { raw: string; small: string };
@@ -47,7 +45,6 @@ function toCandidate(photo: UnsplashPhoto): UnsplashImageCandidate {
     thumbnail_url: imageUrl(photo.urls.raw, 640, 400),
     alt_text: (photo.alt_description ?? photo.description ?? '').trim(),
     description: (photo.description ?? photo.alt_description ?? '').trim(),
-    colour: photo.color ?? '#d4d7ce',
     width: photo.width,
     height: photo.height,
     credit: {
@@ -61,7 +58,6 @@ function toCandidate(photo: UnsplashPhoto): UnsplashImageCandidate {
       licence_url: 'https://unsplash.com/license',
       download_location: photo.links.download_location,
       illustrative: true,
-      colour: photo.color ?? '#d4d7ce',
     },
   };
 }
@@ -102,18 +98,4 @@ export async function recordUnsplashSelection(downloadLocation: string) {
     signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
   });
   if (!response.ok) console.warn(`Unsplash selection tracking returned ${response.status}.`);
-}
-
-export async function getUnsplashImageColour(sourceId: string) {
-  const key = accessKey();
-  const id = sourceId.trim();
-  if (!key || !/^[a-zA-Z0-9_-]+$/.test(id)) return null;
-  const response = await fetch(`${API_URL}/photos/${id}`, {
-    headers: { Authorization: `Client-ID ${key}`, 'Accept-Version': 'v1' },
-    cache: 'no-store',
-    signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-  });
-  if (!response.ok) return null;
-  const photo = await response.json() as Pick<UnsplashPhoto, 'color'>;
-  return isHexColour(photo.color) ? photo.color : null;
 }

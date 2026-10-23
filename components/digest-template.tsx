@@ -2,11 +2,9 @@
 import { ArrowRight } from 'lucide-react';
 import { Fragment } from 'react';
 import { ContextualLinkedText } from '@/components/contextual-linked-text';
-import { DigestHeroImage } from '@/components/digest-hero-image';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { cleanDigestText, type DigestContent, type DigestContextualLink, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import { cleanArticleLinks, contextualLinkOccurrence, type ArticleContextualLink } from '@/lib/article-linking';
-import { FALLBACK_HERO_COLOUR } from '@/lib/images/colour';
 import { NewsletterCta } from '@/components/newsletter-cta';
 import { SocialShare } from '@/components/social-share';
 import { InlineBrand } from '@/components/inline-brand';
@@ -124,28 +122,31 @@ function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
 
 export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
-  const heroStory = stories.find((story) => story.image_url === imageUrl) ?? stories.find((story) => story.image_url) ?? stories[0];
+  const matchingHeroStory = stories.find((story) => story.image_url === imageUrl);
+  const heroStory = matchingHeroStory ?? stories.find((story) => story.image_url) ?? stories[0];
   const resolvedImageUrl = imageUrl ?? heroStory?.image_url ?? null;
   const resolvedImageAlt = imageAlt?.trim() || heroStory?.image_alt?.trim() || `Illustrative image for ${cleanDigestText(content.headline)}`;
+  const heroImageCredit = content.image_credit ?? (heroStory?.image_url === resolvedImageUrl ? heroStory.image_credit : null);
   const sourceTopics = stories.flatMap((story) => story.topics ?? []);
   const displayTopics = (content.topics?.length ? content.topics : [...new Set(sourceTopics)]).slice(0, 3);
   const currentDate = londonCalendarDateFormatter.format(new Date(periodEnd));
   const recentDailyDigests = content.digest_type === 'daily' ? moreDigests.filter((digest) => digest.slug !== `daily-digest-${currentDate}`).slice(0, 6) : [];
   const referencedStories = [...new Set(content.sections.flatMap((section) => section.story_ids ?? []))].flatMap((id) => storyByReference.get(id) ?? []);
   const usedImages = new Set(resolvedImageUrl ? [resolvedImageUrl] : []);
-  const heroColourTargetId = `digest-hero-colour-${content.digest_type}-${currentDate}`;
   const allowLegacyLinks = content.template_version === 1;
   const linksFor = (sectionIndex: number, paragraphIndex: number) => content.contextual_links?.filter((link) => link.section_index === sectionIndex && link.paragraph_index === paragraphIndex);
 
   return <article className={`digest-article digest-${content.digest_type}`}>
     <header className="digest-public-hero">
-      <div className="digest-hero-copy" id={heroColourTargetId} style={{ backgroundColor: FALLBACK_HERO_COLOUR }}>
-        <div className="digest-hero-meta"><time dateTime={periodEnd}>{longDate(periodEnd)}</time><span aria-hidden="true">·</span><span><InlineBrand text="WILDNEWS" /> {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span></div>
-        <h1>{cleanDigestText(content.headline)}</h1>
-        <p>{cleanDigestText(content.standfirst)}</p>
-        <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
+      <div className="digest-hero-copy">
+        <div className="digest-hero-content">
+          <div className="digest-hero-meta"><time dateTime={periodEnd}>{longDate(periodEnd)}</time><span aria-hidden="true">·</span><span><InlineBrand text="WILDNEWS" /> {content.digest_type === 'weekly' ? 'WEEKLY' : 'DAILY'}</span></div>
+          <h1>{cleanDigestText(content.headline)}</h1>
+          <p>{cleanDigestText(content.standfirst)}</p>
+          <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
+        </div>
       </div>
-      {resolvedImageUrl ? <figure className="digest-lead-image"><DigestHeroImage src={resolvedImageUrl} alt={resolvedImageAlt} colourTargetId={heroColourTargetId} /><EditorialImageCredit credit={heroStory?.image_credit} /></figure> : null}
+      {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element -- external editorial images are hotlinked under the provider licence */}<img src={resolvedImageUrl} alt={resolvedImageAlt} loading="eager" fetchPriority="high" decoding="async" /><EditorialImageCredit credit={heroImageCredit} /></figure> : null}
     </header>
 
     <div className="digest-article-body shell">
