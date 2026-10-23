@@ -51,7 +51,7 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   if (error) return Response.json({ error: 'The article could not be unpublished.' }, { status: 500 });
   await Promise.all([
     supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'edited', notes: 'Article unpublished and returned to the private editorial workspace.' }),
-    supabase.from('publication_queue').update({ status: 'cancelled', scheduled_for: null, claimed_at: null, hold_reason: 'Article was manually unpublished.' }).eq('story_id', id),
+    supabase.from('publication_queue').update({ status: 'cancelled', scheduled_for: null, claimed_at: null, hold_reason: 'Article was manually unpublished.', editor_approved_at: null, editor_approved_by: null }).eq('story_id', id),
   ]);
   return Response.json({ saved: true });
 }

@@ -80,7 +80,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     }
     await supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'edited', notes: 'Draft edited and saved in the editorial workspace.' });
     try {
-      const queue = await queueReadyDrafts(null, id, false);
+      const queue = await queueReadyDrafts(null, id, false, false, false, true);
       return Response.json({ saved: true, queue });
     } catch (queueError) {
       const queueWarning = queueError instanceof Error ? queueError.message : 'The publishing queue could not be refreshed.';

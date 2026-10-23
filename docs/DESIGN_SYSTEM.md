@@ -259,13 +259,15 @@ Coverage-analysis dimensions use three equal editorial columns on desktop, separ
 
 The admin uses the same font and core palette with denser typography. Desktop has an expanded left navigation; mobile uses a hamburger-controlled menu. Grouped navigation sections preserve their open state when the active child belongs to that group.
 
-The current destination uses a white surface with a pink edge marker in both the desktop sidebar and mobile drawer. Every authenticated admin header includes a compact public-site shortcut alongside account controls. Operational pages keep routine status visible at a glance and place infrequent or potentially disruptive controls inside labelled native disclosures. Disclosure summaries remain white in both collapsed and expanded states. Digest administration follows this pattern explicitly: schedule, publishing, Buffer and Brevo states appear as summary cards; configuration, manual generation, email testing and delivery diagnostics remain available in separate expandable sections; edition history uses distinct workflow and channel statuses rather than one dense metadata sentence.
+The current destination uses a white surface with a pink edge marker in both the desktop sidebar and mobile drawer. Navigation labels use the charcoal surface colour, with purple reserved for the current destination. Every authenticated admin header includes a compact public-site shortcut alongside account controls; user settings live in the persistent profile control at the foot of the sidebar. Operational pages keep routine status visible at a glance and place infrequent or potentially disruptive controls inside labelled native disclosures. Disclosure summaries remain white in both collapsed and expanded states. Digest administration follows this pattern explicitly: schedule, publishing, Buffer and Brevo states appear as summary cards; configuration, manual generation, email testing and delivery diagnostics remain available in separate expandable sections; edition history uses distinct workflow and channel statuses rather than one dense metadata sentence.
 
 Admin pages use:
 
 - Compact uppercase labels and metadata, with a 12px minimum type size.
 - White cards on a white page surface.
 - Grey borders without drop shadows.
+- Pink action buttons with borderless purple hover states and consistent 12px labels.
+- Pill labels with sufficient horizontal padding for the 12px minimum type size.
 - Disclosure panels for advanced or infrequent manual controls.
 - Responsive tables, cards and stacked controls rather than shrinking desktop layouts below usability.
 

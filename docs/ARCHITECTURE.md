@@ -179,7 +179,7 @@ Database changes are append-only migrations. Existing production migrations must
 
 ### Publication
 
-Eligible drafts enter `publication_queue`. The queue distributes them across the configured London publishing window. A database claim function permits only one due publication per heartbeat and recovers interrupted publications after five minutes.
+Eligible drafts enter `publication_queue`. The queue distributes them across the configured London publishing window. A database claim function permits only one due publication per heartbeat and recovers interrupted publications after five minutes. Drafts held by automatic source or score thresholds can be reviewed and explicitly approved by an authenticated editor; the queue records that approval and still reruns the content publication checklist before the scheduled article goes live.
 
 Published content is read dynamically for the homepage, archives, related stories, sitemap, structured data and `llms.txt`.
 

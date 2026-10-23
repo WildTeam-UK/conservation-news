@@ -25,6 +25,7 @@ type QueueRow = {
   priority_rank: number | null;
   scheduled_for: string | null;
   attempt_count: number;
+  editor_approved_at?: string | null;
   created_at: string;
 };
 
@@ -136,7 +137,7 @@ export async function rebalancePublicationQueue() {
   return { scheduled: cursor };
 }
 
-export async function queueReadyDrafts(sourceRunId: string | null = null, onlyStoryId: string | null = null, forceRebalance = true, allowCancelled = false, allowWhenPaused = false) {
+export async function queueReadyDrafts(sourceRunId: string | null = null, onlyStoryId: string | null = null, forceRebalance = true, allowCancelled = false, allowWhenPaused = false, resetEditorApproval = false) {
   const supabase = getSupabaseAdminClient();
   const settings = await getSettings();
   if (!settings.auto_publish_enabled && !allowWhenPaused) return { queued: 0, held: 0, scheduled: 0 };
@@ -154,7 +155,7 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
   const storyIds = stories.map((story) => story.id);
   const clusterIds = [...new Set(stories.flatMap((story) => story.cluster_id ? [story.cluster_id] : []))];
   const [{ data: existing, error: existingError }, { data: sources, error: sourcesError }, { data: clusters, error: clustersError }, { data: runItems, error: runItemsError }] = await Promise.all([
-    supabase.from('publication_queue').select('story_id, status').in('story_id', storyIds),
+    supabase.from('publication_queue').select('story_id, status, editor_approved_at, editor_approved_by').in('story_id', storyIds),
     supabase.from('story_sources').select('story_id').in('story_id', storyIds),
     clusterIds.length ? supabase.from('story_clusters').select('id, overall_score, evidence_score').in('id', clusterIds) : Promise.resolve({ data: [], error: null }),
     sourceRunId ? supabase.from('editorial_run_items').select('story_id, rank').eq('run_id', sourceRunId).not('story_id', 'is', null) : Promise.resolve({ data: [], error: null }),
@@ -164,7 +165,7 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
   if (clustersError) throw clustersError;
   if (runItemsError) throw runItemsError;
 
-  const existingByStory = new Map((existing ?? []).map((row) => [row.story_id, row.status]));
+  const existingByStory = new Map((existing ?? []).map((row) => [row.story_id, row]));
   const sourceCounts = new Map<string, number>();
   for (const source of sources ?? []) sourceCounts.set(source.story_id, (sourceCounts.get(source.story_id) ?? 0) + 1);
   const scores = new Map((clusters ?? []).map((cluster) => [cluster.id, cluster]));
@@ -174,7 +175,9 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
   let membershipChanged = false;
 
   for (const story of stories) {
-    const existingStatus = existingByStory.get(story.id);
+    const existingQueue = existingByStory.get(story.id);
+    const existingStatus = existingQueue?.status;
+    const editorApproved = Boolean(existingQueue?.editor_approved_at) && !resetEditorApproval;
     if (existingStatus && ['publishing', 'published'].includes(existingStatus)) continue;
     if (existingStatus === 'cancelled' && !allowCancelled) continue;
     const metadata = (story.generation_metadata ?? {}) as Record<string, unknown> & { article_content?: StoryDraftContent };
@@ -195,9 +198,9 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
     if (story.taxonomy_review_required) reasons.push(story.taxonomy_review_reason || 'Topic classification needs editorial review.');
     if (!content) reasons.push('Article content could not be verified.');
     else reasons.push(...publicationChecks(content, sourceCount).filter((check) => !check.passed).map((check) => check.label));
-    if (sourceCount < MINIMUM_AUTOMATIC_SOURCES) reasons.push(`Automatic publishing requires at least ${MINIMUM_AUTOMATIC_SOURCES} sources.`);
-    if (!cluster || Number(cluster.overall_score ?? 0) < settings.min_auto_publish_overall_score) reasons.push(`Overall score is below ${settings.min_auto_publish_overall_score}.`);
-    if (!cluster || Number(cluster.evidence_score ?? 0) < settings.min_auto_publish_evidence_score) reasons.push(`Evidence score is below ${settings.min_auto_publish_evidence_score}.`);
+    if (!editorApproved && sourceCount < MINIMUM_AUTOMATIC_SOURCES) reasons.push(`Automatic publishing requires at least ${MINIMUM_AUTOMATIC_SOURCES} sources.`);
+    if (!editorApproved && (!cluster || Number(cluster.overall_score ?? 0) < settings.min_auto_publish_overall_score)) reasons.push(`Overall score is below ${settings.min_auto_publish_overall_score}.`);
+    if (!editorApproved && (!cluster || Number(cluster.evidence_score ?? 0) < settings.min_auto_publish_evidence_score)) reasons.push(`Evidence score is below ${settings.min_auto_publish_evidence_score}.`);
 
     const status = reasons.length ? 'held' : existingStatus === 'scheduled' ? 'scheduled' : 'queued';
     const priorityRank = ['held', 'cancelled'].includes(existingStatus ?? '') && status === 'queued'
@@ -212,6 +215,8 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
       scheduled_for: null,
       hold_reason: reasons.join(' ' ) || null,
       last_error: null,
+      editor_approved_at: editorApproved ? existingQueue?.editor_approved_at : null,
+      editor_approved_by: editorApproved ? existingQueue?.editor_approved_by : null,
     }, { onConflict: 'story_id' });
     if (error) throw error;
     membershipChanged = membershipChanged || existingStatus !== status || status === 'queued';
@@ -240,11 +245,42 @@ export async function restoreDraftToQueue(storyId: string) {
   return queueItem;
 }
 
+export async function approveHeldDraftForQueue(storyId: string, userId: string) {
+  const supabase = getSupabaseAdminClient();
+  const { data: story, error: storyError } = await supabase.from('stories').select('id, status').eq('id', storyId).maybeSingle();
+  if (storyError) throw storyError;
+  if (!story || story.status !== 'draft') throw new PublicationQueueConflict('Only a private draft can be added to the publishing queue.');
+
+  const { data: approved, error: approvalError } = await supabase
+    .from('publication_queue')
+    .update({ editor_approved_at: new Date().toISOString(), editor_approved_by: userId })
+    .eq('story_id', storyId)
+    .eq('status', 'held')
+    .select('id')
+    .maybeSingle();
+  if (approvalError) throw approvalError;
+  if (!approved) throw new PublicationQueueConflict('This article is no longer held for review. Refresh the page and check its current queue status.');
+
+  await queueReadyDrafts(null, storyId, false, false, true);
+  const { data: queueItem, error: queueError } = await supabase
+    .from('publication_queue')
+    .select('id, status, scheduled_for, hold_reason')
+    .eq('story_id', storyId)
+    .single();
+  if (queueError) throw queueError;
+  if (queueItem.status === 'held') {
+    await supabase.from('publication_queue').update({ editor_approved_at: null, editor_approved_by: null }).eq('id', queueItem.id);
+    throw new PublicationQueueConflict(`This article still needs changes before it can be queued: ${queueItem.hold_reason || 'complete the editorial review and save the draft.'}`);
+  }
+  await rebalancePublicationQueue();
+  return queueItem;
+}
+
 export async function cancelQueuedPublication(queueId: string) {
   const supabase = getSupabaseAdminClient();
   const { data, error } = await supabase
     .from('publication_queue')
-    .update({ status: 'cancelled', scheduled_for: null, claimed_at: null, hold_reason: 'Removed from the automatic publishing queue by an editor.' })
+    .update({ status: 'cancelled', scheduled_for: null, claimed_at: null, hold_reason: 'Removed from the automatic publishing queue by an editor.', editor_approved_at: null, editor_approved_by: null })
     .eq('id', queueId)
     .in('status', ['queued', 'scheduled', 'held'])
     .select('id, story_id')
@@ -258,7 +294,7 @@ export async function cancelQueuedPublication(queueId: string) {
 export async function publishClaimedQueueItem(queueId: string) {
   const supabase = getSupabaseAdminClient();
   const [{ data: queueItem, error: queueError }, settings] = await Promise.all([
-    supabase.from('publication_queue').select('id, story_id, attempt_count').eq('id', queueId).eq('status', 'publishing').single(),
+    supabase.from('publication_queue').select('id, story_id, attempt_count, editor_approved_at').eq('id', queueId).eq('status', 'publishing').single(),
     getSettings(),
   ]);
   if (queueError || !queueItem) throw queueError ?? new Error('Claimed publication was not found.');
@@ -278,15 +314,16 @@ export async function publishClaimedQueueItem(queueId: string) {
     const content = (story.generation_metadata as { article_content?: StoryDraftContent } | null)?.article_content;
     if (!content) throw new Error('Article content could not be verified.');
     const failed = publicationChecks(content, sourceCount ?? 0).filter((check) => !check.passed).map((check) => check.label);
-    if ((sourceCount ?? 0) < MINIMUM_AUTOMATIC_SOURCES) failed.push(`At least ${MINIMUM_AUTOMATIC_SOURCES} sources are required`);
-    if (story.cluster_id) {
+    const editorApproved = Boolean(queueItem.editor_approved_at);
+    if (!editorApproved && (sourceCount ?? 0) < MINIMUM_AUTOMATIC_SOURCES) failed.push(`At least ${MINIMUM_AUTOMATIC_SOURCES} sources are required`);
+    if (!editorApproved && story.cluster_id) {
       const { data: cluster, error } = await supabase.from('story_clusters').select('overall_score, evidence_score').eq('id', story.cluster_id).single();
       if (error) throw error;
       if (Number(cluster.overall_score ?? 0) < settings.min_auto_publish_overall_score) failed.push(`Overall score is below ${settings.min_auto_publish_overall_score}`);
       if (Number(cluster.evidence_score ?? 0) < settings.min_auto_publish_evidence_score) failed.push(`Evidence score is below ${settings.min_auto_publish_evidence_score}`);
-    } else failed.push('Assessment scores are missing');
+    } else if (!editorApproved) failed.push('Assessment scores are missing');
     if (failed.length) {
-      await supabase.from('publication_queue').update({ status: 'held', hold_reason: failed.join('; '), claimed_at: null }).eq('id', queueId);
+      await supabase.from('publication_queue').update({ status: 'held', hold_reason: failed.join('; '), claimed_at: null, editor_approved_at: null, editor_approved_by: null }).eq('id', queueId);
       return { action: 'held', storyId: story.id, headline: story.headline, reason: failed.join('; ') };
     }
 
