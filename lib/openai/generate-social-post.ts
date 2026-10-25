@@ -5,8 +5,8 @@ import { estimateLunaTokenCost } from '@/lib/openai/pricing';
 import { getOpenAIClient } from './client';
 
 const MODEL = 'gpt-6-luna';
-export const SOCIAL_GENERATION_PROMPT_VERSION = 'social-editor-v1';
-export const SOCIAL_REVIEW_PROMPT_VERSION = 'social-review-v1';
+export const SOCIAL_GENERATION_PROMPT_VERSION = 'social-editor-v2';
+export const SOCIAL_REVIEW_PROMPT_VERSION = 'social-review-v2';
 
 export class SocialEditorialValidationError extends Error {}
 
@@ -112,6 +112,21 @@ function openingSimilarity(first: string, second: string) {
   return shared / new Set([...firstWords, ...secondWords]).size;
 }
 
+export function socialClaimMatchesProse(claim: string, proseParts: string[]) {
+  const claimWords = normalizedWords(claim);
+  if (!claimWords.length) return false;
+  const normalizedClaim = claimWords.join(' ');
+  return proseParts.some((part) => {
+    const partWords = normalizedWords(part);
+    const normalizedPart = partWords.join(' ');
+    if (normalizedPart.includes(normalizedClaim)) return true;
+    if (claimWords.length < 6) return false;
+    const partWordSet = new Set(partWords);
+    const matchedWords = claimWords.filter((word) => partWordSet.has(word)).length;
+    return matchedWords / claimWords.length >= 0.8;
+  });
+}
+
 export function validateSocialPostDraft(draft: SocialPostDraft, input: SocialEditorialInput) {
   const issues: string[] = [];
   const storyIds = new Set(input.stories.map((story) => story.id));
@@ -119,19 +134,22 @@ export function validateSocialPostDraft(draft: SocialPostDraft, input: SocialEdi
   const featuredMaximum = input.type === 'weekly' ? 5 : 4;
   const prose = [draft.opening, ...draft.paragraphs, draft.call_to_action].join('\n\n');
   const wordCount = words(prose).length;
-  const minimumWords = input.type === 'weekly' ? 160 : 105;
-  const maximumWords = input.type === 'weekly' ? 280 : 205;
+  const minimumWords = input.type === 'weekly' ? 130 : 80;
+  const maximumWords = 300;
 
   if (!APPROACHES.includes(draft.approach)) issues.push('The editorial approach is not recognised.');
   if (draft.featured_story_ids.length < featuredMinimum || draft.featured_story_ids.length > featuredMaximum) issues.push(`The ${input.type} post must feature ${featuredMinimum}–${featuredMaximum} stories.`);
   if (draft.featured_story_ids.some((id) => !storyIds.has(id))) issues.push('The post cites a story outside the published digest evidence.');
-  if (wordCount < minimumWords || wordCount > maximumWords) issues.push(`The editorial copy contains ${wordCount} words; expected ${minimumWords}–${maximumWords}.`);
+  if (wordCount < minimumWords || wordCount > maximumWords) issues.push(`The editorial copy contains ${wordCount} words; the publishable safety range is ${minimumWords}–${maximumWords}.`);
   if (words(draft.opening).length < 8) issues.push('The opening is too slight to work as an editorial hook.');
   if (draft.paragraphs.length < 2 || draft.paragraphs.length > 6) issues.push('The post needs two to six readable body paragraphs.');
   if (draft.hashtags.length < 2 || draft.hashtags.length > 3) issues.push('The post needs two or three hashtags.');
   if (!draft.hashtags.some((hashtag) => hashtag.toLowerCase() === '#wildnews')) issues.push('The post must include #WildNews.');
   if (draft.hashtags.some((hashtag) => !/^#[A-Za-z][A-Za-z0-9]*$/.test(hashtag))) issues.push('Every hashtag must be a plain social hashtag.');
-  if (!new RegExp(`\\bWildNews\\s+${input.type === 'weekly' ? 'Weekly' : 'Daily'}\\s+Digest\\b`, 'i').test(draft.call_to_action)) issues.push('The closing invitation must identify the correct WildNews digest.');
+  const callToActionWords = new Set(normalizedWords(draft.call_to_action));
+  const expectedDigestType = input.type === 'weekly' ? 'weekly' : 'daily';
+  const unexpectedDigestType = input.type === 'weekly' ? 'daily' : 'weekly';
+  if (!['wildnews', expectedDigestType, 'digest'].every((word) => callToActionWords.has(word)) || callToActionWords.has(unexpectedDigestType)) issues.push('The closing invitation must identify the correct WildNews digest.');
   if (/\b(welcome to|here(?:'s| is) (?:your|the)|today(?:'s|’s) (?:digest|roundup)|daily roundup|weekly roundup)\b/i.test(draft.opening)) issues.push('The opening uses a generic publication announcement.');
   if (/\b(today|tonight|yesterday|tomorrow|this week|last week|next week)\b/i.test(prose)) issues.push('The copy uses a relative date that could become inaccurate on a retry.');
   if (/https?:\/\//i.test(prose)) issues.push('The generated editorial fields must not contain a URL.');
@@ -172,7 +190,7 @@ First select the ${type === 'weekly' ? 'four or five' : 'three or four'} stronge
 
 The post must be useful to a reader who never clicks. Lead with the news, never a publication announcement. Include specific developments and explain why they matter without becoming opinionated, promotional or sensationalist. ${type === 'weekly' ? 'Reflect on the most important developments, implications, contrasts or genuine connections across the week.' : 'Give three or four substantial highlights in a concise, readable briefing.'}
 
-Write short paragraphs suitable for LinkedIn. Target ${type === 'weekly' ? '180–250' : '120–180'} words across the opening, body paragraphs and call to action, with modest flexibility for clarity. Do not use Markdown, a URL, image attribution or more than one restrained emoji. Do not use relative phrases such as “today” or “this week”, because a provider retry may happen later. End with a natural invitation that explicitly names the WildNews ${type === 'weekly' ? 'Weekly' : 'Daily'} Digest. Supply two or three relevant hashtags, including #WildNews.
+Write short paragraphs suitable for LinkedIn. Aim for ${type === 'weekly' ? '180–250' : '120–180'} words across the opening, body paragraphs and call to action. This is an editorial target rather than a rigid quota, but never exceed 300 words. Do not use Markdown, a URL, image attribution or more than one restrained emoji. Do not use relative phrases such as “today” or “this week”, because a provider retry may happen later. End with a natural invitation that clearly identifies WildNews, the ${type === 'weekly' ? 'weekly' : 'daily'} edition and the digest, without requiring a fixed phrase or word order. Supply two or three relevant hashtags, including #WildNews.
 
 Avoid generic AI language, clichés, rhetorical questions, forced connections, repeated sentence structures, marketing language and self-congratulation. Return only the requested structured data.`);
 }
@@ -185,7 +203,7 @@ Every factual claim must be supported by the supplied evidence. Do not add outsi
 
 You may return the draft unchanged as approved, or revise it to fix a real defect. A revision may only rephrase, remove or reorganise evidence already supplied. It must not add facts. Record concise issues that caused a revision. For each factual claim in the final post, copy an exact excerpt containing that claim into claim_support and provide the IDs of the source stories that support it. The closing invitation and hashtags do not need claim-support entries.
 
-Keep the same output constraints: professional British English, no Markdown, no URL, no image attribution, no em dash, no relative date language, two or three hashtags including #WildNews, and a useful post rather than a digest announcement. Return only the requested structured data.`);
+Keep the same output constraints: professional British English, aim for the requested editorial word range but never exceed 300 words, no Markdown, no URL, no image attribution, no em dash, no relative date language, two or three hashtags including #WildNews, and a useful post rather than a digest announcement. The closing invitation must clearly identify WildNews, the correct daily or weekly edition and the digest, but it may use natural word order. Return only the requested structured data.`);
 
 export async function generateSocialEditorial(input: SocialEditorialInput): Promise<SocialEditorialResult> {
   if (!input.stories.length) throw new SocialEditorialValidationError('Social editorial generation requires source-story evidence.');
@@ -247,11 +265,11 @@ export async function generateSocialEditorial(input: SocialEditorialInput): Prom
   const finalDraft = cleanDraft(reviewed.post);
   const reviewIssues = validateSocialPostDraft(finalDraft, input);
   const supportedIds = new Set(reviewed.claim_support.flatMap((item) => item.story_ids));
-  const normalizedProse = normalizedWords([finalDraft.opening, ...finalDraft.paragraphs].join(' ')).join(' ');
+  const factualProseParts = [finalDraft.opening, ...finalDraft.paragraphs];
   if (reviewed.claim_support.length < finalDraft.paragraphs.length + 1) reviewIssues.push('The editorial review did not provide support for every factual paragraph.');
   if (finalDraft.featured_story_ids.some((id) => !supportedIds.has(id))) reviewIssues.push('The editorial review did not map every featured story to a factual claim.');
   if (reviewed.claim_support.some((item) => !item.claim.trim() || item.story_ids.some((id) => !storyIds.includes(id)))) reviewIssues.push('The editorial review returned invalid claim-support evidence.');
-  if (reviewed.claim_support.some((item) => !normalizedProse.includes(normalizedWords(item.claim).join(' ')))) reviewIssues.push('The editorial review returned claim support that does not match the final post.');
+  if (reviewed.claim_support.some((item) => !socialClaimMatchesProse(item.claim, factualProseParts))) reviewIssues.push('The editorial review returned claim support that does not sufficiently match the final post.');
   if (reviewIssues.length) throw new SocialEditorialValidationError(`Reviewed social post validation failed: ${reviewIssues.join(' ')}`);
 
   const text = renderSocialPost(finalDraft, input);
