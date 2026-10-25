@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoaderCircle, RefreshCw } from 'lucide-react';
+import { SOCIAL_EDITORIAL_DESTINATION } from '@/lib/distribution/constants';
 
 type Delivery = {
   id: string;
@@ -14,14 +15,14 @@ type Delivery = {
   last_error: string | null;
 };
 
-export function DigestDeliveryStatus({ storyId, deliveries }: { storyId: string; deliveries: Delivery[] }) {
+export function DigestDeliveryStatus({ storyId, deliveries, socialCopy }: { storyId: string; deliveries: Delivery[]; socialCopy: string | null }) {
   const router = useRouter();
   const [working, setWorking] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   if (!deliveries.length) return null;
 
   async function retry(delivery: Delivery) {
-    const uncertain = delivery.status === 'uncertain';
+    const uncertain = delivery.status === 'uncertain' && delivery.destination !== SOCIAL_EDITORIAL_DESTINATION;
     if (uncertain && !window.confirm('The provider may already have received this request. Retrying could create a duplicate post or email campaign. Retry anyway?')) return;
     setWorking(delivery.id);
     setMessage('');
@@ -40,8 +41,9 @@ export function DigestDeliveryStatus({ storyId, deliveries }: { storyId: string;
 
   return <section className="digest-delivery-panel" aria-labelledby="digest-delivery-heading">
     <div><p className="eyebrow">External distribution</p><h2 id="digest-delivery-heading">Delivery status</h2><p>Each destination is recorded separately so a failure can be handled without repeating successful deliveries.</p></div>
+    {socialCopy ? <div className="digest-social-copy"><strong>Validated social post</strong><pre>{socialCopy}</pre></div> : null}
     <div className="digest-delivery-list">{deliveries.map((delivery) => <article key={delivery.id}>
-      <div><strong>{delivery.provider === 'buffer' ? 'Buffer channel' : 'Brevo Weekly Digest'}</strong><span>{delivery.destination}</span></div>
+      <div><strong>{delivery.destination === SOCIAL_EDITORIAL_DESTINATION ? 'Social editorial generation' : delivery.provider === 'buffer' ? 'Buffer channel' : 'Brevo Weekly Digest'}</strong><span>{delivery.destination === SOCIAL_EDITORIAL_DESTINATION ? 'Generate, fact-check and validate the post' : delivery.destination}</span></div>
       <span className={`run-status ${delivery.status}`}>{delivery.status}</span>
       <div><small>{delivery.provider_reference ? `Provider reference ${delivery.provider_reference}` : `${delivery.attempt_count} ${delivery.attempt_count === 1 ? 'attempt' : 'attempts'}`}</small>{delivery.last_error ? <p>{delivery.last_error}</p> : null}</div>
       {delivery.destination !== 'configuration' && ['failed', 'uncertain'].includes(delivery.status) ? <button type="button" disabled={Boolean(working)} onClick={() => retry(delivery)}>{working === delivery.id ? <LoaderCircle className="admin-spinner" /> : <RefreshCw />} Retry</button> : null}

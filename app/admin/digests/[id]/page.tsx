@@ -26,7 +26,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   const { data: story, error } = await supabase.from('stories').select('id, slug, status, headline, image_url, image_alt, digest_period_end, generation_metadata').eq('id', id).in('content_type', ['daily_digest', 'weekly_digest']).maybeSingle();
   if (error || !story) notFound();
   const [{ data: run }, { data: settings }] = await Promise.all([
-    supabase.from('digest_runs').select('id').eq('story_id', story.id).maybeSingle(),
+    supabase.from('digest_runs').select('id, social_copy').eq('story_id', story.id).maybeSingle(),
     supabase.from('digest_settings').select('social_distribution_enabled, social_distribution_mode, email_distribution_enabled').eq('id', true).maybeSingle(),
   ]);
   const [{ data: links }, { data: deliveries }] = run ? await Promise.all([
@@ -44,6 +44,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   const distributionParts = [settings?.social_distribution_enabled ? settings.social_distribution_mode === 'immediate' ? 'Buffer social posts will publish immediately.' : 'Buffer social posts will be queued.' : '', settings?.email_distribution_enabled && content.digest_type === 'weekly' ? 'The Brevo weekly campaign will be scheduled.' : ''].filter(Boolean);
   const distributionSummary = historicalPublicationDate ? 'External distribution remains paused for recovered historical editions.' : distributionParts.length ? distributionParts.join(' ') : 'External distribution is paused.';
   const distributionDeliveries = (deliveries ?? []) as Array<{ id: string; provider: 'buffer' | 'brevo'; destination: string; status: string; provider_reference: string | null; attempt_count: number; last_error: string | null }>;
+  const savedSocialCopy = (run?.social_copy as { text?: unknown } | null)?.text;
   const deliveryNeedsAttention = distributionDeliveries.some((delivery) => ['failed', 'uncertain'].includes(delivery.status));
 
   return <main className="admin-page digest-preview-page">
@@ -56,7 +57,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
         <summary><span><Send /><span><strong>Distribution and email tools</strong><small>Send a private email test, review provider deliveries and retry failures</small></span></span><span className={`admin-disclosure-state${deliveryNeedsAttention ? ' needs-attention' : ''}`}>{deliveryNeedsAttention ? 'Needs attention' : distributionDeliveries.length ? `${distributionDeliveries.length} ${distributionDeliveries.length === 1 ? 'delivery' : 'deliveries'}` : 'Test available'} <ChevronDown /></span></summary>
         <div className="digest-preview-operations">
           {content.digest_type === 'weekly' ? <DigestEmailTest storyId={story.id} configured={Boolean(process.env.BREVO_API_KEY?.trim() && /^\d+$/.test(process.env.BREVO_LIST_ID?.trim() ?? '') && /^\d+$/.test(process.env.BREVO_SENDER_ID?.trim() ?? ''))} /> : null}
-          <DigestDeliveryStatus storyId={story.id} deliveries={distributionDeliveries} />
+          <DigestDeliveryStatus storyId={story.id} deliveries={distributionDeliveries} socialCopy={typeof savedSocialCopy === 'string' ? savedSocialCopy : null} />
         </div>
       </details> : null}
       <div className="digest-preview-heading"><div><p className="eyebrow">Edition preview</p><h2>{story.headline}</h2></div><p>This is the exact public page layout. Use the controls above for publishing and distribution.</p></div>

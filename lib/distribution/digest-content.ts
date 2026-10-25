@@ -63,14 +63,9 @@ function emailStoryCard(source: DigestDistributionSource) {
   return `<tr><td style="padding:0 0 18px;"><table class="story-table" role="presentation" width="100%" height="230" cellspacing="0" cellpadding="0" style="height:230px;border:1px solid #e3dcdf;border-radius:16px;background:#fef3e5;overflow:hidden;"><tr>${imageCell}<td class="story-copy" width="${source.image_url ? '62%' : '100%'}" valign="middle" style="padding:20px 22px;"><h3 style="margin:0 0 8px;color:#080808;font-family:'Arial Rounded MT Bold','Trebuchet MS',Arial,sans-serif;font-size:21px;line-height:1.2;"><a href="${storyUrl}" style="color:#080808;text-decoration:none;">${escapeHtml(source.headline)}</a></h3><p style="margin:0 0 13px;color:#4d4a4c;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5;">${escapeHtml(source.standfirst)}</p><a href="${storyUrl}" style="color:#6e0f6c;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;text-decoration:underline;">Read story&nbsp;&rarr;</a></td></tr></table></td></tr>`;
 }
 
-export function buildSocialDistributionPayload({ deliveryId, type, editionDate, content, imageUrl, mode }: { deliveryId: string; type: DigestType; editionDate: string; content: DigestContent; imageUrl: string | null; mode: 'addToQueue' | 'shareNow' }): SocialDistributionPayload {
-  const publicUrl = digestPublicUrl(type, editionDate);
-  const attribution = content.image_credit ? truncate(`Photo: ${content.image_credit.creator_name} / ${content.image_credit.source_name}`, 60) : '';
-  const available = Math.max(40, 280 - publicUrl.length - attribution.length - 6);
-  const fallback = `${type === 'weekly' ? '🌍' : '🌿'} ${content.standfirst} ${type === 'weekly' ? 'Catch up with the full weekly digest' : 'Read today’s full digest'} 👇`;
-  const socialPost = truncate(content.social_post || fallback, available);
+export function buildSocialDistributionPayload({ deliveryId, text, publicUrl, imageUrl, mode }: { deliveryId: string; text: string; publicUrl: string; imageUrl: string | null; mode: 'addToQueue' | 'shareNow' }): SocialDistributionPayload {
   return {
-    text: `${socialPost}\n\n${publicUrl}${attribution ? `\n\n${attribution}` : ''}`,
+    text,
     imageUrl,
     publicUrl,
     source: `wildnews-digest-${deliveryId}`,
