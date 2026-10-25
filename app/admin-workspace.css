@@ -310,6 +310,9 @@
 
 .digest-delivery-panel > div:first-child h2 { margin: 3px 0 6px; }
 .digest-delivery-panel > div:first-child > p:last-child { margin: 0; color: var(--muted); }
+.digest-social-copy { margin-top: 20px; padding: 16px; border: 1px solid var(--rule); border-radius: var(--radius-compact); background: var(--paper); }
+.digest-social-copy > strong { display: block; margin-bottom: 10px; }
+.digest-social-copy pre { margin: 0; overflow-wrap: anywhere; white-space: pre-wrap; color: var(--surface-charcoal); font-family: var(--font-family), sans-serif; font-size: var(--admin-type-min-size); line-height: 1.55; }
 .digest-delivery-list { display: grid; gap: 10px; margin-top: 20px; }
 .digest-delivery-list article {
   display: grid;
