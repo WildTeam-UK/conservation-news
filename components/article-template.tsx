@@ -79,10 +79,10 @@ function ArticleTextContent({ value, sources }: { value: ArticleText; sources: M
   const sourceIds = typeof value === 'string' ? [] : [...new Set(value.sourceIds ?? [])];
   const text = articleTextValue(value);
   const links = typeof value === 'string' ? [] : value.links;
-  return <><ContextualLinkedText text={text} links={links} />{sourceIds.length ? <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
+  return <><ContextualLinkedText text={text} links={links} />{sourceIds.length ? <> <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
     const source = sources.get(id);
     return source ? <a href={source.url} target="_blank" rel="noopener noreferrer" title={`${source.name}${source.title ? `: ${source.title}` : ''}`} aria-label={`Source ${id.replace('source-', '')}: ${source.name}`} key={id}>{id.replace('source-', '')}</a> : null;
-  })}</span> : null}</>;
+  })}</span></> : null}</>;
 }
 
 export function ArticleTemplate({ article, sharePath }: { article: ArticleTemplateData; sharePath?: string }) {
