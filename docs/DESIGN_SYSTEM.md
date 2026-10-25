@@ -65,6 +65,7 @@ The shared public typography roles are:
 | Editorial body | `--type-body-size`, `--type-body-leading` | 17px / 1.65; sections may retain a deliberately roomier local leading |
 | Editorial lead | `--type-lead-size`, `--type-lead-leading` | 21px / 1.72; used by digest introductions |
 | Card title | `--type-card-title-size`, `--type-card-title-leading` | 25px / 1.08; used by related and digest discovery cards |
+| Supporting panel title | `--type-supporting-panel-title-size` | 27px; aligns coverage, course and newsletter headings beneath mobile articles |
 | Section title | `--type-section-title-size`, `--type-section-title-leading` | 44px / 1; used by principal editorial sections |
 
 Components own their layout, colour and responsive variation while consuming these shared roles. A one-off display size may remain local when it expresses a genuinely different hierarchy; new near-duplicate values should not be introduced without updating this system.
@@ -230,6 +231,8 @@ The article template is shared by every published news story:
 6. Newsletter CTA and related-story discovery supplied by the page route.
 
 Inline source references are numbered circles. Contextual links may point to relevant internal stories, taxonomy pages, courses or external sources. Links are not added merely to meet a quota.
+
+On phones, the overview flows into the article without a divider. Editorial sections use one consistent 48px gap rather than accumulated adjacent padding. Coverage dimensions, the course-promotion headline and the following newsletter headline share the supporting-panel title size. Source-reference circles are separated from prose by collapsible whitespace, so a wrapped reference group begins flush with the new line.
 
 ### Digests
 
