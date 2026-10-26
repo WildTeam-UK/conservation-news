@@ -175,11 +175,13 @@ Database changes are append-only migrations. Existing production migrations must
 4. Taxonomy, conservation outlook and the featured course recommendation are attached.
 5. A separate OpenAI link-editor pass examines the final copy against approved related articles, active topics, approved tags, courses and verified sources. Deterministic validation then enforces exact complete-word anchors, confidence thresholds, destination limits and duplicate prevention before accepted links are stored.
 6. Proposed, accepted and rejected counts, rejection categories, token usage, cost and retryable failures are recorded in `story_linking_assessments`.
-7. The result remains a private draft until queued or manually published.
+7. The result remains private after generation. It can then enter the publication queue or be published manually.
 
 ### Publication
 
 Eligible drafts enter `publication_queue`. The queue distributes them across the configured London publishing window. A database claim function permits only one due publication per heartbeat and recovers interrupted publications after five minutes. Drafts held by automatic source or score thresholds can be reviewed and explicitly approved by an authenticated editor; the queue records that approval and still reruns the content publication checklist before the scheduled article goes live.
+
+The database keeps an article's `stories.status` as `draft` until it becomes public. Admin workflow labels combine that private/public state with `publication_queue.status`: **Drafts** are private articles outside the active queue, **Scheduled** covers queued, scheduled and currently publishing articles, **Held** identifies private articles requiring attention, and **Published** identifies live articles. These admin groups are mutually exclusive even though scheduled and held records remain database drafts.
 
 Published content is read dynamically for the homepage, archives, related stories, sitemap, structured data and `llms.txt`.
 

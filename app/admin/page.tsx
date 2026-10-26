@@ -56,8 +56,8 @@ const greetings = [
 export default async function AdminDashboard() {
   const { supabase, user, admin } = await requireContentAdmin();
   const [draftsResult, publishedResult, sourcesResult, itemsResult, candidatesResult, queueResult, heldResult, sourceErrorsResult, taxonomyReviewResult, settingsResult, editorialRunsResult, activeRunResult, ingestionRunsResult] = await Promise.all([
-    supabase.from('stories').select('*', { count: 'exact', head: true }).eq('status', 'draft'),
-    supabase.from('stories').select('*', { count: 'exact', head: true }).eq('status', 'published'),
+    supabase.from('stories').select('id').eq('content_type', 'news').eq('status', 'draft'),
+    supabase.from('stories').select('*', { count: 'exact', head: true }).eq('content_type', 'news').eq('status', 'published'),
     supabase.from('sources').select('*', { count: 'exact', head: true }).eq('enabled', true),
     supabase.from('source_items').select('*', { count: 'exact', head: true }),
     supabase.from('story_clusters').select('*', { count: 'exact', head: true }).eq('status', 'selected'),
@@ -74,6 +74,11 @@ export default async function AdminDashboard() {
   const settings = settingsResult.data;
   const upcoming = (queueResult.data ?? []) as QueueOverviewItem[];
   const held = (heldResult.data ?? []) as QueueOverviewItem[];
+  const activeQueueStoryIds = new Set([...upcoming, ...held].flatMap((item) => {
+    const story = queueStory(item);
+    return story ? [story.id] : [];
+  }));
+  const privateDraftCount = (draftsResult.data ?? []).filter((story) => !activeQueueStoryIds.has(story.id)).length;
   const sourceErrors = sourceErrorsResult.data ?? [];
   const taxonomyReviews = taxonomyReviewResult.data ?? [];
   const latestEditorialRun = editorialRunsResult.data?.[0];
@@ -110,7 +115,7 @@ export default async function AdminDashboard() {
           <div className="overview-flow-track">
             <a href="/admin/collected"><span><Radio /></span><strong>{itemsResult.count ?? 0}</strong><small>Collected</small></a><ArrowRight />
             <a href="/admin/candidates"><span><Activity /></span><strong>{candidatesResult.count ?? 0}</strong><small>Candidates</small></a><ArrowRight />
-            <a href="/admin/drafts"><span><FileText /></span><strong>{draftsResult.count ?? 0}</strong><small>Drafts</small></a><ArrowRight />
+            <a href="/admin/drafts?view=drafts"><span><FileText /></span><strong>{privateDraftCount}</strong><small>Drafts</small></a><ArrowRight />
             <a href="/admin/queue"><span><CalendarClock /></span><strong>{upcoming.length}</strong><small>Scheduled</small></a><ArrowRight />
             <a href="/admin/drafts?view=published"><span><Newspaper /></span><strong>{publishedResult.count ?? 0}</strong><small>Published</small></a>
           </div>
