@@ -201,6 +201,8 @@ Story discovery uses a small set of repeated patterns:
 
 Cards display the appropriate topic or digest label above the title. Good News is signalled on the image. Titles, images and explicit read links lead to the same canonical story URL.
 
+Public editorial images use the shared `EditorialImage` component. If a remote image cannot be loaded, it replaces the failed asset with the local WildNews mark centred on a white surface while preserving the original image container and link. Photo credits are hidden when their corresponding image has fallen back, so attribution never describes an image that is no longer visible.
+
 ### Calls to action
 
 - `NewsletterCta`: shared Weekly Digest signup component with `full` and `streamlined` variants. Both variants use the same headline and subscription form; the full variant adds supporting copy while the streamlined variant is the compact in-flow treatment.

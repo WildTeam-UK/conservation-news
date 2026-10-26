@@ -2,6 +2,7 @@
 import { ArrowRight } from 'lucide-react';
 import { Fragment } from 'react';
 import { ContextualLinkedText } from '@/components/contextual-linked-text';
+import { EditorialImage } from '@/components/editorial-image';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { cleanDigestText, type DigestContent, type DigestContextualLink, type DigestSourceStory, type DigestStoryRecord } from '@/lib/digests';
 import { cleanArticleLinks, contextualLinkOccurrence, type ArticleContextualLink } from '@/lib/article-linking';
@@ -102,7 +103,7 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
     <div className="digest-more-grid">{digests.map((digest) => {
       const date = digest.slug.replace('daily-digest-', '');
       return <article key={digest.id}>
-        <a className="digest-more-image" href={`/daily-digest/${date}`} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={digest.image_url} alt="" loading="lazy" decoding="async" /></> : null}</a>
+        <a className="digest-more-image" href={`/daily-digest/${date}`} aria-label={`Read: ${cleanDigestText(digest.headline)}`}>{digest.image_url ? <EditorialImage src={digest.image_url} alt="" loading="lazy" decoding="async" /> : null}</a>
         <time dateTime={digest.digest_period_end}>{longDate(digest.digest_period_end)}</time>
         <h3><a href={`/daily-digest/${date}`}>{cleanDigestText(digest.headline)}</a></h3>
       </article>;
@@ -150,7 +151,7 @@ export function DigestTemplate({ content, stories, storyId, periodEnd, imageUrl,
           <a className="digest-ai-link" href="/how-we-use-ai">Learn more about how we use AI <ArrowRight /></a>
         </div>
       </div>
-      {resolvedImageUrl ? <figure className="digest-lead-image">{/* oxlint-disable-next-line next/no-img-element -- external editorial images are hotlinked under the provider licence */}<img src={resolvedImageUrl} alt={resolvedImageAlt} loading="eager" fetchPriority="high" decoding="async" /><EditorialImageCredit credit={heroImageCredit} /></figure> : null}
+      {resolvedImageUrl ? <figure className="digest-lead-image"><EditorialImage src={resolvedImageUrl} alt={resolvedImageAlt} loading="eager" fetchPriority="high" decoding="async" /><EditorialImageCredit credit={heroImageCredit} /></figure> : null}
     </header>
 
     <div className="digest-article-body shell">
@@ -169,7 +170,7 @@ export function DigestTemplate({ content, stories, storyId, periodEnd, imageUrl,
           if (sectionImage?.image_url) usedImages.add(sectionImage.image_url);
           return <section className="digest-editorial-section" key={`${section.heading}-${index}`}>
             <h2>{cleanDigestText(section.heading)}</h2>
-            {sectionImage ? <figure className="digest-section-image">{/* oxlint-disable-next-line next/no-img-element */}<img src={sectionImage.image_url!} alt={sectionImage.image_alt?.trim() || `Illustrative image for ${cleanDigestText(section.heading)}`} loading="lazy" decoding="async" /><EditorialImageCredit credit={sectionImage.image_credit} /></figure> : null}
+            {sectionImage ? <figure className="digest-section-image"><EditorialImage src={sectionImage.image_url!} alt={sectionImage.image_alt?.trim() || `Illustrative image for ${cleanDigestText(section.heading)}`} loading="lazy" decoding="async" /><EditorialImageCredit credit={sectionImage.image_credit} /></figure> : null}
             {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} links={linksFor(index, paragraphIndex)} stories={storyByReference} referenced={referenced} allowLegacy={allowLegacyLinks} />{index === 1 && paragraphIndex === 0 ? <NewsletterCta id="digest-email-inline" variant="streamlined" /> : null}</Fragment>)}
           </section>;
         })}

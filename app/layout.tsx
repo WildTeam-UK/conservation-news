@@ -17,8 +17,11 @@ export const metadata: Metadata = {
   robots: isProductionDeployment() ? { index: true, follow: true } : { index: false, follow: false, noarchive: true },
   manifest: '/manifest.webmanifest',
   icons: {
-    icon: [{ url: '/favicon.png', type: 'image/png', sizes: '50x50' }],
-    apple: '/favicon.png',
+    icon: [
+      { url: '/favicon.ico', type: 'image/x-icon', sizes: '48x48' },
+      { url: '/favicon.png', type: 'image/png', sizes: '96x96' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', type: 'image/png', sizes: '180x180' }],
   },
   openGraph: {
     type: 'website',

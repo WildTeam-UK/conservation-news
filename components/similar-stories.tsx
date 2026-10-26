@@ -1,6 +1,7 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation on dynamic story routes */
 import { StoryTags } from '@/components/story-tags';
 import { cleanCopy, storyHref, storyImage, type Story } from '@/lib/stories';
+import { EditorialImage } from '@/components/editorial-image';
 import { GoodNewsBadge } from '@/components/good-news-badge';
 
 export function SimilarStories({ stories, description = 'Keep exploring related coverage.' }: { stories: Story[]; description?: string }) {
@@ -9,7 +10,7 @@ export function SimilarStories({ stories, description = 'Keep exploring related 
   return <section className="related shell">
     <div className="section-heading"><h2>Similar stories</h2><p>{description}</p></div>
     <div className="related-grid">{stories.map((story) => <article key={story.slug}>
-      <a href={storyHref(story)} className="related-image" aria-label={`Read: ${cleanCopy(story.title)}`}>{/* oxlint-disable-next-line next/no-img-element */}<img src={storyImage(story)} alt="" loading="lazy" decoding="async" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
+      <a href={storyHref(story)} className="related-image" aria-label={`Read: ${cleanCopy(story.title)}`}><EditorialImage src={storyImage(story)} alt="" loading="lazy" decoding="async" />{story.goodNews ? <GoodNewsBadge overlay /> : null}</a>
       <StoryTags story={story} />
       <h3><a href={storyHref(story)}>{cleanCopy(story.title)}</a></h3>
     </article>)}</div>
