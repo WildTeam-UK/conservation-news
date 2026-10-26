@@ -27,6 +27,8 @@ export type PublishedStory = {
   image_alt: string | null;
   published_at: string;
   updated_at: string;
+  editorial_updated_at: string | null;
+  editorial_change_summary: string | null;
   content_type: 'news' | 'daily_digest' | 'weekly_digest';
   digest_period_end: string | null;
   generation_metadata: Record<string, unknown>;
@@ -41,7 +43,7 @@ type PublishedStoryDetail = PublishedStory & {
   story_contextual_links: PublishedContextualLink[];
 };
 
-const storyListingSelect = 'id, slug, headline, standfirst, image_url, image_alt, published_at, updated_at, content_type, digest_period_end, generation_metadata, story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_conservation_outlooks(classification, score, confidence, rationale)';
+const storyListingSelect = 'id, slug, headline, standfirst, image_url, image_alt, published_at, updated_at, editorial_updated_at, editorial_change_summary, content_type, digest_period_end, generation_metadata, story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_conservation_outlooks(classification, score, confidence, rationale)';
 const storyDetailSelect = `${storyListingSelect}, story_sources(source_name, source_title, source_url, source_role, display_order), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale)`;
 
 export function publishedTopics(story: PublishedStory) {
@@ -163,7 +165,10 @@ export function publishedStoryToArticle(story: PublishedStoryDetail, goodNewsSet
     imageUrl: story.image_url ?? content.image_url,
     imageAlt: story.image_alt ?? content.image_alt,
     imageCredit: content.image_credit,
-    updatedAt: story.updated_at,
+    publishedAt: story.published_at,
+    editorialUpdatedAt: story.editorial_updated_at,
+    editorialChangeSummary: story.editorial_change_summary,
+    updatedAt: story.editorial_updated_at ?? story.published_at,
     keyTakeaways: content.key_takeaways.map((item) => ({ text: item.text, sourceIds: item.source_ids, links: item.links })),
     whyItMatters: { text: content.why_it_matters.text, sourceIds: content.why_it_matters.source_ids, links: content.why_it_matters.links },
     whatHappensNext: { text: content.what_happens_next.text, sourceIds: content.what_happens_next.source_ids, links: content.what_happens_next.links },

@@ -14,7 +14,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   const { user } = auth;
   const supabase = getSupabaseAdminClient();
   const [{ data: story, error: storyError }, { count: sourceCount, error: sourcesError }] = await Promise.all([
-    supabase.from('stories').select('id, status, generation_metadata, taxonomy_review_required, taxonomy_review_reason').eq('id', id).single(),
+    supabase.from('stories').select('id, status, published_at, generation_metadata, taxonomy_review_required, taxonomy_review_reason').eq('id', id).single(),
     supabase.from('story_sources').select('*', { count: 'exact', head: true }).eq('story_id', id),
   ]);
   if (storyError || !story) return Response.json({ error: 'Draft not found.' }, { status: 404 });
@@ -25,7 +25,7 @@ export async function POST(_: Request, { params }: { params: Promise<{ id: strin
   if (!content) return Response.json({ error: 'The article content could not be verified.' }, { status: 422 });
   const failed = publicationChecks(content, sourceCount ?? 0).filter((check) => !check.passed);
   if (failed.length) return Response.json({ error: `Complete these checks before publishing: ${failed.map((check) => check.label).join('; ')}.` }, { status: 422 });
-  const publishedAt = new Date().toISOString();
+  const publishedAt = story.published_at ?? new Date().toISOString();
   const { error: updateError } = await supabase.from('stories').update({ status: 'published', published_at: publishedAt, reviewer_id: user.id }).eq('id', id).eq('status', 'draft');
   if (updateError) return Response.json({ error: 'The article could not be published.' }, { status: 500 });
   await Promise.all([
@@ -47,10 +47,10 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   if ('response' in auth) return auth.response;
   const { user } = auth;
   const supabase = getSupabaseAdminClient();
-  const { error } = await supabase.from('stories').update({ status: 'draft', published_at: null, reviewer_id: user.id }).eq('id', id).eq('status', 'published');
+  const { error } = await supabase.from('stories').update({ status: 'draft', reviewer_id: user.id }).eq('id', id).eq('status', 'published');
   if (error) return Response.json({ error: 'The article could not be unpublished.' }, { status: 500 });
   await Promise.all([
-    supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'edited', notes: 'Article unpublished and returned to the private editorial workspace.' }),
+    supabase.from('editorial_actions').insert({ story_id: id, user_id: user.id, action: 'edited', notes: 'Article unpublished for correction. Its original publication date was preserved.' }),
     supabase.from('publication_queue').update({ status: 'cancelled', scheduled_for: null, claimed_at: null, hold_reason: 'Article was manually unpublished.', editor_approved_at: null, editor_approved_by: null }).eq('story_id', id),
   ]);
   return Response.json({ saved: true });

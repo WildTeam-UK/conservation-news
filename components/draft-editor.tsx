@@ -9,19 +9,16 @@ import type { DraftCoverageAnalysis, SourcedDraftText, StoryDraftContent } from 
 import { EDITORIAL_TOPICS } from '@/lib/taxonomy';
 import type { TrainingCoursePromotion } from '@/lib/training-courses';
 
-export type DraftSource = { id: string; title: string; publisher: string; url: string; source_type: string };
+export type DraftSource = { id: string; title: string; publisher: string; url: string; source_type: string; source_item_id?: string; published_at?: string | null };
 
-function SourceReferences({ ids, sources }: { ids: string[]; sources: Map<string, DraftSource> }) {
-  return <span className="draft-source-refs">{ids.map((id) => {
-    const source = sources.get(id);
-    return source ? <a href={source.url} target="_blank" rel="noopener noreferrer" title={`${source.publisher}: ${source.title}`} key={id}>{id.replace('source-', '')}</a> : null;
-  })}</span>;
+function SourceReferences({ ids, sources, onChange }: { ids: string[]; sources: Map<string, DraftSource>; onChange: (ids: string[]) => void }) {
+  return <span className="draft-source-selector">{[...sources.values()].map((source) => <span className="draft-source-option" key={source.id}><label title={`Use ${source.publisher}: ${source.title}`}><input type="checkbox" aria-label={`Use source ${source.id.replace('source-', '')}, ${source.publisher}: ${source.title}`} checked={ids.includes(source.id)} onChange={(event) => onChange(event.target.checked ? [...new Set([...ids, source.id])] : ids.filter((id) => id !== source.id))} /><span>{source.id.replace('source-', '')}</span></label><a href={source.url} target="_blank" rel="noopener noreferrer" title={`${source.publisher}: ${source.title}`}>{source.publisher}</a></span>)}</span>;
 }
 
 function SourcedFields({ label, items, sources, onChange }: { label: string; items: SourcedDraftText[]; sources: Map<string, DraftSource>; onChange: (items: SourcedDraftText[]) => void }) {
   return <fieldset className="draft-fieldset"><legend>{label}</legend>{items.map((item, index) => <div className="draft-sourced-field" key={`${label}-${index}`}>
     <textarea aria-label={`${label}, item ${index + 1}`} value={item.text} onChange={(event) => onChange(items.map((current, currentIndex) => currentIndex === index ? { ...current, text: event.target.value } : current))} rows={3} />
-    <div><span>Supporting sources</span><SourceReferences ids={item.source_ids} sources={sources} /></div>
+    <div><span>Supporting sources</span><SourceReferences ids={item.source_ids} sources={sources} onChange={(source_ids) => onChange(items.map((current, currentIndex) => currentIndex === index ? { ...current, source_ids } : current))} /></div>
   </div>)}</fieldset>;
 }
 
@@ -29,7 +26,39 @@ function SingleSourcedField({ label, item, sources, onChange }: { label: string;
   return <SourcedFields label={label} items={[item]} sources={sources} onChange={(items) => items[0] && onChange(items[0])} />;
 }
 
-export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, coursePromotion, readOnly = false }: { storyId: string; initialContent: StoryDraftContent; sourceList: DraftSource[]; updatedAt: string; coursePromotion?: TrainingCoursePromotion | null; readOnly?: boolean }) {
+type DraftEditorProps = {
+  storyId: string;
+  initialContent: StoryDraftContent;
+  sourceList: DraftSource[];
+  updatedAt: string;
+  coursePromotion?: TrainingCoursePromotion | null;
+  readOnly?: boolean;
+  saveEndpoint?: string;
+  editorLabel?: string;
+  editorTitle?: string;
+  editorDescription?: string;
+  saveLabel?: string;
+  savedMessage?: string;
+  previewLabel?: string;
+  allowCoverageRecalculation?: boolean;
+};
+
+export function DraftEditor({
+  storyId,
+  initialContent,
+  sourceList,
+  updatedAt,
+  coursePromotion,
+  readOnly = false,
+  saveEndpoint = `/api/admin/drafts/${storyId}`,
+  editorLabel = 'The shared article template',
+  editorTitle = 'Review the generated copy',
+  editorDescription = 'These fields map directly to the public article design. Source numbers remain attached in the editor while you check each factual claim.',
+  saveLabel = 'Save draft',
+  savedMessage = 'Draft saved. Its automatic publishing slot has been checked.',
+  previewLabel,
+  allowCoverageRecalculation = true,
+}: DraftEditorProps) {
   const router = useRouter();
   const [content, setContent] = useState(initialContent);
   const [saving, setSaving] = useState(false);
@@ -47,13 +76,13 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, co
     setMessage('');
     setFailed(false);
     try {
-      const response = await fetch(`/api/admin/drafts/${storyId}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
+      const response = await fetch(saveEndpoint, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ content }) });
       const result = await response.json() as { saved?: boolean; queueWarning?: string; error?: string };
       if (!response.ok || !result.saved) {
         setFailed(true);
         setMessage(result.error ?? 'The draft could not be saved.');
       } else {
-        setMessage(result.queueWarning ? `Draft saved, but ${result.queueWarning}` : 'Draft saved. Its automatic publishing slot has been checked.');
+        setMessage(result.queueWarning ? `Draft saved, but ${result.queueWarning}` : savedMessage);
         router.refresh();
       }
     } catch {
@@ -171,7 +200,7 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, co
   return <>
     <form className={`draft-editor${readOnly ? ' draft-editor-readonly' : ''}`} onSubmit={save}>
       <fieldset disabled={readOnly} className="draft-editor-lock">
-      <div className="draft-editor-heading"><div><p className="eyebrow">The shared article template</p><h2>Review the generated copy</h2><p>These fields now map directly to the public article design. Source numbers remain attached in the editor while you check each factual claim.</p></div><button className="admin-primary-button" type="submit" disabled={saving}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving</> : <><Save /> Save draft</>}</button></div>
+      <div className="draft-editor-heading"><div><p className="eyebrow">{editorLabel}</p><h2>{editorTitle}</h2><p>{editorDescription}</p></div><button className="admin-primary-button" type="submit" disabled={saving}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving</> : <><Save /> {saveLabel}</>}</button></div>
       {message ? <output className={failed ? 'draft-save-message failed' : 'draft-save-message'}>{failed ? null : <Check />}{message}</output> : null}
 
       <section className="draft-edit-section"><h3>Article identity</h3>
@@ -208,7 +237,7 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, co
         <SourcedFields label="What we don't know" items={content.what_we_dont_know} sources={sources} onChange={(what_we_dont_know) => setContent({ ...content, what_we_dont_know })} />
       </section>
 
-      <section className="draft-edit-section"><div className="draft-section-heading"><div><h3>Coverage analysis</h3><p className="draft-section-note">These calibrated scores power both coverage panels in the article.</p></div><button className="admin-secondary-button" type="button" onClick={recalculateCoverage} disabled={recalculating}>{recalculating ? <><LoaderCircle className="admin-spinner" /> Recalculating</> : <><RotateCcw /> Recalculate coverage</>}</button></div><div className="draft-score-fields">
+      <section className="draft-edit-section"><div className="draft-section-heading"><div><h3>Coverage analysis</h3><p className="draft-section-note">These calibrated scores power both coverage panels in the article.</p></div>{allowCoverageRecalculation ? <button className="admin-secondary-button" type="button" onClick={recalculateCoverage} disabled={recalculating}>{recalculating ? <><LoaderCircle className="admin-spinner" /> Recalculating</> : <><RotateCcw /> Recalculate coverage</>}</button> : null}</div><div className="draft-score-fields">
         {coverageLooksUncalibrated ? <p className="draft-coverage-warning">These scores came from the earlier decimal-conversion bug. Use “Recalculate coverage” before publishing.</p> : null}
         <label><span>Ecological</span><input type="number" min="0" max="100" value={content.coverage_analysis.ecological} onChange={(event) => setCoverage('ecological', event.target.value)} /></label>
         <label><span>Evidence-led</span><input type="number" min="0" max="100" value={content.coverage_analysis.evidence} onChange={(event) => setCoverage('evidence', event.target.value)} /></label>
@@ -220,7 +249,7 @@ export function DraftEditor({ storyId, initialContent, sourceList, updatedAt, co
     </form>
 
     <section className="draft-template-preview" aria-label={readOnly ? 'Published article preview' : 'Private article preview'}>
-      <div className="draft-preview-banner"><ShieldCheck /><span>{readOnly ? 'Published article using the live article template' : 'Private preview using the live article template'}</span><strong>{readOnly ? 'Live' : 'Not published'}</strong></div>
+      <div className="draft-preview-banner"><ShieldCheck /><span>{previewLabel ?? (readOnly ? 'Published article using the live article template' : 'Private preview using the live article template')}</span><strong>{readOnly ? 'Live' : 'Not published'}</strong></div>
       <ArticleTemplate article={article} />
     </section>
   </>;

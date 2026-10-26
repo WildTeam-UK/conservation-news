@@ -31,6 +31,9 @@ export type ArticleTemplateData = {
   imageAlt?: string;
   imageCredit?: EditorialImageCreditData | null;
   updatedAt: string;
+  publishedAt?: string;
+  editorialUpdatedAt?: string | null;
+  editorialChangeSummary?: string | null;
   keyTakeaways: ArticleText[];
   whyItMatters: ArticleText;
   whatHappensNext: ArticleText;
@@ -103,7 +106,8 @@ export function ArticleTemplate({ article, sharePath }: { article: ArticleTempla
     </header>
     <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt?.trim() || `Illustrative image for ${article.headline}`} loading="eager" fetchPriority="high" decoding="async" />{article.goodNews ? <GoodNewsBadge overlay /> : null}<EditorialImageCredit credit={article.imageCredit} /></> : <span>Lead image to be selected</span>}</figure>
     <section className="article-overview shell">
-      <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}<p className="story-update-note">Last updated {formattedDate(article.updatedAt)}. This story may be updated as it develops.</p></div>
+      <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}<p className="story-update-note">{article.editorialUpdatedAt && article.publishedAt ? <>First published {formattedDate(article.publishedAt)}. Updated {formattedDate(article.editorialUpdatedAt)}.</> : <>Published {formattedDate(article.publishedAt ?? article.updatedAt)}. This story may be updated as it develops.</>}</p></div>
+      {article.editorialUpdatedAt && article.editorialChangeSummary ? <aside className="article-change-summary"><p className="eyebrow">Editorial update</p><h2>What changed</h2><p>{article.editorialChangeSummary}</p></aside> : null}
       <h2>The story at a glance</h2>
       <div className="article-overview-reading">
         {sharePath ? <SocialShare path={sharePath} title={article.headline} /> : null}

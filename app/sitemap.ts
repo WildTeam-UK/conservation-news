@@ -26,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     const date = type ? story.slug.replace(`${type}-digest-`, '') : null;
     return {
       url: absoluteUrl(type && date ? digestPath(type, date) : `/stories/${story.slug}`),
-      lastModified: new Date(story.updated_at || story.published_at),
+      lastModified: new Date(story.editorial_updated_at || story.published_at),
       changeFrequency: 'weekly' as const,
       priority: type ? 0.8 : 0.7,
     };

@@ -316,13 +316,13 @@ export async function publishClaimedQueueItem(queueId: string) {
 
   try {
     const [{ data: story, error: storyError }, { count: sourceCount, error: sourceError }] = await Promise.all([
-      supabase.from('stories').select('id, status, cluster_id, headline, generation_metadata').eq('id', queueItem.story_id).single(),
+      supabase.from('stories').select('id, status, cluster_id, headline, published_at, generation_metadata').eq('id', queueItem.story_id).single(),
       supabase.from('story_sources').select('*', { count: 'exact', head: true }).eq('story_id', queueItem.story_id),
     ]);
     if (storyError || !story) throw storyError ?? new Error('Queued article was not found.');
     if (sourceError) throw sourceError;
     if (story.status === 'published') {
-      await supabase.from('publication_queue').update({ status: 'published', published_at: new Date().toISOString(), claimed_at: null, hold_reason: null }).eq('id', queueId);
+      await supabase.from('publication_queue').update({ status: 'published', published_at: story.published_at ?? new Date().toISOString(), claimed_at: null, hold_reason: null }).eq('id', queueId);
       return { action: 'already_published', storyId: story.id, headline: story.headline };
     }
     if (story.status !== 'draft') throw new Error('The queued article is no longer a private draft.');
@@ -342,7 +342,7 @@ export async function publishClaimedQueueItem(queueId: string) {
       return { action: 'held', storyId: story.id, headline: story.headline, reason: failed.join('; ') };
     }
 
-    const publishedAt = new Date().toISOString();
+    const publishedAt = story.published_at ?? new Date().toISOString();
     const { data: published, error: publishError } = await supabase.from('stories').update({ status: 'published', published_at: publishedAt, reviewer_id: null }).eq('id', story.id).eq('status', 'draft').select('id').maybeSingle();
     if (publishError || !published) throw publishError ?? new Error('The draft changed before it could be published.');
     const { error: queueUpdateError } = await supabase.from('publication_queue').update({ status: 'published', published_at: publishedAt, claimed_at: null, hold_reason: null, last_error: null }).eq('id', queueId);

@@ -40,9 +40,16 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
   const { data: stories, error } = await supabase.from('stories').select('id, cluster_id, headline, standfirst, status, updated_at, published_at, generation_metadata').eq('content_type', 'news').in('status', ['draft', 'published']).order('updated_at', { ascending: false });
   if (error) throw new Error('Unable to load articles.');
   const clusterIds = (stories ?? []).flatMap((story) => story.cluster_id ? [story.cluster_id] : []);
-  const { data: updateRows } = clusterIds.length ? await supabase.from('story_cluster_updates').select('cluster_id').in('cluster_id', clusterIds).eq('status', 'pending_review') : { data: [] };
+  const storyIds = (stories ?? []).map((story) => story.id);
+  const [{ data: updateRows, error: updatesError }, { data: revisionRows, error: revisionsError }] = await Promise.all([
+    clusterIds.length ? supabase.from('story_cluster_updates').select('cluster_id').in('cluster_id', clusterIds).eq('status', 'pending_review') : Promise.resolve({ data: [], error: null }),
+    storyIds.length ? supabase.from('story_editorial_revisions').select('story_id').in('story_id', storyIds).eq('status', 'draft') : Promise.resolve({ data: [], error: null }),
+  ]);
+  if (updatesError) throw new Error('Unable to load pending coverage reviews.');
+  if (revisionsError) throw new Error('Unable to load editorial revisions. Run the coverage-revision migration first.');
   const updateCounts = new Map<string, number>();
   for (const update of updateRows ?? []) updateCounts.set(update.cluster_id, (updateCounts.get(update.cluster_id) ?? 0) + 1);
+  const revisionStoryIds = new Set((revisionRows ?? []).map((revision) => revision.story_id));
   const drafts = stories?.filter((story) => story.status === 'draft') ?? [];
   const published = stories?.filter((story) => story.status === 'published') ?? [];
   const draftIds = drafts.map((draft) => draft.id);
@@ -77,10 +84,11 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
       {!stories?.length ? <section className="source-empty candidate-empty"><FilePenLine /><h2>No articles yet</h2><p>Research a candidate, then choose Generate draft.</p></section> : visibleArticles.length ? <section className="draft-list">{visibleArticles.map((article) => {
         const metadata = article.generation_metadata as { topic_classification?: { primary_topic?: string }; model?: string };
         const updates = article.cluster_id ? updateCounts.get(article.cluster_id) ?? 0 : 0;
+        const hasRevision = revisionStoryIds.has(article.id);
         const queue = article.status === 'draft' ? queueByStory.get(article.id) : null;
         const group = article.status === 'draft' ? queueGroup(queue?.status) : 'published';
         const articleStatus = article.status === 'published' ? 'Published' : queueLabel(queue?.status);
-        return <article key={article.id}><div><div className="draft-card-labels"><p className="eyebrow">{metadata.topic_classification?.primary_topic ?? 'Conservation'} · {article.status === 'published' ? 'Live article' : 'Private article'}</p><span className={`draft-queue-badge ${group === 'drafts' ? 'unscheduled' : group}`}>{articleStatus}</span></div>{updates ? <p className="new-coverage-badge"><BellRing /> {updates} new coverage {updates === 1 ? 'source' : 'sources'} to review</p> : null}<h2>{article.headline}</h2><p>{stripSourceMarkers(article.standfirst)}</p><small>{article.status === 'published' ? `Published ${article.published_at ? dateTime.format(new Date(article.published_at)) : ''}` : `Updated ${dateTime.format(new Date(article.updated_at))} · ${metadata.model ?? 'OpenAI'}${queue?.scheduled_for ? ` · Publishes ${dateTime.format(new Date(queue.scheduled_for))}` : queue?.hold_reason ? ` · ${queue.hold_reason}` : ''}`}</small></div><div className="draft-card-actions">{group === 'drafts' ? <AddToQueueButton storyId={article.id} compact /> : null}<a href={`/admin/drafts/${article.id}`}>{article.status === 'published' ? 'View article controls' : 'Review and edit'} <ArrowRight /></a></div></article>;
+        return <article key={article.id}><div><div className="draft-card-labels"><p className="eyebrow">{metadata.topic_classification?.primary_topic ?? 'Conservation'} · {article.status === 'published' ? 'Live article' : 'Private article'}</p><span className={`draft-queue-badge ${group === 'drafts' ? 'unscheduled' : group}`}>{articleStatus}</span></div>{hasRevision ? <p className="new-coverage-badge"><FilePenLine /> Editorial revision in progress</p> : updates ? <p className="new-coverage-badge"><BellRing /> {updates} new coverage {updates === 1 ? 'source' : 'sources'} to review</p> : null}<h2>{article.headline}</h2><p>{stripSourceMarkers(article.standfirst)}</p><small>{article.status === 'published' ? `Published ${article.published_at ? dateTime.format(new Date(article.published_at)) : ''}` : `Updated ${dateTime.format(new Date(article.updated_at))} · ${metadata.model ?? 'OpenAI'}${queue?.scheduled_for ? ` · Publishes ${dateTime.format(new Date(queue.scheduled_for))}` : queue?.hold_reason ? ` · ${queue.hold_reason}` : ''}`}</small></div><div className="draft-card-actions">{group === 'drafts' ? <AddToQueueButton storyId={article.id} compact /> : null}<a href={`/admin/drafts/${article.id}`}>{hasRevision ? 'Review revision' : article.status === 'published' ? 'View article controls' : 'Review and edit'} <ArrowRight /></a></div></article>;
       })}</section> : <section className="source-empty candidate-empty draft-filter-empty"><Search /><h2>No matching articles</h2><p>Try another search or choose a different article status.</p></section>}
     </div>
   </main>;

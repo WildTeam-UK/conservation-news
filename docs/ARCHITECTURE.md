@@ -144,8 +144,9 @@ Public read policies expose active taxonomy and published editorial records. Adm
 - Identity: `admin_users`
 - Taxonomy: `topics`, `content_tags`, aliases and story/cluster joins
 - Sources: `sources`, `source_topics`, `source_items`, ingestion runs and per-source ingestion tasks
-- Editorial grouping: `story_clusters`, cluster items and cluster updates
+- Editorial grouping: `story_clusters`, cluster items and reviewable cluster updates
 - Published content: `stories`, topics, organisations, sources and contextual links
+- Revision history: protected story editorial revisions and their linked coverage updates
 - AI evidence: `ai_generations`, `research_packs`, linking assessments
 - Daily workflow: editorial settings, runs, run items and run events
 - Publishing: `publication_queue`
@@ -192,6 +193,10 @@ Eligible drafts from the current editorial run enter `publication_queue`. The da
 The database keeps an article's `stories.status` as `draft` until it becomes public. Admin workflow labels combine that private/public state with `publication_queue.status`: **Drafts** are private articles outside the active queue, **Scheduled** covers queued, scheduled and currently publishing articles, **Held** identifies private articles requiring attention, and **Published** identifies live articles. These admin groups are mutually exclusive even though scheduled and held records remain database drafts.
 
 Published content is read dynamically for the homepage, archives, related stories, sitemap, structured data and `llms.txt`.
+
+New reporting matched to an existing news cluster creates a pending coverage review. An authenticated editor can dismiss it, record that it was reviewed with no article change, or attach it to a protected editorial revision. A revision clones the current structured article and source list; editing or saving it never changes the live story. Applying it is an explicit database transaction that updates the article and source coverage, records the revision and review decisions, and preserves the original `published_at` value. A database trigger also prevents later news-article updates from replacing an existing publication timestamp accidentally. Published revisions alone set `editorial_updated_at` and a public change summary. Routine metadata changes and corrections update the database audit timestamp but do not create a public editorial-update date. Unpublishing an article for correction also preserves its original publication date for later republication.
+
+Public article dates therefore use `published_at` as the original publication date and `editorial_updated_at` only for an explicitly applied editorial content update. Updated articles show both dates and a “What changed” section. Chronological archives continue to order by `published_at`, while SEO `dateModified` and sitemap modification dates use the editorial update date when one exists. Existing articles are not backfilled with editorial update timestamps.
 
 ### Digests
 

@@ -125,6 +125,8 @@ Implementation note: `max_new_drafts` remains the backward-compatible database f
 4. Add the public first-published, updated and “What changed” presentation.
 5. Backfill no editorial update timestamps automatically.
 
+Implementation note: pending coverage now has explicit dismiss, reviewed-with-no-change and prepare-revision decisions. A prepared revision is stored separately from the live article and can collect more than one matched source. Applying it atomically records the source decisions and revision audit, updates the story without changing `published_at`, and sets the public editorial update date and “What changed” summary only when the story is already published. Routine corrections and image or metadata edits do not create an editorial update timestamp, and no historical timestamps are inferred.
+
 ### Batch 5: source intelligence
 
 1. Add source performance aggregates and rolling contribution measures.
