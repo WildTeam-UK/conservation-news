@@ -230,7 +230,7 @@ The article template is shared by every published news story:
 5. Sticky desktop sidebar containing coverage analysis and a course promotion.
 6. Newsletter CTA and related-story discovery supplied by the page route.
 
-Inline source references are numbered circles. Contextual links may point to relevant internal stories, taxonomy pages, courses or external sources. Links are not added merely to meet a quota. The source section includes a full-column, rounded disclosure explaining that WildNews synthesises the original reporting and links to the AI methodology. Article feedback follows the sources as an unboxed editorial section with large icon-only controls; digest feedback retains its compact card treatment.
+Inline source references are numbered circles. Contextual links may point to relevant internal stories, taxonomy pages, courses or external sources. Links are not added merely to meet a quota. The source section includes a plain full-column disclosure explaining that WildNews synthesises the original reporting and links to the AI methodology. Article feedback follows the sources as an unboxed editorial section with large icon-only controls aligned beside the question where space allows; digest feedback retains its compact card treatment.
 
 On phones, the overview flows into the article without a divider. Editorial sections use one consistent 48px gap rather than accumulated adjacent padding. Coverage dimensions, the course-promotion headline and the following newsletter headline share the supporting-panel title size. Source-reference circles are separated from prose by collapsible whitespace, so a wrapped reference group begins flush with the new line.
 
