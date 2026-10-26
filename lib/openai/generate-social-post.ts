@@ -5,8 +5,8 @@ import { estimateLunaTokenCost } from '@/lib/openai/pricing';
 import { getOpenAIClient } from './client';
 
 const MODEL = 'gpt-6-luna';
-export const SOCIAL_GENERATION_PROMPT_VERSION = 'social-editor-v2';
-export const SOCIAL_REVIEW_PROMPT_VERSION = 'social-review-v2';
+export const SOCIAL_GENERATION_PROMPT_VERSION = 'social-editor-v3';
+export const SOCIAL_REVIEW_PROMPT_VERSION = 'social-review-v3';
 
 export class SocialEditorialValidationError extends Error {}
 
@@ -30,7 +30,6 @@ export type SocialPostDraft = {
   featured_story_ids: string[];
   opening: string;
   paragraphs: string[];
-  call_to_action: string;
   hashtags: string[];
 };
 
@@ -77,10 +76,9 @@ function postSchema(type: DigestType, storyIds: string[]) {
       featured_story_ids: { type: 'array', minItems: featuredMinimum, maxItems: featuredMaximum, items: { type: 'string', enum: storyIds } },
       opening: { type: 'string' },
       paragraphs: { type: 'array', minItems: 2, maxItems: 6, items: { type: 'string' } },
-      call_to_action: { type: 'string' },
       hashtags: { type: 'array', minItems: 2, maxItems: 3, items: { type: 'string', pattern: '^#[A-Za-z][A-Za-z0-9]*$' } },
     },
-    required: ['approach', 'featured_story_ids', 'opening', 'paragraphs', 'call_to_action', 'hashtags'],
+    required: ['approach', 'featured_story_ids', 'opening', 'paragraphs', 'hashtags'],
     additionalProperties: false,
   } as const;
 }
@@ -91,7 +89,6 @@ function cleanDraft(draft: SocialPostDraft): SocialPostDraft {
     featured_story_ids: [...new Set(draft.featured_story_ids)],
     opening: cleanAiText(draft.opening).trim(),
     paragraphs: draft.paragraphs.map((paragraph) => cleanAiText(paragraph).trim()).filter(Boolean),
-    call_to_action: cleanAiText(draft.call_to_action).trim(),
     hashtags: [...new Set(draft.hashtags.map((hashtag) => hashtag.trim()))],
   };
 }
@@ -110,6 +107,20 @@ function openingSimilarity(first: string, second: string) {
   if (!firstWords.size || !secondWords.size) return 0;
   const shared = [...firstWords].filter((word) => secondWords.has(word)).length;
   return shared / new Set([...firstWords, ...secondWords]).size;
+}
+
+function emojiCount(value: string) {
+  return (value.match(/\p{Extended_Pictographic}/gu) ?? []).length;
+}
+
+const INAPPROPRIATE_REACTION_EMOJI = /[\u{1F600}-\u{1F64F}\u{1F910}-\u{1F92F}\u{1FAE0}-\u{1FAE8}\u{1F389}\u{1F38A}\u{1F44F}\u{1F44D}\u{2764}\u{1F495}-\u{1F49F}]/u;
+
+function digestLinkLabel(type: DigestType) {
+  return `Read the latest WildNews ${type} digest:`;
+}
+
+export function socialDigestLinkLine(input: Pick<SocialEditorialInput, 'type' | 'canonicalUrl'>) {
+  return `${digestLinkLabel(input.type)} ${input.canonicalUrl}`;
 }
 
 export function socialClaimMatchesProse(claim: string, proseParts: string[]) {
@@ -132,8 +143,8 @@ export function validateSocialPostDraft(draft: SocialPostDraft, input: SocialEdi
   const storyIds = new Set(input.stories.map((story) => story.id));
   const featuredMinimum = input.type === 'weekly' ? 4 : 3;
   const featuredMaximum = input.type === 'weekly' ? 5 : 4;
-  const prose = [draft.opening, ...draft.paragraphs, draft.call_to_action].join('\n\n');
-  const wordCount = words(prose).length;
+  const prose = [draft.opening, ...draft.paragraphs].join('\n\n');
+  const wordCount = words(`${prose}\n\n${digestLinkLabel(input.type)}`).length;
   const minimumWords = input.type === 'weekly' ? 130 : 80;
   const maximumWords = 300;
 
@@ -146,16 +157,17 @@ export function validateSocialPostDraft(draft: SocialPostDraft, input: SocialEdi
   if (draft.hashtags.length < 2 || draft.hashtags.length > 3) issues.push('The post needs two or three hashtags.');
   if (!draft.hashtags.some((hashtag) => hashtag.toLowerCase() === '#wildnews')) issues.push('The post must include #WildNews.');
   if (draft.hashtags.some((hashtag) => !/^#[A-Za-z][A-Za-z0-9]*$/.test(hashtag))) issues.push('Every hashtag must be a plain social hashtag.');
-  const callToActionWords = new Set(normalizedWords(draft.call_to_action));
-  const expectedDigestType = input.type === 'weekly' ? 'weekly' : 'daily';
-  const unexpectedDigestType = input.type === 'weekly' ? 'daily' : 'weekly';
-  if (!['wildnews', expectedDigestType, 'digest'].every((word) => callToActionWords.has(word)) || callToActionWords.has(unexpectedDigestType)) issues.push('The closing invitation must identify the correct WildNews digest.');
   if (/\b(welcome to|here(?:'s| is) (?:your|the)|today(?:'s|’s) (?:digest|roundup)|daily roundup|weekly roundup)\b/i.test(draft.opening)) issues.push('The opening uses a generic publication announcement.');
   if (/\b(today|tonight|yesterday|tomorrow|this week|last week|next week)\b/i.test(prose)) issues.push('The copy uses a relative date that could become inaccurate on a retry.');
   if (/https?:\/\//i.test(prose)) issues.push('The generated editorial fields must not contain a URL.');
   if (/\*\*|__|\[[^\]]+\]\([^)]+\)|^#{1,6}\s/m.test(prose)) issues.push('The post contains unsupported Markdown formatting.');
   if (prose.includes('—')) issues.push('The post contains an em dash.');
-  if ((prose.match(/\p{Extended_Pictographic}/gu) ?? []).length > 1) issues.push('The post uses more than one emoji.');
+  const openingEmojiCount = emojiCount(draft.opening);
+  const bodyEmojiCount = draft.paragraphs.reduce((total, paragraph) => total + emojiCount(paragraph), 0);
+  if (openingEmojiCount !== 1) issues.push('The opening must contain one relevant editorial emoji.');
+  if (openingEmojiCount + bodyEmojiCount > 3) issues.push('The post uses more than three emojis.');
+  if (draft.paragraphs.some((paragraph) => emojiCount(paragraph) > 1)) issues.push('A body paragraph uses more than one emoji.');
+  if (INAPPROPRIATE_REACTION_EMOJI.test(prose)) issues.push('The post uses an inappropriate reaction, facial or celebratory emoji.');
   if (draft.hashtags.some((hashtag) => prose.includes(hashtag))) issues.push('Hashtags must be kept in the dedicated closing line.');
 
   const opening = draft.opening.split('\n')[0] ?? draft.opening;
@@ -165,7 +177,7 @@ export function validateSocialPostDraft(draft: SocialPostDraft, input: SocialEdi
 
 export function renderSocialPost(draft: SocialPostDraft, input: SocialEditorialInput) {
   const attribution = input.imageCredit ? `Photo: ${input.imageCredit.creator_name} / ${input.imageCredit.source_name}` : '';
-  return [draft.opening, ...draft.paragraphs, draft.hashtags.join(' '), attribution, draft.call_to_action, input.canonicalUrl]
+  return [draft.opening, socialDigestLinkLine(input), ...draft.paragraphs, draft.hashtags.join(' '), attribution]
     .filter(Boolean)
     .join('\n\n');
 }
@@ -174,7 +186,8 @@ export function validateRenderedSocialPost(text: string, input: SocialEditorialI
   const issues: string[] = [];
   const urlOccurrences = text.split(input.canonicalUrl).length - 1;
   if (urlOccurrences !== 1) issues.push('The canonical digest URL must appear exactly once.');
-  if (!text.endsWith(input.canonicalUrl)) issues.push('The canonical digest URL must be the final line.');
+  const blocks = text.split('\n\n');
+  if (blocks[1] !== socialDigestLinkLine(input)) issues.push('The canonical digest link must appear directly beneath the opening paragraph.');
   if (text.includes('—')) issues.push('The rendered post contains an em dash.');
   if (/\*\*|__|\[[^\]]+\]\([^)]+\)|^#{1,6}\s/m.test(text)) issues.push('The rendered post contains unsupported Markdown formatting.');
   if (digestTextGraphemes(text).length > 3_000) issues.push('The rendered post exceeds the supported social length.');
@@ -190,7 +203,11 @@ First select the ${type === 'weekly' ? 'four or five' : 'three or four'} stronge
 
 The post must be useful to a reader who never clicks. Lead with the news, never a publication announcement. Include specific developments and explain why they matter without becoming opinionated, promotional or sensationalist. ${type === 'weekly' ? 'Reflect on the most important developments, implications, contrasts or genuine connections across the week.' : 'Give three or four substantial highlights in a concise, readable briefing.'}
 
-Write short paragraphs suitable for LinkedIn. Aim for ${type === 'weekly' ? '180–250' : '120–180'} words across the opening, body paragraphs and call to action. This is an editorial target rather than a rigid quota, but never exceed 300 words. Do not use Markdown, a URL, image attribution or more than one restrained emoji. Do not use relative phrases such as “today” or “this week”, because a provider retry may happen later. End with a natural invitation that clearly identifies WildNews, the ${type === 'weekly' ? 'weekly' : 'daily'} edition and the digest, without requiring a fixed phrase or word order. Supply two or three relevant hashtags, including #WildNews.
+Write short paragraphs suitable for LinkedIn. Aim for ${type === 'weekly' ? '180–250' : '120–180'} words across the opening and body paragraphs, allowing for a short application-supplied digest link. This is an editorial target rather than a rigid quota, but the complete editorial copy must never exceed 300 words. Do not use Markdown, a URL or image attribution. Supply two or three relevant hashtags, including #WildNews.
+
+Use exactly one highly relevant editorial emoji in the opening paragraph. Choose it from the actual lead story, such as the featured species, habitat, weather event or conservation subject. You may use up to two additional relevant emojis across the body, no more than one in any paragraph, only when they improve scanning. Do not add an emoji to every paragraph. Never use facial-expression, laughing, crying, angry, romantic, applause, thumbs-up or celebratory emojis. Do not use an emoji to make loss, harm or uncertainty feel playful.
+
+Do not use relative phrases such as “today” or “this week”, because a provider retry may happen later. The application adds the canonical digest invitation immediately after the opening, so do not write a call to action or mention the URL yourself.
 
 Avoid generic AI language, clichés, rhetorical questions, forced connections, repeated sentence structures, marketing language and self-congratulation. Return only the requested structured data.`);
 }
@@ -201,9 +218,9 @@ Check the draft against the final published digest, the supplied source-story ev
 
 Every factual claim must be supported by the supplied evidence. Do not add outside knowledge. Preserve uncertainty exactly. A promising intervention is not a proven success, a proposal is not an outcome, and an allegation is not a finding. Reject the post if it cannot be made accurate from the evidence.
 
-You may return the draft unchanged as approved, or revise it to fix a real defect. A revision may only rephrase, remove or reorganise evidence already supplied. It must not add facts. Record concise issues that caused a revision. For each factual claim in the final post, copy an exact excerpt containing that claim into claim_support and provide the IDs of the source stories that support it. The closing invitation and hashtags do not need claim-support entries.
+You may return the draft unchanged as approved, or revise it to fix a real defect. A revision may only rephrase, remove or reorganise evidence already supplied. It must not add facts. Record concise issues that caused a revision. For each factual claim in the final post, copy an exact excerpt containing that claim into claim_support and provide the IDs of the source stories that support it. Hashtags do not need claim-support entries.
 
-Keep the same output constraints: professional British English, aim for the requested editorial word range but never exceed 300 words, no Markdown, no URL, no image attribution, no em dash, no relative date language, two or three hashtags including #WildNews, and a useful post rather than a digest announcement. The closing invitation must clearly identify WildNews, the correct daily or weekly edition and the digest, but it may use natural word order. Return only the requested structured data.`);
+Keep the same output constraints: professional British English, aim for the requested editorial word range but never exceed 300 words, no Markdown, no URL, no image attribution, no em dash, no relative date language, two or three hashtags including #WildNews, and a useful post rather than a digest announcement. Require exactly one highly relevant, non-reaction emoji in the opening and permit no more than two additional relevant body emojis. Remove any emoji that is tonally inappropriate, playful about harm, generic or unrelated to its paragraph. The application supplies the digest invitation, so the post must not add one. Return only the requested structured data.`);
 
 export async function generateSocialEditorial(input: SocialEditorialInput): Promise<SocialEditorialResult> {
   if (!input.stories.length) throw new SocialEditorialValidationError('Social editorial generation requires source-story evidence.');
