@@ -14,6 +14,13 @@ export const dynamic = 'force-dynamic';
 
 type StoredSource = { id?: string; url?: string };
 
+function sourceOnlyChangeSummary(evidence: RevisionSummaryEvidence[]) {
+  const publishers = [...new Set(evidence.map((item) => item.publisher.trim()).filter(Boolean))];
+  if (!publishers.length) return 'The source list was updated with additional reporting. The briefing text was unchanged.';
+  const publisherList = new Intl.ListFormat('en-GB', { style: 'long', type: 'conjunction' }).format(publishers);
+  return `The source list was updated with additional reporting from ${publisherList}. The briefing text was unchanged.`;
+}
+
 async function loadDraftRevision(supabase: SupabaseClient, id: string) {
   return supabase.from('story_editorial_revisions').select('id, story_id, status, base_content, proposed_content, source_list, public_content_changed').eq('id', id).maybeSingle();
 }
@@ -78,7 +85,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
       });
     }
     const generatedSummary = contentChanged ? await generateRevisionSummary({ baseContent, proposedContent, coverageEvidence }) : null;
-    const changeSummary = generatedSummary?.summary ?? 'Additional source reporting was added without changing the public article copy.';
+    const changeSummary = generatedSummary?.summary ?? sourceOnlyChangeSummary(coverageEvidence);
     const { error: summaryError } = await supabase.from('story_editorial_revisions').update({ change_summary: changeSummary, public_content_changed: contentChanged }).eq('id', id).eq('status', 'draft');
     if (summaryError) throw summaryError;
     if (generatedSummary) {

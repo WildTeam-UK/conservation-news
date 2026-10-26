@@ -1,5 +1,5 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation */
-import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
+import { ArrowRight, ChevronDown, CircleHelp, ExternalLink } from 'lucide-react';
 import { ContextualLinkedText } from '@/components/contextual-linked-text';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
 import { SocialShare } from '@/components/social-share';
@@ -35,8 +35,7 @@ export type ArticleTemplateData = {
   imageCredit?: EditorialImageCreditData | null;
   updatedAt: string;
   publishedAt?: string;
-  editorialUpdatedAt?: string | null;
-  editorialChangeSummary?: string | null;
+  editorialUpdates?: { date: string; summary: string; sourceOnly: boolean }[];
   keyTakeaways: ArticleText[];
   whyItMatters: ArticleText;
   whatHappensNext: ArticleText;
@@ -95,6 +94,8 @@ function ArticleTextContent({ value, sources, storyId }: { value: ArticleText; s
 
 export function ArticleTemplate({ article, storyId, sharePath }: { article: ArticleTemplateData; storyId?: string; sharePath?: string }) {
   const { coverage } = article;
+  const editorialUpdates = article.editorialUpdates ?? [];
+  const latestEditorialUpdate = editorialUpdates[0];
   const sourcesById = new Map(article.sources.flatMap((source) => source.id ? [[source.id, source] as const] : []));
   return <article className="article-template">
     {storyId ? <ContentViewTracker storyId={storyId} /> : null}
@@ -112,8 +113,7 @@ export function ArticleTemplate({ article, storyId, sharePath }: { article: Arti
     </header>
     <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt?.trim() || `Illustrative image for ${article.headline}`} loading="eager" fetchPriority="high" decoding="async" />{article.goodNews ? <GoodNewsBadge overlay /> : null}<EditorialImageCredit credit={article.imageCredit} /></> : <span>Lead image to be selected</span>}</figure>
     <section className="article-overview shell">
-      <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}<p className="story-update-note">{article.editorialUpdatedAt && article.publishedAt ? <>First published {formattedDate(article.publishedAt)}. Updated {formattedDate(article.editorialUpdatedAt)}.</> : <>Published {formattedDate(article.publishedAt ?? article.updatedAt)}. This story may be updated as it develops.</>}</p></div>
-      {article.editorialUpdatedAt && article.editorialChangeSummary ? <aside className="article-change-summary"><p className="eyebrow">Editorial update</p><h2>What changed</h2><p>{article.editorialChangeSummary}</p></aside> : null}
+      <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}{latestEditorialUpdate && article.publishedAt ? <details className="story-update-history"><summary><span>First published {formattedDate(article.publishedAt)}. Updated {formattedDate(latestEditorialUpdate.date)}.</span><span className="story-update-action">See what&apos;s changed <ChevronDown /></span></summary><div className="story-update-timeline"><p className="eyebrow">Editorial update</p>{editorialUpdates.map((update, index) => <article key={`${update.date}-${index}`}><time dateTime={update.date}>{formattedDate(update.date)}</time><p>{update.summary}</p></article>)}</div></details> : <p className="story-update-note">Published {formattedDate(article.publishedAt ?? article.updatedAt)}. This story may be updated as it develops.</p>}</div>
       <h2>The story at a glance</h2>
       <div className="article-overview-reading">
         {sharePath ? <SocialShare path={sharePath} title={article.headline} storyId={storyId} /> : null}
