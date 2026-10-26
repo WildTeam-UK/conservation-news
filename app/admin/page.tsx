@@ -119,7 +119,7 @@ export default async function AdminDashboard() {
           <div className="overview-flow-track">
             <a href="/admin/collected"><span><Radio /></span><strong>{itemsResult.count ?? 0}</strong><small>Collected</small></a><ArrowRight />
             <a href="/admin/candidates"><span><Activity /></span><strong>{activeCandidateCount}</strong><small>Candidates</small></a><ArrowRight />
-            <a href="/admin/drafts?view=drafts"><span><FileText /></span><strong>{privateDraftCount}</strong><small>Drafts</small></a><ArrowRight />
+            <a href="/admin/drafts?view=unscheduled"><span><FileText /></span><strong>{privateDraftCount}</strong><small>Unscheduled</small></a><ArrowRight />
             <a href="/admin/queue"><span><CalendarClock /></span><strong>{upcoming.length}</strong><small>Scheduled</small></a><ArrowRight />
             <a href="/admin/drafts?view=published"><span><Newspaper /></span><strong>{publishedResult.count ?? 0}</strong><small>Published</small></a>
           </div>

@@ -14,13 +14,13 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-type ArticleView = 'all' | 'drafts' | 'scheduled' | 'held' | 'published';
-type QueueGroup = 'drafts' | 'scheduled' | 'held';
+type ArticleView = 'all' | 'unscheduled' | 'scheduled' | 'held' | 'published';
+type QueueGroup = 'unscheduled' | 'scheduled' | 'held';
 
 function queueGroup(status?: string): QueueGroup {
   if (status === 'held') return 'held';
   if (status && ['queued', 'scheduled', 'publishing'].includes(status)) return 'scheduled';
-  return 'drafts';
+  return 'unscheduled';
 }
 
 function queueLabel(status?: string) {
@@ -33,8 +33,8 @@ function queueLabel(status?: string) {
 
 export default async function DraftsPage({ searchParams }: { searchParams: Promise<{ view?: string; q?: string }> }) {
   const filters = await searchParams;
-  const requestedView = filters.view === 'unscheduled' ? 'drafts' : filters.view;
-  const view: ArticleView = ['all', 'drafts', 'scheduled', 'held', 'published'].includes(requestedView ?? '') ? requestedView as ArticleView : 'all';
+  const requestedView = filters.view === 'drafts' ? 'unscheduled' : filters.view;
+  const view: ArticleView = ['all', 'unscheduled', 'scheduled', 'held', 'published'].includes(requestedView ?? '') ? requestedView as ArticleView : 'all';
   const search = (filters.q ?? '').trim();
   const { supabase } = await requireContentAdmin();
   const { data: stories, error } = await supabase.from('stories').select('id, cluster_id, headline, standfirst, status, updated_at, published_at, generation_metadata').eq('content_type', 'news').in('status', ['draft', 'published']).order('updated_at', { ascending: false });
@@ -61,7 +61,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
   const counts = {
     all: stories?.length ?? 0,
     scheduled: drafts.filter((draft) => queueGroup(queueByStory.get(draft.id)?.status) === 'scheduled').length,
-    drafts: drafts.filter((draft) => queueGroup(queueByStory.get(draft.id)?.status) === 'drafts').length,
+    unscheduled: drafts.filter((draft) => queueGroup(queueByStory.get(draft.id)?.status) === 'unscheduled').length,
     held: drafts.filter((draft) => queueGroup(queueByStory.get(draft.id)?.status) === 'held').length,
     published: published.length,
   };
@@ -80,7 +80,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
     <AdminNav active="drafts" />
     <div className="admin-shell admin-drafts-shell">
       <section className="admin-welcome candidates-heading"><div><p className="eyebrow">Editorial workspace</p><h1>Articles</h1><p>Search and manage every draft, scheduled, held and published article in one place.</p></div><div className="candidate-summary"><FilePenLine /><strong>{stories?.length ?? 0}</strong><span>total articles</span></div></section>
-      {stories?.length ? <div className="draft-library-tools"><nav aria-label="Filter articles">{(['all', 'drafts', 'scheduled', 'held', 'published'] as ArticleView[]).map((option) => { const query = new URLSearchParams(); if (option !== 'all') query.set('view', option); if (search) query.set('q', search); return <a className={view === option ? 'active' : ''} href={`/admin/drafts${query.size ? `?${query}` : ''}`} aria-current={view === option ? 'page' : undefined} key={option}>{option}<span>{counts[option]}</span></a>; })}</nav><form action="/admin/drafts"><input type="hidden" name="view" value={view === 'all' ? '' : view} /><label><Search /><input aria-label="Search articles" name="q" defaultValue={search} placeholder="Search article titles…" /></label><button type="submit">Search</button>{search ? <a href={`/admin/drafts${view === 'all' ? '' : `?view=${view}`}`}>Clear</a> : null}</form></div> : null}
+      {stories?.length ? <div className="draft-library-tools"><nav aria-label="Filter articles">{(['all', 'unscheduled', 'scheduled', 'held', 'published'] as ArticleView[]).map((option) => { const query = new URLSearchParams(); if (option !== 'all') query.set('view', option); if (search) query.set('q', search); return <a className={view === option ? 'active' : ''} href={`/admin/drafts${query.size ? `?${query}` : ''}`} aria-current={view === option ? 'page' : undefined} key={option}>{option}<span>{counts[option]}</span></a>; })}</nav><form action="/admin/drafts"><input type="hidden" name="view" value={view === 'all' ? '' : view} /><label><Search /><input aria-label="Search articles" name="q" defaultValue={search} placeholder="Search article titles…" /></label><button type="submit">Search</button>{search ? <a href={`/admin/drafts${view === 'all' ? '' : `?view=${view}`}`}>Clear</a> : null}</form></div> : null}
       {!stories?.length ? <section className="source-empty candidate-empty"><FilePenLine /><h2>No articles yet</h2><p>Research a candidate, then choose Generate draft.</p></section> : visibleArticles.length ? <section className="draft-list">{visibleArticles.map((article) => {
         const metadata = article.generation_metadata as { topic_classification?: { primary_topic?: string }; model?: string };
         const updates = article.cluster_id ? updateCounts.get(article.cluster_id) ?? 0 : 0;
@@ -88,7 +88,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
         const queue = article.status === 'draft' ? queueByStory.get(article.id) : null;
         const group = article.status === 'draft' ? queueGroup(queue?.status) : 'published';
         const articleStatus = article.status === 'published' ? 'Published' : queueLabel(queue?.status);
-        return <article key={article.id}><div><div className="draft-card-labels"><p className="eyebrow">{metadata.topic_classification?.primary_topic ?? 'Conservation'} · {article.status === 'published' ? 'Live article' : 'Private article'}</p><span className={`draft-queue-badge ${group === 'drafts' ? 'unscheduled' : group}`}>{articleStatus}</span></div>{hasRevision ? <p className="new-coverage-badge"><FilePenLine /> Editorial revision in progress</p> : updates ? <p className="new-coverage-badge"><BellRing /> {updates} new coverage {updates === 1 ? 'source' : 'sources'} to review</p> : null}<h2>{article.headline}</h2><p>{stripSourceMarkers(article.standfirst)}</p><small>{article.status === 'published' ? `Published ${article.published_at ? dateTime.format(new Date(article.published_at)) : ''}` : `Updated ${dateTime.format(new Date(article.updated_at))} · ${metadata.model ?? 'OpenAI'}${queue?.scheduled_for ? ` · Publishes ${dateTime.format(new Date(queue.scheduled_for))}` : queue?.hold_reason ? ` · ${queue.hold_reason}` : ''}`}</small></div><div className="draft-card-actions">{group === 'drafts' ? <AddToQueueButton storyId={article.id} compact /> : null}<a href={`/admin/drafts/${article.id}`}>{hasRevision ? 'Review revision' : article.status === 'published' ? 'View article controls' : 'Review and edit'} <ArrowRight /></a></div></article>;
+        return <article key={article.id}><div><div className="draft-card-labels"><p className="eyebrow">{metadata.topic_classification?.primary_topic ?? 'Conservation'} · {article.status === 'published' ? 'Live article' : 'Private article'}</p><span className={`draft-queue-badge ${group}`}>{articleStatus}</span></div>{hasRevision ? <p className="new-coverage-badge"><FilePenLine /> Editorial revision in progress</p> : updates ? <p className="new-coverage-badge"><BellRing /> {updates} new coverage {updates === 1 ? 'source' : 'sources'} to review</p> : null}<h2>{article.headline}</h2><p>{stripSourceMarkers(article.standfirst)}</p><small>{article.status === 'published' ? `Published ${article.published_at ? dateTime.format(new Date(article.published_at)) : ''}` : `Updated ${dateTime.format(new Date(article.updated_at))} · ${metadata.model ?? 'OpenAI'}${queue?.scheduled_for ? ` · Publishes ${dateTime.format(new Date(queue.scheduled_for))}` : queue?.hold_reason ? ` · ${queue.hold_reason}` : ''}`}</small></div><div className="draft-card-actions">{group === 'unscheduled' ? <AddToQueueButton storyId={article.id} compact /> : null}<a href={`/admin/drafts/${article.id}`}>{hasRevision ? 'Review revision' : article.status === 'published' ? 'View article controls' : 'Review and edit'} <ArrowRight /></a></div></article>;
       })}</section> : <section className="source-empty candidate-empty draft-filter-empty"><Search /><h2>No matching articles</h2><p>Try another search or choose a different article status.</p></section>}
     </div>
   </main>;

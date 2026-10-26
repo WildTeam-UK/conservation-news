@@ -61,7 +61,7 @@ export default async function PublicationQueuePage() {
         />
 
         <section className="queue-section">
-          <div className="source-list-heading"><div><p className="eyebrow">Coming up</p><h2>{upcoming.length} scheduled {upcoming.length === 1 ? 'article' : 'articles'}</h2></div><p>Times are varied within today&apos;s remaining publishing window. Work without a same-day slot stays private rather than rolling into tomorrow.</p></div>
+          <div className="source-list-heading"><div><p className="eyebrow">Coming up</p><h2>{upcoming.length} upcoming {upcoming.length === 1 ? 'article' : 'articles'}</h2></div><p>Times are varied within today&apos;s remaining publishing window. Work without a same-day slot stays private rather than rolling into tomorrow.</p></div>
           {upcoming.length ? <div className="queue-list">{upcoming.map((item) => { const story = storyFor(item); return story ? <article key={item.id}><span className={`run-status ${item.status}`}>{item.status}</span><div><strong>{story.headline}</strong><small>{item.scheduled_for ? dateTime.format(new Date(item.scheduled_for)) : 'Waiting for a publishing slot'}</small></div><QueueItemActions queueId={item.id} storyId={story.id} /></article> : null; })}</div> : <div className="queue-empty"><CalendarClock /><h3>No articles are waiting</h3><p>Complete drafts will appear here automatically when publishing is enabled.</p></div>}
         </section>
 
