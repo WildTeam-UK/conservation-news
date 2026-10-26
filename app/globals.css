@@ -706,6 +706,12 @@ p{margin-top:0;margin-bottom:1.25em}p:last-child{margin-bottom:0}p+p{margin-top:
 :where(a,button,input,textarea,select,summary):focus-visible{outline:2px solid var(--brand-pink);outline-offset:3px}
 .digest-signup-control input:focus-visible{outline:0}
 
+/* Candidate lifecycle and ranking */
+.candidate-labels .candidate-freshness-label{background:var(--status-info-surface);color:var(--status-info-text)}
+.daily-run-controls label{align-content:start}
+.daily-run-controls label>small{color:var(--muted);font-size:var(--admin-type-min-size);line-height:1.35}
+@media(max-width:900px){.candidate-scores{grid-template-columns:repeat(6,1fr)}}
+
 @media(prefers-reduced-motion:reduce){
   html{scroll-behavior:auto}
   *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}

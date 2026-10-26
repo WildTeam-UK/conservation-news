@@ -7,6 +7,7 @@ import { queueReadyDrafts } from '@/lib/publication-queue';
 import { enrichSourceSuggestionDescriptions, rebuildSourceSuggestionsFromResearch, scanBestSourceSuggestions } from '@/lib/source-discovery';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { firstRelation } from '@/lib/supabase/relations';
+import { candidateRankingSettings, compareRankedCandidates, rankCandidate } from '@/lib/candidate-ranking';
 
 const ASSESSMENT_RESERVE_USD = 0.03;
 const RESEARCH_RESERVE_USD = 0.06;
@@ -15,7 +16,6 @@ const DRAFT_RESERVE_USD = 0.015;
 // lasts 90 seconds. Three minutes leaves a full extra heartbeat for any late
 // completion while recovering genuinely interrupted work promptly.
 const STALE_STEP_MINUTES = 3;
-const CANDIDATE_FRESHNESS_DAYS = 7;
 
 type RunStatus = 'running' | 'completed' | 'partial' | 'failed' | 'budget_stopped';
 type RunStage = 'collecting' | 'assessing' | 'researching' | 'drafting' | 'finished';
@@ -79,52 +79,42 @@ type RankedCandidate = {
   id: string;
   overall_score: number | null;
   relevance_score: number | null;
+  assessment: { primary_topic?: string } | null;
   created_at: string;
+  last_source_at: string | null;
 };
 
 async function selectRecentUndraftedCandidates(limit: number) {
   const supabase = getSupabaseAdminClient();
-  const cutoff = new Date(Date.now() - CANDIDATE_FRESHNESS_DAYS * 24 * 60 * 60_000);
-  const { data: candidateRows, error: candidateError } = await supabase
-    .from('story_clusters')
-    .select('id, overall_score, relevance_score, created_at')
-    .eq('status', 'selected')
-    .order('overall_score', { ascending: false, nullsFirst: false })
-    .limit(250);
-  if (candidateError) throw candidateError;
-  const candidates = (candidateRows ?? []) as RankedCandidate[];
-  if (!candidates.length) return [];
-
-  const candidateIds = candidates.map((candidate) => candidate.id);
-  const [{ data: existingStories, error: storyError }, { data: clusterLinks, error: linkError }] = await Promise.all([
-    supabase.from('stories').select('cluster_id').in('cluster_id', candidateIds),
-    supabase.from('story_cluster_items').select('cluster_id, source_item_id').in('cluster_id', candidateIds),
-  ]);
-  if (storyError) throw storyError;
-  if (linkError) throw linkError;
-
-  const draftedIds = new Set((existingStories ?? []).flatMap((story) => story.cluster_id ? [story.cluster_id] : []));
-  const sourceItemIds = [...new Set((clusterLinks ?? []).map((link) => link.source_item_id))];
-  const { data: sourceItems, error: sourceError } = sourceItemIds.length
-    ? await supabase.from('source_items').select('id, published_at, discovered_at').in('id', sourceItemIds)
-    : { data: [], error: null };
-  if (sourceError) throw sourceError;
-
-  const sourceDates = new Map((sourceItems ?? []).map((item) => [item.id, item.published_at ?? item.discovered_at]));
-  const latestDateByCluster = new Map<string, number>();
-  for (const link of clusterLinks ?? []) {
-    const date = Date.parse(sourceDates.get(link.source_item_id) ?? '');
-    if (Number.isFinite(date)) latestDateByCluster.set(link.cluster_id, Math.max(latestDateByCluster.get(link.cluster_id) ?? 0, date));
+  const settingsRequest = supabase.from('editorial_run_settings').select('candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).single();
+  const candidates: RankedCandidate[] = [];
+  const pageSize = 1000;
+  for (let from = 0; ; from += pageSize) {
+    const { data, error } = await supabase.from('story_clusters').select('id, overall_score, relevance_score, assessment, created_at, last_source_at').eq('status', 'selected').range(from, from + pageSize - 1);
+    if (error) throw error;
+    const page = (data ?? []) as RankedCandidate[];
+    candidates.push(...page);
+    if (page.length < pageSize) break;
+  }
+  const { data: settingsRow, error: settingsError } = await settingsRequest;
+  if (settingsError) throw settingsError;
+  const settings = candidateRankingSettings(settingsRow);
+  if (!candidates.length) return { candidates: [], settings };
+  const ranked = candidates.map((candidate) => ({ ...candidate, ranking: rankCandidate(candidate, settings) })).filter((candidate) => candidate.ranking.isFresh).sort(compareRankedCandidates);
+  const shortlist: typeof ranked = [];
+  const safeLimit = Math.max(1, Math.min(25, limit));
+  for (let from = 0; from < ranked.length && shortlist.length < safeLimit; from += 100) {
+    const page = ranked.slice(from, from + 100);
+    const { data: existingStories, error: storyError } = await supabase.from('stories').select('cluster_id').in('cluster_id', page.map((candidate) => candidate.id));
+    if (storyError) throw storyError;
+    const draftedIds = new Set((existingStories ?? []).flatMap((story) => story.cluster_id ? [story.cluster_id] : []));
+    shortlist.push(...page.filter((candidate) => !draftedIds.has(candidate.id)).slice(0, safeLimit - shortlist.length));
   }
 
-  return candidates
-    .filter((candidate) => !draftedIds.has(candidate.id))
-    .filter((candidate) => {
-      const sourceDate = latestDateByCluster.get(candidate.id);
-      return sourceDate ? sourceDate >= cutoff.getTime() : Date.parse(candidate.created_at) >= cutoff.getTime();
-    })
-    .sort((a, b) => Number(b.overall_score ?? 0) - Number(a.overall_score ?? 0) || Number(b.relevance_score ?? 0) - Number(a.relevance_score ?? 0) || Date.parse(b.created_at) - Date.parse(a.created_at))
-    .slice(0, Math.max(1, Math.min(25, limit)));
+  return {
+    candidates: shortlist,
+    settings,
+  };
 }
 
 async function addEvent(runId: string, stage: string, message: string, options: {
@@ -343,7 +333,8 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
       return getEditorialRunSnapshot(run.id, `Assessed ${result.assessedItems} items. ${result.remainingItems} remain in the recent backlog.`);
     }
 
-    const shortlist = await selectRecentUndraftedCandidates(run.max_new_drafts);
+    const shortlistResult = await selectRecentUndraftedCandidates(run.max_new_drafts);
+    const shortlist = shortlistResult.candidates;
     if (shortlist.length) {
       const { error: itemError } = await supabase.from('editorial_run_items').insert(shortlist.map((candidate, index) => ({
         run_id: run.id,
@@ -362,7 +353,7 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
       estimated_cost_usd: nextCost,
     }).eq('id', run.id);
     await addEvent(run.id, 'assessing', `Assessed ${result.assessedItems} new items, then selected the top ${shortlist.length} recent undrafted candidates.`, {
-      details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, matched_items: result.matchedItems, updates_flagged: result.updatesFlagged, expired_items: result.expiredItems, recent_pool_shortlist: shortlist.length, freshness_days: CANDIDATE_FRESHNESS_DAYS },
+      details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, matched_items: result.matchedItems, updates_flagged: result.updatesFlagged, expired_items: result.expiredItems, recent_pool_shortlist: shortlist.length, freshness_days: shortlistResult.settings.freshnessDays, freshness_decay_per_day: shortlistResult.settings.freshnessDecayPerDay, wildlife_bonus: shortlistResult.settings.wildlifeBonus, selected_effective_scores: shortlist.map((candidate) => ({ cluster_id: candidate.id, effective_score: candidate.ranking.effectiveScore })) },
       estimatedCostUsd: result.estimatedCostUsd,
     });
     if (completed) {

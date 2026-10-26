@@ -8,6 +8,7 @@ import type { ResearchClaim, ResearchContent } from '@/lib/openai/research-story
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { sourceRelationName } from '@/lib/supabase/relations';
 import { londonMediumDateFormatter } from '@/lib/date-format';
+import { candidateRankingSettings, compareRankedCandidates, rankCandidate, type CandidateRanking } from '@/lib/candidate-ranking';
 
 export const dynamic = 'force-dynamic';
 
@@ -27,10 +28,14 @@ type Candidate = {
   selection_rank: number | null;
   assessment: { primary_topic?: string; rationale?: string } | null;
   created_at: string;
+  last_source_at: string | null;
 };
 
+type RankedCandidate = Candidate & { ranking: CandidateRanking };
+
 const candidateSorts = {
-  score: 'Highest overall score',
+  score: 'Highest current priority',
+  assessment: 'Highest assessment score',
   newest: 'Newest first',
   oldest: 'Oldest first',
   relevance: 'Highest relevance',
@@ -101,22 +106,30 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
   const sort: CandidateSort = requestedSort && requestedSort in candidateSorts
     ? requestedSort as CandidateSort
     : 'score';
-  const [candidatesResult, rejectedResult] = await Promise.all([
+  const [candidatesResult, rejectedResult, settingsResult] = await Promise.all([
     supabase
       .from('story_clusters')
-      .select('id, working_title, relevance_score, evidence_score, practitioner_value_score, novelty_score, overall_score, selection_rank, assessment, created_at')
+      .select('id, working_title, relevance_score, evidence_score, practitioner_value_score, novelty_score, overall_score, selection_rank, assessment, created_at, last_source_at')
       .eq('status', 'selected')
       .order('created_at', { ascending: false }),
     supabase.from('story_clusters').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
+    supabase.from('editorial_run_settings').select('candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).single(),
   ]);
 
   if (candidatesResult.error) throw new Error('Unable to load assessed candidates.');
+  if (settingsResult.error) throw new Error('Unable to load candidate ranking settings.');
 
-  const candidates = ((candidatesResult.data ?? []) as Candidate[]).sort((a, b) => {
-    if (sort === 'newest') return Date.parse(b.created_at) - Date.parse(a.created_at);
-    if (sort === 'oldest') return Date.parse(a.created_at) - Date.parse(b.created_at);
+  const rankingSettings = candidateRankingSettings(settingsResult.data);
+  const rankedCandidates: RankedCandidate[] = ((candidatesResult.data ?? []) as Candidate[]).map((candidate) => ({ ...candidate, ranking: rankCandidate(candidate, rankingSettings) }));
+  const staleCandidates = rankedCandidates.filter((candidate) => !candidate.ranking.isFresh);
+  const candidates = rankedCandidates.filter((candidate) => candidate.ranking.isFresh).sort((a, b) => {
+    if (sort === 'score') return compareRankedCandidates(a, b);
+    if (sort === 'newest') return b.ranking.latestSourceAt - a.ranking.latestSourceAt;
+    if (sort === 'oldest') return a.ranking.latestSourceAt - b.ranking.latestSourceAt;
 
-    const scoreKey: keyof Candidate = sort === 'relevance'
+    const scoreKey: keyof Candidate = sort === 'assessment'
+      ? 'overall_score'
+      : sort === 'relevance'
       ? 'relevance_score'
       : sort === 'evidence'
         ? 'evidence_score'
@@ -126,7 +139,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
             ? 'novelty_score'
             : 'overall_score';
     const scoreDifference = Number(b[scoreKey] ?? 0) - Number(a[scoreKey] ?? 0);
-    return scoreDifference || Date.parse(b.created_at) - Date.parse(a.created_at);
+    return scoreDifference || b.ranking.latestSourceAt - a.ranking.latestSourceAt;
   });
   const candidateIds = candidates.map((candidate) => candidate.id);
   const sourceMap = new Map<string, CandidateSource[]>();
@@ -176,7 +189,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
       <div className="admin-shell admin-candidates-shell">
         <section className="admin-welcome candidates-heading" aria-labelledby="candidates-heading">
           <div><p className="eyebrow">AI story assessment</p><h1 id="candidates-heading">Candidates</h1><p>The strongest stories from the collected inbox, ranked for editorial review. Nothing on this page is published.</p></div>
-          <div className="candidate-summary"><BrainCircuit /><strong>{candidates.length}</strong><span>recommended</span></div>
+          <div className="candidate-summary"><BrainCircuit /><strong>{candidates.length}</strong><span>active candidates</span></div>
         </section>
 
         {candidates.length ? <form className="candidate-toolbar" method="get">
@@ -196,12 +209,11 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
               const sources = sourceMap.get(candidate.id) ?? [];
               const research = researchMap.get(candidate.id);
               const draftId = draftMap.get(candidate.id);
-              const latestSourceAt = Math.max(...sources.map((source) => Date.parse(source.published_at ?? source.discovered_at)).filter(Number.isFinite), 0);
               return (
                 <article className="candidate-card" id={`candidate-${candidate.id}`} key={candidate.id}>
                   <div className="candidate-rank"><span>Position</span><strong>{index + 1}</strong></div>
                   <div className="candidate-main">
-                    <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span>{!draftId && latestSourceAt > 0 ? <span className="candidate-stale-label"><ClockAlert /> Source dated {londonMediumDateFormatter.format(new Date(latestSourceAt))} · automation uses 7 days</span> : null}</div>
+                    <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span><span className="candidate-freshness-label"><ClockAlert /> Latest source {londonMediumDateFormatter.format(new Date(candidate.ranking.latestSourceAt))} · {candidate.ranking.completeAgeDays ? `${candidate.ranking.completeAgeDays} complete ${candidate.ranking.completeAgeDays === 1 ? 'day' : 'days'} old` : 'less than a day old'}</span></div>
                     <h2>{candidate.working_title}</h2>
                     {assessment.rationale ? <p>{assessment.rationale}</p> : null}
                     <div className="candidate-sources">
@@ -212,7 +224,8 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
                     {research?.status === 'failed' && research.error_message ? <p className="research-error-detail">The previous attempt failed and can be retried.</p> : null}
                   </div>
                   <dl className="candidate-scores">
-                    <div className="candidate-overall"><dt>Overall</dt><dd>{candidate.overall_score ?? 0}</dd></div>
+                    <div className="candidate-overall"><dt>Current priority</dt><dd>{candidate.ranking.effectiveScore}</dd></div>
+                    <div><dt>Assessment</dt><dd>{candidate.overall_score ?? 0}</dd></div>
                     <div><dt>Relevance</dt><dd>{candidate.relevance_score ?? 0}</dd></div>
                     <div><dt>Evidence</dt><dd>{candidate.evidence_score ?? 0}</dd></div>
                     <div><dt>Practitioner value</dt><dd>{candidate.practitioner_value_score ?? 0}</dd></div>
@@ -225,7 +238,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
           </section>
         )}
 
-        <p className="candidate-rejected-note">{rejectedResult.count ?? 0} assessed {rejectedResult.count === 1 ? 'story was' : 'stories were'} not selected. They remain recorded for audit and can be reviewed later.</p>
+        <p className="candidate-rejected-note">Scores lose {rankingSettings.freshnessDecayPerDay} points per complete day. Wildlife candidates receive a {rankingSettings.wildlifeBonus}-point relevance bonus. {staleCandidates.length} {staleCandidates.length === 1 ? 'candidate is' : 'candidates are'} older than {rankingSettings.freshnessDays} days and hidden from this active workspace. {rejectedResult.count ?? 0} assessed {rejectedResult.count === 1 ? 'story was' : 'stories were'} not selected. All remain recorded for audit.</p>
       </div>
     </main>
   );

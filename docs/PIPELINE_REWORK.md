@@ -43,6 +43,8 @@ The core operating model is deliberately simple:
 - Geography is recorded for discovery and future regional archives, not used as a ranking factor.
 - The daily run selects only the strongest eligible candidates needed to fill that day's configured publication capacity.
 
+Implementation note: the freshness window, daily decay and wildlife bonus are configurable in the existing daily workflow settings. Effective scores are calculated dynamically, while the original assessment score is preserved for audit.
+
 ### Daily editorial run and publication
 
 - `max_new_drafts` and `max_auto_publishes_per_day` become one daily article target in the admin experience and workflow.

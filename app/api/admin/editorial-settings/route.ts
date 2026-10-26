@@ -13,10 +13,16 @@ export async function PATCH(request: Request) {
     dailyRunTime?: string;
     maxNewDrafts?: number;
     maxEstimatedCostUsd?: number;
+    candidateFreshnessDays?: number;
+    candidateFreshnessDecayPerDay?: number;
+    candidateWildlifeBonus?: number;
   } | null;
   const maxNewDrafts = Number(body?.maxNewDrafts);
   const maxEstimatedCostUsd = Number(body?.maxEstimatedCostUsd);
   const dailyRunTime = body?.dailyRunTime?.slice(0, 5) ?? '';
+  const candidateFreshnessDays = Number(body?.candidateFreshnessDays);
+  const candidateFreshnessDecayPerDay = Number(body?.candidateFreshnessDecayPerDay);
+  const candidateWildlifeBonus = Number(body?.candidateWildlifeBonus);
 
   if (typeof body?.automationEnabled !== 'boolean' || !isTime(dailyRunTime)) {
     return Response.json({ error: 'Choose a valid automation status and daily run time.' }, { status: 400 });
@@ -27,6 +33,15 @@ export async function PATCH(request: Request) {
   if (!Number.isFinite(maxEstimatedCostUsd) || maxEstimatedCostUsd < 0.05 || maxEstimatedCostUsd > 100) {
     return Response.json({ error: 'The estimated cost limit must be between $0.05 and $100.' }, { status: 400 });
   }
+  if (!Number.isInteger(candidateFreshnessDays) || candidateFreshnessDays < 1 || candidateFreshnessDays > 30) {
+    return Response.json({ error: 'Candidate freshness must be between 1 and 30 days.' }, { status: 400 });
+  }
+  if (!Number.isFinite(candidateFreshnessDecayPerDay) || candidateFreshnessDecayPerDay < 0 || candidateFreshnessDecayPerDay > 20) {
+    return Response.json({ error: 'Daily freshness decay must be between 0 and 20 points.' }, { status: 400 });
+  }
+  if (!Number.isFinite(candidateWildlifeBonus) || candidateWildlifeBonus < 0 || candidateWildlifeBonus > 10) {
+    return Response.json({ error: 'The wildlife bonus must be between 0 and 10 points.' }, { status: 400 });
+  }
 
   const { error } = await supabase.from('editorial_run_settings').upsert({
     id: true,
@@ -35,6 +50,9 @@ export async function PATCH(request: Request) {
     automation_timezone: 'Europe/London',
     max_new_drafts: maxNewDrafts,
     max_estimated_cost_usd: Math.round(maxEstimatedCostUsd * 100) / 100,
+    candidate_freshness_days: candidateFreshnessDays,
+    candidate_freshness_decay_per_day: Math.round(candidateFreshnessDecayPerDay * 100) / 100,
+    candidate_wildlife_bonus: Math.round(candidateWildlifeBonus * 100) / 100,
     updated_by: user.id,
   });
   if (error) {

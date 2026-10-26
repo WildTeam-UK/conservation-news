@@ -60,18 +60,22 @@ export default async function AdminDashboard() {
     supabase.from('stories').select('*', { count: 'exact', head: true }).eq('content_type', 'news').eq('status', 'published'),
     supabase.from('sources').select('*', { count: 'exact', head: true }).eq('enabled', true),
     supabase.from('source_items').select('*', { count: 'exact', head: true }),
-    supabase.from('story_clusters').select('*', { count: 'exact', head: true }).eq('status', 'selected'),
+    supabase.from('story_clusters').select('created_at, last_source_at').eq('status', 'selected'),
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').in('status', ['queued', 'scheduled', 'publishing']).order('scheduled_for', { ascending: true, nullsFirst: false }),
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').eq('status', 'held').order('updated_at', { ascending: false }),
     supabase.from('sources').select('id, name, last_error').eq('enabled', true).not('last_error', 'is', null),
     supabase.from('stories').select('id, headline, taxonomy_review_reason', { count: 'exact' }).eq('taxonomy_review_required', true).order('updated_at', { ascending: false }).limit(4),
-    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, max_auto_publishes_per_day').eq('id', true).maybeSingle(),
+    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, max_auto_publishes_per_day, candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).maybeSingle(),
     supabase.from('editorial_runs').select('id, trigger_type, status, max_new_drafts, estimated_cost_usd, drafts_created, candidates_selected, failures, created_at, completed_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('editorial_runs').select('id').eq('status', 'running').maybeSingle(),
     supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, error_summary, created_at').order('created_at', { ascending: false }).limit(1),
   ]);
 
   const settings = settingsResult.data;
+  // This dynamic server-rendered page needs the current request time to exclude stale candidates.
+  // oxlint-disable-next-line react/react-compiler
+  const candidateFreshnessCutoff = Date.now() - Number(settings?.candidate_freshness_days ?? 7) * 24 * 60 * 60 * 1000;
+  const activeCandidateCount = (candidatesResult.data ?? []).filter((candidate) => Date.parse(candidate.last_source_at ?? candidate.created_at) >= candidateFreshnessCutoff).length;
   const upcoming = (queueResult.data ?? []) as QueueOverviewItem[];
   const held = (heldResult.data ?? []) as QueueOverviewItem[];
   const activeQueueStoryIds = new Set([...upcoming, ...held].flatMap((item) => {
@@ -114,7 +118,7 @@ export default async function AdminDashboard() {
           <div className="overview-section-heading"><div><p className="eyebrow">Content flow</p><h2 id="flow-heading">From source to publication</h2></div><p>Live totals show where content currently sits in the system.</p></div>
           <div className="overview-flow-track">
             <a href="/admin/collected"><span><Radio /></span><strong>{itemsResult.count ?? 0}</strong><small>Collected</small></a><ArrowRight />
-            <a href="/admin/candidates"><span><Activity /></span><strong>{candidatesResult.count ?? 0}</strong><small>Candidates</small></a><ArrowRight />
+            <a href="/admin/candidates"><span><Activity /></span><strong>{activeCandidateCount}</strong><small>Candidates</small></a><ArrowRight />
             <a href="/admin/drafts?view=drafts"><span><FileText /></span><strong>{privateDraftCount}</strong><small>Drafts</small></a><ArrowRight />
             <a href="/admin/queue"><span><CalendarClock /></span><strong>{upcoming.length}</strong><small>Scheduled</small></a><ArrowRight />
             <a href="/admin/drafts?view=published"><span><Newspaper /></span><strong>{publishedResult.count ?? 0}</strong><small>Published</small></a>
@@ -152,6 +156,9 @@ export default async function AdminDashboard() {
               defaultMaxCostUsd={Number(settings?.max_estimated_cost_usd ?? 1)}
               defaultAutomationEnabled={settings?.automation_enabled ?? false}
               defaultDailyRunTime={settings?.daily_run_time ?? '10:00'}
+              defaultCandidateFreshnessDays={Number(settings?.candidate_freshness_days ?? 7)}
+              defaultCandidateFreshnessDecayPerDay={Number(settings?.candidate_freshness_decay_per_day ?? 2)}
+              defaultCandidateWildlifeBonus={Number(settings?.candidate_wildlife_bonus ?? 3)}
               lastAutomationTickAt={settings?.last_automation_tick_at ?? null}
               lastAutomationError={settings?.last_automation_error ?? null}
               hasActiveRun={Boolean(activeRunResult.data)}

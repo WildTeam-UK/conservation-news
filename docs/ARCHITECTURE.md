@@ -167,9 +167,13 @@ Database changes are append-only migrations. Existing production migrations must
 5. Recent unprocessed items are claimed in assessment batches.
 6. OpenAI assesses relevance, quality, evidence, timeliness and related signals.
 7. Qualifying items become or join story clusters; rejected items remain assessed and are not repeatedly charged.
-8. Recent undrafted candidates are ranked for the daily run.
+8. Every qualifying cluster remains a candidate until it is drafted, rejected or becomes stale; candidate creation is not capped by the daily draft limit.
+9. Active undrafted candidates receive a time-sensitive effective score. The default removes two points per complete day since the latest supporting source and adds a deliberately small three-point bonus when Wildlife is the primary topic. Geography is not a ranking factor.
+10. The daily run researches and drafts only the configured number of highest-ranked active candidates. Candidates older than the configurable seven-day freshness window remain stored for audit but are excluded from automation and the active Candidates workspace.
 
 Manual collection, periodic collection and the daily editorial run use the same resumable collection mechanism. The admin request reports completed progress immediately; the minute heartbeat continues any remaining source tasks. Once per day, an otherwise idle heartbeat clears old replaceable `raw_content` in a bounded batch after the configured 30-day retention period. It preserves item metadata, URLs, hashes and assessment history, and excludes payloads supporting stories, research packs or pending coverage updates. Retention runs are logged. Source-item row deletion remains deferred until production history supports a safe policy.
+
+Candidate freshness days, daily score decay and the wildlife bonus are stored in `editorial_run_settings` and can be adjusted with the existing daily workflow controls. Effective scores are calculated from the original assessment score at read or selection time, so the underlying AI assessment remains intact and the ranking naturally changes as candidates age.
 
 ### Research and drafting
 
