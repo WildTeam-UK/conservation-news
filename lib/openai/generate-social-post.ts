@@ -6,7 +6,7 @@ import { getOpenAIClient } from './client';
 
 const MODEL = 'gpt-6-luna';
 export const SOCIAL_GENERATION_PROMPT_VERSION = 'social-editor-v3';
-export const SOCIAL_REVIEW_PROMPT_VERSION = 'social-review-v3';
+export const SOCIAL_REVIEW_PROMPT_VERSION = 'social-review-v4';
 
 export class SocialEditorialValidationError extends Error {}
 
@@ -127,14 +127,18 @@ export function socialClaimMatchesProse(claim: string, proseParts: string[]) {
   const claimWords = normalizedWords(claim);
   if (!claimWords.length) return false;
   const normalizedClaim = claimWords.join(' ');
+  const normalizedProse = proseParts.flatMap((part) => normalizedWords(part)).join(' ');
+  if (normalizedProse.includes(normalizedClaim)) return true;
+
   return proseParts.some((part) => {
     const partWords = normalizedWords(part);
     const normalizedPart = partWords.join(' ');
     if (normalizedPart.includes(normalizedClaim)) return true;
     if (claimWords.length < 6) return false;
     const partWordSet = new Set(partWords);
-    const matchedWords = claimWords.filter((word) => partWordSet.has(word)).length;
-    return matchedWords / claimWords.length >= 0.8;
+    const uniqueClaimWords = [...new Set(claimWords)];
+    const matchedWords = uniqueClaimWords.filter((word) => partWordSet.has(word)).length;
+    return matchedWords >= 5 && matchedWords / uniqueClaimWords.length >= 0.72;
   });
 }
 
@@ -218,7 +222,7 @@ Check the draft against the final published digest, the supplied source-story ev
 
 Every factual claim must be supported by the supplied evidence. Do not add outside knowledge. Preserve uncertainty exactly. A promising intervention is not a proven success, a proposal is not an outcome, and an allegation is not a finding. Reject the post if it cannot be made accurate from the evidence.
 
-You may return the draft unchanged as approved, or revise it to fix a real defect. A revision may only rephrase, remove or reorganise evidence already supplied. It must not add facts. Record concise issues that caused a revision. For each factual claim in the final post, copy an exact excerpt containing that claim into claim_support and provide the IDs of the source stories that support it. Hashtags do not need claim-support entries.
+You may return the draft unchanged as approved, or revise it to fix a real defect. A revision may only rephrase, remove or reorganise evidence already supplied. It must not add facts. Record concise issues that caused a revision. Create one claim_support entry for every factual opening or body paragraph in the final post. In each entry, copy the complete final paragraph verbatim into claim and provide every source-story ID that supports that paragraph. Do not summarise, paraphrase, label or combine paragraphs in claim_support. Hashtags do not need claim-support entries.
 
 Keep the same output constraints: professional British English, aim for the requested editorial word range but never exceed 300 words, no Markdown, no URL, no image attribution, no em dash, no relative date language, two or three hashtags including #WildNews, and a useful post rather than a digest announcement. Require exactly one highly relevant, non-reaction emoji in the opening and permit no more than two additional relevant body emojis. Remove any emoji that is tonally inappropriate, playful about harm, generic or unrelated to its paragraph. The application supplies the digest invitation, so the post must not add one. Return only the requested structured data.`);
 

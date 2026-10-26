@@ -77,8 +77,13 @@ void test('treats the target length as guidance while retaining a 300-word safet
 });
 
 void test('accepts close review excerpts but rejects unrelated claim support', () => {
-  const prose = ['Early tests found elevated turbidity and conductivity after a discharge reached streams connected to the Kafue River.'];
+  const prose = [
+    'Early tests found elevated turbidity and conductivity after a discharge reached streams connected to the Kafue River.',
+    'Heavy-metal results were still pending, while the mine operator disputed responsibility.',
+  ];
   assert.equal(socialClaimMatchesProse('Tests found elevated turbidity and conductivity in streams connected with the Kafue River.', prose), true);
+  assert.equal(socialClaimMatchesProse('Claim: early tests found elevated turbidity and conductivity after discharge reached streams connected with the Kafue River.', prose), true);
+  assert.equal(socialClaimMatchesProse('connected to the Kafue River Heavy metal results were still pending', prose), true);
   assert.equal(socialClaimMatchesProse('A coral restoration project reported successful spawning across three reefs.', prose), false);
 });
 
