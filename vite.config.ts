@@ -12,7 +12,11 @@ export default defineConfig(async () => {
       : undefined,
     plugins: [
       vinext(),
-      nitro(),
+      nitro({
+        // WildNews has no native runtime dependencies. Bundle server dependencies so
+        // Nitro does not trace build-only tooling into every Vercel Function archive.
+        noExternals: true,
+      }),
     ],
   };
 });
