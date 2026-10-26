@@ -195,7 +195,7 @@ export async function generateDigest(type: DigestType, userId: string | null, op
 
   const { data: existing } = await supabase.from('stories').select('id, headline, status').eq('slug', slug).maybeSingle();
   if (existing) {
-    const { data: run } = await supabase.from('digest_runs').select('id').eq('story_id', existing.id).maybeSingle();
+    const { data: run } = await supabase.from('digest_runs').select('id').eq('story_id', existing.id).neq('status', 'skipped').order('created_at', { ascending: false }).limit(1).maybeSingle();
     return { runId: run?.id ?? null, storyId: existing.id, headline: existing.headline, status: existing.status, alreadyCompleted: true, estimatedCostUsd: 0 };
   }
 

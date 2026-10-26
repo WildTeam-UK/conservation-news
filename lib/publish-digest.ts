@@ -21,7 +21,7 @@ export async function publishDigest(storyId: string, { reviewerId, publicationDa
     .maybeSingle();
   if (storyError || !story) throw storyError ?? new Error('Digest not found.');
 
-  const { data: run } = await supabase.from('digest_runs').select('id').eq('story_id', storyId).maybeSingle();
+  const { data: run } = await supabase.from('digest_runs').select('id').eq('story_id', storyId).neq('status', 'skipped').order('created_at', { ascending: false }).limit(1).maybeSingle();
   const type = story.content_type === 'weekly_digest' ? 'weekly' : 'daily';
   const editionDate = story.slug.replace(`${type}-digest-`, '');
   if (story.status === 'published') {

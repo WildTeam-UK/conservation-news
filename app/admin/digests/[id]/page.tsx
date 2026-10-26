@@ -26,7 +26,7 @@ export default async function DigestPreviewPage({ params }: { params: Promise<{ 
   const { data: story, error } = await supabase.from('stories').select('id, slug, status, headline, image_url, image_alt, digest_period_end, generation_metadata').eq('id', id).in('content_type', ['daily_digest', 'weekly_digest']).maybeSingle();
   if (error || !story) notFound();
   const [{ data: run }, { data: settings }] = await Promise.all([
-    supabase.from('digest_runs').select('id, social_copy').eq('story_id', story.id).maybeSingle(),
+    supabase.from('digest_runs').select('id, social_copy').eq('story_id', story.id).neq('status', 'skipped').order('created_at', { ascending: false }).limit(1).maybeSingle(),
     supabase.from('digest_settings').select('social_distribution_enabled, social_distribution_mode, email_distribution_enabled').eq('id', true).maybeSingle(),
   ]);
   const [{ data: links }, { data: deliveries }] = run ? await Promise.all([

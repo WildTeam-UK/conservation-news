@@ -35,7 +35,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
   const [{ data: story, error: storyError }, { data: run, error: runError }] = await Promise.all([
     auth.supabase.from('stories').select('id, slug, content_type, image_url, image_alt, generation_metadata').eq('id', storyId).eq('content_type', 'weekly_digest').maybeSingle(),
-    auth.supabase.from('digest_runs').select('id').eq('story_id', storyId).eq('digest_type', 'weekly').maybeSingle(),
+    auth.supabase.from('digest_runs').select('id').eq('story_id', storyId).eq('digest_type', 'weekly').neq('status', 'skipped').order('created_at', { ascending: false }).limit(1).maybeSingle(),
   ]);
   if (storyError || runError || !story || !run) return Response.json({ error: 'The weekly digest could not be found.' }, { status: 404 });
 
