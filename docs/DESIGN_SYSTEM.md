@@ -226,13 +226,13 @@ The article template is shared by every published news story:
 1. Centred hero with Good News/topic pills, title and compact coverage summary.
 2. Full-width lead image with attribution.
 3. “The story at a glance” introduction, discovery tags, update date and share controls. The controls form a vertical rail beside the introduction on desktop, then move above the discovery tags in a horizontal row at 1000px and below.
-4. Structured editorial sections: what you need to know, why it matters, what happens next, what is known, what is unknown, and source reporting.
+4. Structured editorial sections: what you need to know, why it matters, what happens next, what is known, what is unknown, source reporting and article feedback. These use their descriptive headings without additional eyebrow labels and retain one consistent gap between sections.
 5. Sticky desktop sidebar containing coverage analysis and a course promotion.
 6. Newsletter CTA and related-story discovery supplied by the page route.
 
-Inline source references are numbered circles. Contextual links may point to relevant internal stories, taxonomy pages, courses or external sources. Links are not added merely to meet a quota.
+Inline source references are numbered circles. Contextual links may point to relevant internal stories, taxonomy pages, courses or external sources. Links are not added merely to meet a quota. The source section includes a plain full-column disclosure explaining that WildNews synthesises the original reporting and links to the AI methodology. Article feedback follows the sources in a rounded cream supporting panel, matching the coverage-analysis surface, with large icon-only controls aligned beside the question where space allows; digest feedback retains its compact card treatment.
 
-On phones, the overview flows into the article without a divider. Editorial sections use one consistent 48px gap rather than accumulated adjacent padding. Coverage dimensions, the course-promotion headline and the following newsletter headline share the supporting-panel title size. Source-reference circles are separated from prose by collapsible whitespace, so a wrapped reference group begins flush with the new line.
+On phones, the overview flows into the article without a divider. Editorial sections use one consistent 48px gap rather than accumulated adjacent padding. Coverage dimensions, article feedback, the course-promotion headline and the following newsletter headline share the supporting-panel title size. Article-feedback copy remains on the left while its icon-only controls stack on the right. The same compact feedback arrangement is used while the desktop article and sidebar columns pass through their narrow tablet range, preventing the controls from crushing the copy before the article becomes one column. Source-reference circles are separated from prose by collapsible whitespace, so a wrapped reference group begins flush with the new line.
 
 ### Digests
 
