@@ -36,7 +36,7 @@ export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, week
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
 
-  const valid = Boolean(time) && dailyMin >= 1 && dailyMax >= dailyMin && dailyMax <= 50 && weeklyMin >= 1 && weeklyMax >= weeklyMin && weeklyMax <= 100 && maxCost >= 0.05 && maxCost <= 100;
+  const valid = Boolean(time) && dailyMin >= 1 && dailyMax >= dailyMin && dailyMax <= 50 && weeklyMin >= 1 && weeklyMax >= weeklyMin && weeklyMax <= 25 && maxCost >= 0.05 && maxCost <= 100;
 
   async function save() {
     setSaving(true);
@@ -80,10 +80,10 @@ export function DigestSettings({ runTime, dailyMinStories, dailyMaxStories, week
       <section className="digest-settings-group" aria-labelledby="digest-schedule-settings">
         <header><CalendarClock /><div><h3 id="digest-schedule-settings">Schedule and limits</h3><p>Controls when editions run and the maximum input and AI cost for each one.</p></div></header>
         <div className="digest-settings-controls">
-          <label><span>Run time</span><input type="time" value={time} disabled={saving} onChange={(event) => setTime(event.target.value)} /><small>Daily in UK time; Friday creates the weekly edition.</small></label>
+          <label><span>Run time</span><input type="time" value={time} disabled={saving} onChange={(event) => setTime(event.target.value)} /><small>Daily in UK time; Friday creates the weekly edition. The standard morning briefing runs at 09:00.</small></label>
           <label><span>Maximum AI cost</span><input type="number" min="0.05" max="100" step="0.05" value={maxCost} disabled={saving} onChange={(event) => setMaxCost(Number(event.target.value))} /><small>Estimated limit for one digest run.</small></label>
           <fieldset><legend>Daily edition</legend><label><span>Minimum stories</span><input type="number" min="1" max="25" value={dailyMin} disabled={saving} onChange={(event) => setDailyMin(Number(event.target.value))} /></label><label><span>Maximum stories</span><input type="number" min="1" max="50" value={dailyMax} disabled={saving} onChange={(event) => setDailyMax(Number(event.target.value))} /></label></fieldset>
-          <fieldset><legend>Weekly edition</legend><label><span>Minimum stories</span><input type="number" min="1" max="50" value={weeklyMin} disabled={saving} onChange={(event) => setWeeklyMin(Number(event.target.value))} /></label><label><span>Maximum stories</span><input type="number" min="1" max="100" value={weeklyMax} disabled={saving} onChange={(event) => setWeeklyMax(Number(event.target.value))} /></label></fieldset>
+          <fieldset><legend>Weekly edition</legend><label><span>Minimum stories</span><input type="number" min="1" max="25" value={weeklyMin} disabled={saving} onChange={(event) => setWeeklyMin(Number(event.target.value))} /></label><label><span>Maximum stories</span><input type="number" min="1" max="25" value={weeklyMax} disabled={saving} onChange={(event) => setWeeklyMax(Number(event.target.value))} /><small>Up to 25 of the strongest stories, with soft topic, place and source balancing.</small></label></fieldset>
         </div>
       </section>
       <section className="digest-settings-group" aria-labelledby="digest-workflow-settings">

@@ -37,7 +37,7 @@ function previousCalendarDate(date: string) {
 }
 
 const defaultSettings = {
-  run_time: '14:00',
+  run_time: '09:00',
   automation_enabled: false,
   daily_min_stories: 3,
   daily_max_stories: 10,
@@ -70,7 +70,7 @@ export default async function DigestsPage() {
     <AdminNav active="digests" />
     <div className="admin-shell admin-digests-shell">
       <section className="admin-welcome candidates-heading">
-        <div><p className="eyebrow">Editorial editions</p><h1>Digests</h1><p>Turn the strongest published conservation stories into a connected daily briefing and a deeper Friday edition.</p></div>
+        <div><p className="eyebrow">Editorial editions</p><h1>Digests</h1><p>Turn the strongest published conservation stories into a 09:00 morning briefing and a deeper, diversified Friday edition.</p></div>
         <div className={`overview-health-pill ${workflowActive && distributionActive && !digestSettings.last_automation_error ? 'healthy' : 'attention'}`}>{workflowActive && distributionActive && !digestSettings.last_automation_error ? <CheckCircle2 /> : <PauseCircle />}<span><strong>{workflowActive && distributionActive ? 'Fully automatic' : 'Review settings'}</strong><small>{latest ? `Latest: ${latest.digest_type} ${latest.status}` : 'No editions yet'}</small></span></div>
       </section>
 

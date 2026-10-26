@@ -143,6 +143,8 @@ Implementation note: the source workspace now uses an RLS-respecting aggregate v
 3. Make daily reporting periods explicit and retry-safe.
 4. Regression-test Buffer and Brevo distribution without live test publication.
 
+Implementation note: the scheduled run now stores the preceding London-local edition window explicitly and treats its end as exclusive, so the same story cannot fall into adjacent editions and retries cannot drift onto newer evidence. Daily over-capacity selection uses existing editorial evidence scores. Weekly selection considers the full eligible period, then applies soft topic, place and primary-source repetition penalties while retaining the strongest developments. Selection scores and adjustments are recorded in the digest event audit. Existing Buffer and Brevo delivery records, leases and duplicate-prevention behaviour are unchanged.
+
 ### Batch 7: feedback and operational learning
 
 1. Add privacy-conscious usefulness feedback and interaction events.

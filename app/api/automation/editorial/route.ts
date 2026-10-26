@@ -80,6 +80,7 @@ export async function POST(request: Request) {
           message: digestClaim.is_recovery ? 'Interrupted scheduled digest recovered by the automation heartbeat.' : `Scheduled ${digestClaim.claimed_digest_type} digest claimed automatically.`,
         });
         const generated = await generateDigest(digestClaim.claimed_digest_type, null, {
+          periodStart: digestClaim.claimed_period_start,
           periodEnd: digestClaim.claimed_period_end,
           triggerType: digestClaim.is_recovery ? 'retry' : 'scheduled',
         });

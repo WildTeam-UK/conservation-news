@@ -9,7 +9,7 @@ import { prepareDigestDistributions } from '@/lib/digest-distribution';
 
 function londonPublicationTime(date: string) {
   const [year, month, day] = date.split('-').map(Number);
-  return new Date(londonLocalDateTimeToUtc(year, month, day, 14));
+  return new Date(londonLocalDateTimeToUtc(year, month, day, 9));
 }
 
 export async function publishDigest(storyId: string, { reviewerId, publicationDate, automated = false }: { reviewerId: string | null; publicationDate?: string; automated?: boolean }) {
@@ -82,7 +82,7 @@ export async function publishDigest(storyId: string, { reviewerId, publicationDa
   if (run) {
     await Promise.all([
       supabase.from('digest_runs').update({ status: 'published', completed_at: actionAt }).eq('id', run.id),
-      supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'publishing', message: automated ? 'Digest published automatically.' : publicationDate ? `Digest published manually with a historical publication time of 14:00 Europe/London on ${publicationDate}.` : 'Digest published manually.', details: { published_at: publishedAt } }),
+      supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'publishing', message: automated ? 'Digest published automatically.' : publicationDate ? `Digest published manually with a historical publication time of 09:00 Europe/London on ${publicationDate}.` : 'Digest published manually.', details: { published_at: publishedAt } }),
     ]);
     if (publicationDate) {
       await supabase.from('digest_run_events').insert({ run_id: run.id, stage: 'distribution', message: 'External distribution skipped for a recovered historical edition.' });

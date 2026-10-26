@@ -10,6 +10,7 @@ import type { UnsplashImageCandidate } from '@/lib/images/types';
 import { londonCalendarDateFormatter, londonLongDateFormatter } from '@/lib/date-format';
 import { londonLocalDateTimeToUtc } from '@/lib/london-time';
 import { assessStoryContextualLinks } from '@/lib/openai/assess-contextual-links';
+import { selectDigestCandidates, type DigestSelectionCandidate } from '@/lib/digest-selection';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'digest-v9-social-after-publish';
@@ -24,6 +25,7 @@ type DigestSettings = {
 
 type GenerateDigestOptions = {
   targetDate?: string;
+  periodStart?: string;
   periodEnd?: string;
   triggerType?: 'manual' | 'scheduled' | 'retry';
 };
@@ -47,6 +49,63 @@ type SourceMetadata = {
     image_alt?: string | null;
   };
 };
+
+type DigestStoryRow = DigestSourceStory & {
+  cluster_id: string | null;
+  conservation_significance: number | null;
+  evidence_confidence: number | null;
+  practitioner_relevance: number | null;
+  generation_metadata: SourceMetadata;
+  story_topics: Array<{ topics: { name: string } | Array<{ name: string }> | null }>;
+  story_tags: Array<{ content_tags: { name: string; tag_type: string } | Array<{ name: string; tag_type: string }> | null }>;
+  story_sources: Array<{
+    source_name: string;
+    source_role: string;
+    display_order: number;
+    source_items: { sources: { name: string } | Array<{ name: string }> | null } | Array<{ sources: { name: string } | Array<{ name: string }> | null }> | null;
+  }>;
+};
+
+type ClusterScores = {
+  id: string;
+  overall_score: number | null;
+  relevance_score: number | null;
+  evidence_score: number | null;
+  practitioner_value_score: number | null;
+  novelty_score: number | null;
+};
+
+function firstRelation<T>(value: T | T[] | null) {
+  return Array.isArray(value) ? value[0] ?? null : value;
+}
+
+function selectionCandidate(story: DigestStoryRow, clusters: Map<string, ClusterScores>): DigestSelectionCandidate {
+  const cluster = story.cluster_id ? clusters.get(story.cluster_id) : null;
+  const topics = story.story_topics.flatMap((link) => firstRelation(link.topics)?.name ?? []);
+  const places = story.story_tags.flatMap((link) => {
+    const tag = firstRelation(link.content_tags);
+    return tag?.tag_type === 'place' ? tag.name : [];
+  });
+  const orderedSources = [...story.story_sources].sort((left, right) => (left.source_role === 'primary' ? -1 : 0) - (right.source_role === 'primary' ? -1 : 0) || left.display_order - right.display_order);
+  const primarySourceItem = firstRelation(orderedSources[0]?.source_items ?? null);
+  const monitoredSource = primarySourceItem ? firstRelation(primarySourceItem.sources) : null;
+  return {
+    id: story.id,
+    publishedAt: story.published_at,
+    primaryTopic: story.generation_metadata?.article_content?.topics?.[0] ?? topics[0] ?? null,
+    topics,
+    places,
+    primarySource: monitoredSource?.name ?? orderedSources[0]?.source_name ?? null,
+    clusterOverallScore: cluster?.overall_score ?? null,
+    clusterRelevanceScore: cluster?.relevance_score ?? null,
+    clusterEvidenceScore: cluster?.evidence_score ?? null,
+    clusterPractitionerScore: cluster?.practitioner_value_score ?? null,
+    clusterNoveltyScore: cluster?.novelty_score ?? null,
+    conservationSignificance: story.conservation_significance,
+    evidenceConfidence: story.evidence_confidence,
+    practitionerRelevance: story.practitioner_relevance,
+  };
+}
 
 function sourceImageUrl(source: DigestSourceStory & { generation_metadata: SourceMetadata }) {
   return source.image_url ?? source.generation_metadata?.article_content?.image_url ?? null;
@@ -74,8 +133,8 @@ function historicalDailyPeriod(date: string) {
   if (!isCalendarDate(date) || londonDate(londonMidnight(date)) !== date) throw new Error('Choose a valid missed daily edition date.');
   if (date >= londonDate(new Date())) throw new Error('Missed-date generation is only available for an earlier London calendar day.');
   const start = londonMidnight(date);
-  const endExclusive = londonMidnight(addCalendarDay(date));
-  return { start, end: new Date(endExclusive.getTime() - 1), editionDate: date };
+  const end = londonMidnight(addCalendarDay(date));
+  return { start, end, editionDate: date };
 }
 
 function editionLabel(type: DigestType, end: Date) {
@@ -122,12 +181,15 @@ export async function generateDigest(type: DigestType, userId: string | null, op
   if (settingsError || !settings) throw settingsError ?? new Error('Digest settings were not found.');
   const config = settings as DigestSettings;
   if (options.targetDate && type !== 'daily') throw new Error('Only missed daily editions can be generated for a specific date.');
-  if (options.targetDate && options.periodEnd) throw new Error('A digest cannot use both a missed date and a scheduled period end.');
+  if (options.targetDate && (options.periodStart || options.periodEnd)) throw new Error('A digest cannot use both a missed date and a scheduled reporting period.');
+  if (options.periodStart && !options.periodEnd) throw new Error('A scheduled digest period start requires an end.');
   const historicalPeriod = options.targetDate ? historicalDailyPeriod(options.targetDate) : null;
   const scheduledEnd = options.periodEnd ? new Date(options.periodEnd) : null;
-  if (scheduledEnd && Number.isNaN(scheduledEnd.getTime())) throw new Error('The scheduled digest period is invalid.');
+  const scheduledStart = options.periodStart ? new Date(options.periodStart) : null;
+  if ((scheduledEnd && Number.isNaN(scheduledEnd.getTime())) || (scheduledStart && Number.isNaN(scheduledStart.getTime()))) throw new Error('The scheduled digest period is invalid.');
   const end = historicalPeriod?.end ?? scheduledEnd ?? new Date();
-  const start = historicalPeriod?.start ?? new Date(end.getTime() - (type === 'weekly' ? 7 : 1) * 24 * 60 * 60 * 1000);
+  const start = historicalPeriod?.start ?? scheduledStart ?? new Date(end.getTime() - (type === 'weekly' ? 7 : 1) * 24 * 60 * 60 * 1000);
+  if (end <= start) throw new Error('The digest reporting period must end after it starts.');
   const editionDate = historicalPeriod?.editionDate ?? londonDate(end);
   const slug = `${type}-digest-${editionDate}`;
 
@@ -140,15 +202,23 @@ export async function generateDigest(type: DigestType, userId: string | null, op
   const minimum = type === 'weekly' ? config.weekly_min_stories : config.daily_min_stories;
   const maximum = type === 'weekly' ? config.weekly_max_stories : config.daily_max_stories;
   const { data: rows, error: storiesError } = await supabase.from('stories')
-    .select('id, slug, headline, standfirst, image_url, image_alt, published_at, generation_metadata')
+    .select('id, slug, headline, standfirst, image_url, image_alt, published_at, generation_metadata, cluster_id, conservation_significance, evidence_confidence, practitioner_relevance, story_topics(topics(name)), story_tags(content_tags(name, tag_type)), story_sources(source_name, source_role, display_order, source_items(sources(name)))')
     .eq('status', 'published')
     .eq('content_type', 'news')
     .gte('published_at', start.toISOString())
-    .lte('published_at', end.toISOString())
+    .lt('published_at', end.toISOString())
     .order('published_at', { ascending: false })
-    .limit(maximum);
+    .limit(500);
   if (storiesError) throw storiesError;
-  const sourceStories = (rows ?? []) as Array<DigestSourceStory & { generation_metadata: SourceMetadata }>;
+  const eligibleStories = (rows ?? []) as unknown as DigestStoryRow[];
+  const clusterIds = [...new Set(eligibleStories.flatMap((story) => story.cluster_id ?? []))];
+  const { data: clusterRows, error: clustersError } = clusterIds.length
+    ? await supabase.from('story_clusters').select('id, overall_score, relevance_score, evidence_score, practitioner_value_score, novelty_score').in('id', clusterIds)
+    : { data: [], error: null };
+  if (clustersError) throw clustersError;
+  const clusters = new Map(((clusterRows ?? []) as ClusterScores[]).map((cluster) => [cluster.id, cluster]));
+  const selected = selectDigestCandidates(eligibleStories.map((story) => Object.assign(story, selectionCandidate(story, clusters))), maximum, type === 'weekly');
+  const sourceStories = selected.map((result) => result.story);
   if (sourceStories.length < minimum) throw new Error(`Only ${sourceStories.length} eligible ${sourceStories.length === 1 ? 'story was' : 'stories were'} published in this period. The ${type} digest needs at least ${minimum}.`);
 
   const runValues = {
@@ -177,7 +247,18 @@ export async function generateDigest(type: DigestType, userId: string | null, op
     : await supabase.from('digest_runs').insert(runValues).select('id').single();
   const run = runResult.data;
   if (runResult.error || !run) throw runResult.error ?? new Error('The digest run could not be started.');
-  await supabase.from('digest_run_events').insert({ run_id: run.id, stage: previousRun ? 'retry' : 'selection', message: previousRun ? `Failed ${type} digest restarted with ${sourceStories.length} published stories.` : `${sourceStories.length} published stories selected for the ${type} edition.` });
+  await supabase.from('digest_run_events').insert({
+    run_id: run.id,
+    stage: previousRun ? 'retry' : 'selection',
+    message: previousRun ? `Failed ${type} digest restarted with ${sourceStories.length} published stories.` : `${sourceStories.length} of ${eligibleStories.length} eligible published stories selected for the ${type} edition.`,
+    details: {
+      selection_version: type === 'weekly' ? 'weekly-editorial-diversity-v1' : 'daily-editorial-score-v1',
+      eligible_story_count: eligibleStories.length,
+      period_start: start.toISOString(),
+      period_end_exclusive: end.toISOString(),
+      selected: selected.map((result, index) => ({ story_id: result.story.id, rank: index + 1, base_score: Number(result.baseScore.toFixed(2)), selection_score: Number(result.selectionScore.toFixed(2)), diversity_penalty: Number(result.diversityPenalty.toFixed(2)) })),
+    },
+  });
 
   try {
     const inputStories = sourceStories.map(compactSource);

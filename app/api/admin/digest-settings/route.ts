@@ -34,8 +34,8 @@ export async function PATCH(request: Request) {
   if (!Number.isInteger(dailyMin) || !Number.isInteger(dailyMax) || dailyMin < 1 || dailyMax > 50 || dailyMax < dailyMin) {
     return Response.json({ error: 'Daily story limits must be between 1 and 50, with the maximum no lower than the minimum.' }, { status: 400 });
   }
-  if (!Number.isInteger(weeklyMin) || !Number.isInteger(weeklyMax) || weeklyMin < 1 || weeklyMax > 100 || weeklyMax < weeklyMin) {
-    return Response.json({ error: 'Weekly story limits must be between 1 and 100, with the maximum no lower than the minimum.' }, { status: 400 });
+  if (!Number.isInteger(weeklyMin) || !Number.isInteger(weeklyMax) || weeklyMin < 1 || weeklyMax > 25 || weeklyMax < weeklyMin) {
+    return Response.json({ error: 'Weekly story limits must be between 1 and 25, with the maximum no lower than the minimum.' }, { status: 400 });
   }
   if (!Number.isFinite(maxCost) || maxCost < 0.05 || maxCost > 100) {
     return Response.json({ error: 'The estimated cost limit must be between $0.05 and $100.' }, { status: 400 });
