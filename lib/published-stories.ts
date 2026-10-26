@@ -14,7 +14,7 @@ type PublishedTopicLink = { topics: { name: string; slug: string } | { name: str
 type PublishedTagLink = { confidence: number | null; content_tags: { name: string; slug: string; status: string } | { name: string; slug: string; status: string }[] | null };
 type PublishedCourseRecommendation = { placement: string; confidence: number | null; rationale: string | null; training_courses: TrainingCoursePromotion | TrainingCoursePromotion[] | null };
 type PublishedContextualLink = { link_type: ArticleLinkType; target_id: string; href: string; anchor_text: string; section_key: ArticleLinkSection; item_index: number; external: boolean; confidence: number; rationale: string | null };
-type PublishedEditorialUpdate = { id: string; change_summary: string; applied_at: string; public_content_changed: boolean };
+type PublishedEditorialUpdate = { id: string; change_summary: string; applied_at: string; public_content_changed: boolean; public_source_ids: string[] };
 export type PublishedConservationOutlook = { classification: 'positive' | 'mixed' | 'neutral' | 'negative'; score: number; confidence: number; rationale: string };
 
 export type PublicTaxonomyArchive = { name: string; slug: string; description: string | null; seo_title: string | null; meta_description: string | null };
@@ -46,7 +46,7 @@ type PublishedStoryDetail = PublishedStory & {
 };
 
 const storyListingSelect = 'id, slug, headline, standfirst, image_url, image_alt, published_at, updated_at, editorial_updated_at, editorial_change_summary, content_type, digest_period_end, generation_metadata, story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_conservation_outlooks(classification, score, confidence, rationale)';
-const storyDetailSelect = `${storyListingSelect}, story_sources(id, source_name, source_title, source_url, source_role, display_order), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale), story_editorial_revisions(id, change_summary, applied_at, public_content_changed)`;
+const storyDetailSelect = `${storyListingSelect}, story_sources(id, source_name, source_title, source_url, source_role, display_order), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale), story_editorial_revisions(id, change_summary, applied_at, public_content_changed, public_source_ids)`;
 
 export function publishedTopics(story: PublishedStory) {
   const article = (story.generation_metadata.article_content ?? {}) as Partial<StoryDraftContent>;
@@ -159,10 +159,11 @@ export function publishedStoryToArticle(story: PublishedStoryDetail, goodNewsSet
   const sources = [...story.story_sources].sort((a, b) => a.display_order - b.display_order);
   const featuredRecommendation = story.story_course_recommendations?.find((recommendation) => recommendation.placement === 'featured');
   const coursePromotion = featuredRecommendation ? firstRelation(featuredRecommendation.training_courses) : null;
+  const validSourceIds = new Set(sources.map((source) => `source-${source.display_order}`));
   const editorialUpdates = [...(story.story_editorial_revisions ?? [])]
     .filter((revision) => revision.applied_at && revision.change_summary)
     .sort((a, b) => new Date(b.applied_at).getTime() - new Date(a.applied_at).getTime())
-    .map((revision) => ({ date: revision.applied_at, summary: revision.change_summary, sourceOnly: !revision.public_content_changed }));
+    .map((revision) => ({ date: revision.applied_at, summary: revision.change_summary, sourceIds: [...new Set(revision.public_source_ids ?? [])].filter((sourceId) => validSourceIds.has(sourceId)), sourceOnly: !revision.public_content_changed }));
   return {
     topics: publishedTopics(story),
     discoveryTags: publishedTags(story).slice(0, 3),

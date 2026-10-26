@@ -35,7 +35,7 @@ export type ArticleTemplateData = {
   imageCredit?: EditorialImageCreditData | null;
   updatedAt: string;
   publishedAt?: string;
-  editorialUpdates?: { date: string; summary: string; sourceOnly: boolean }[];
+  editorialUpdates?: { date: string; summary: string; sourceIds: string[]; sourceOnly: boolean }[];
   keyTakeaways: ArticleText[];
   whyItMatters: ArticleText;
   whatHappensNext: ArticleText;
@@ -80,16 +80,20 @@ function articleTextValue(value: ArticleText) {
   return stripSourceMarkers(text);
 }
 
-function ArticleTextContent({ value, sources, storyId }: { value: ArticleText; sources: Map<string, ArticleSource>; storyId?: string }) {
-  const sourceIds = typeof value === 'string' ? [] : [...new Set(value.sourceIds ?? [])];
-  const text = articleTextValue(value);
-  const links = typeof value === 'string' ? [] : value.links;
-  return <><ContextualLinkedText text={text} links={links} />{sourceIds.length ? <> <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
+function SourceReferenceLinks({ sourceIds, sources, storyId }: { sourceIds: string[]; sources: Map<string, ArticleSource>; storyId?: string }) {
+  return sourceIds.length ? <span className="article-source-refs" aria-label="Supporting sources">{sourceIds.map((id) => {
     const source = sources.get(id);
     return source ? storyId && source.recordId
       ? <TrackedInteractionLink href={source.url} target="_blank" rel="noopener noreferrer" storyId={storyId} storySourceId={source.recordId} eventType="outbound_source" title={`${source.name}${source.title ? `: ${source.title}` : ''}`} aria-label={`Source ${id.replace('source-', '')}: ${source.name}`} key={id}>{id.replace('source-', '')}</TrackedInteractionLink>
       : <a href={source.url} target="_blank" rel="noopener noreferrer" title={`${source.name}${source.title ? `: ${source.title}` : ''}`} aria-label={`Source ${id.replace('source-', '')}: ${source.name}`} key={id}>{id.replace('source-', '')}</a> : null;
-  })}</span></> : null}</>;
+  })}</span> : null;
+}
+
+function ArticleTextContent({ value, sources, storyId }: { value: ArticleText; sources: Map<string, ArticleSource>; storyId?: string }) {
+  const sourceIds = typeof value === 'string' ? [] : [...new Set(value.sourceIds ?? [])];
+  const text = articleTextValue(value);
+  const links = typeof value === 'string' ? [] : value.links;
+  return <><ContextualLinkedText text={text} links={links} />{sourceIds.length ? <> <SourceReferenceLinks sourceIds={sourceIds} sources={sources} storyId={storyId} /></> : null}</>;
 }
 
 export function ArticleTemplate({ article, storyId, sharePath }: { article: ArticleTemplateData; storyId?: string; sharePath?: string }) {
@@ -113,7 +117,7 @@ export function ArticleTemplate({ article, storyId, sharePath }: { article: Arti
     </header>
     <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <>{/* oxlint-disable-next-line next/no-img-element */}<img src={article.imageUrl} alt={article.imageAlt?.trim() || `Illustrative image for ${article.headline}`} loading="eager" fetchPriority="high" decoding="async" />{article.goodNews ? <GoodNewsBadge overlay /> : null}<EditorialImageCredit credit={article.imageCredit} /></> : <span>Lead image to be selected</span>}</figure>
     <section className="article-overview shell">
-      <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}{latestEditorialUpdate && article.publishedAt ? <details className="story-update-history"><summary><span>First published {formattedDate(article.publishedAt)}. Updated {formattedDate(latestEditorialUpdate.date)}.</span><span className="story-update-action">See what&apos;s changed <ChevronDown /></span></summary><div className="story-update-timeline"><p className="eyebrow">Editorial update</p>{editorialUpdates.map((update, index) => <article key={`${update.date}-${index}`}><time dateTime={update.date}>{formattedDate(update.date)}</time><p>{update.summary}</p></article>)}</div></details> : <p className="story-update-note">Published {formattedDate(article.publishedAt ?? article.updatedAt)}. This story may be updated as it develops.</p>}</div>
+      <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}{latestEditorialUpdate && article.publishedAt ? <details className="story-update-history"><summary><span>First published {formattedDate(article.publishedAt)}. Updated {formattedDate(latestEditorialUpdate.date)}.</span><span className="story-update-action">See what&apos;s changed <ChevronDown /></span></summary><div className="story-update-timeline">{editorialUpdates.map((update, index) => <article key={`${update.date}-${index}`}><time dateTime={update.date}>{formattedDate(update.date)}</time><p>{update.summary}{update.sourceIds.length ? <> <SourceReferenceLinks sourceIds={update.sourceIds} sources={sourcesById} storyId={storyId} /></> : null}</p></article>)}</div></details> : <p className="story-update-note">Published {formattedDate(article.publishedAt ?? article.updatedAt)}. This story may be updated as it develops.</p>}</div>
       <h2>The story at a glance</h2>
       <div className="article-overview-reading">
         {sharePath ? <SocialShare path={sharePath} title={article.headline} storyId={storyId} /> : null}

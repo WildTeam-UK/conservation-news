@@ -19,11 +19,11 @@ type QueueGroup = 'unscheduled' | 'scheduled' | 'held';
 
 const articleViews: { value: ArticleView; label: string }[] = [
   { value: 'all', label: 'All' },
-  { value: 'updates', label: 'Updates available' },
-  { value: 'unscheduled', label: 'Unscheduled' },
-  { value: 'scheduled', label: 'Scheduled' },
-  { value: 'held', label: 'Held' },
   { value: 'published', label: 'Published' },
+  { value: 'scheduled', label: 'Scheduled' },
+  { value: 'unscheduled', label: 'Unscheduled' },
+  { value: 'held', label: 'Held' },
+  { value: 'updates', label: 'Updates available' },
 ];
 
 function queueGroup(status?: string): QueueGroup {

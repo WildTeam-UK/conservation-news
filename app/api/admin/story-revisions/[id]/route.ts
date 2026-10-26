@@ -5,6 +5,7 @@ import { recordUnsplashSelection } from '@/lib/images/unsplash';
 import { cleanDraftContent, type StoryDraftContent } from '@/lib/openai/draft-story';
 import { revisionChangesPublicContent } from '@/lib/openai/generate-editorial-revision';
 import { generateRevisionSummary, type RevisionSummaryEvidence } from '@/lib/openai/generate-revision-summary';
+import { publicRevisionSourceIds } from '@/lib/revision-source-references';
 import { firstRelation, sourceRelationName } from '@/lib/supabase/relations';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { normalizeEditorialTopics } from '@/lib/taxonomy';
@@ -12,7 +13,7 @@ import { isUuid } from '@/lib/validation';
 
 export const dynamic = 'force-dynamic';
 
-type StoredSource = { id?: string; url?: string };
+type StoredSource = { id?: string; url?: string; source_item_id?: string };
 
 function sourceOnlyChangeSummary(evidence: RevisionSummaryEvidence[]) {
   const publishers = [...new Set(evidence.map((item) => item.publisher.trim()).filter(Boolean))];
@@ -68,12 +69,14 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     if (revisionLinksError) throw revisionLinksError;
     const updateIds = (revisionLinks ?? []).map((link) => link.update_id);
     let coverageEvidence: RevisionSummaryEvidence[] = [];
+    let coverageSourceItemIds: string[] = [];
     if (updateIds.length) {
       const { data: updates, error: updatesError } = await supabase
         .from('story_cluster_updates')
-        .select('relationship, rationale, source_items(title, sources(name))')
+        .select('source_item_id, relationship, rationale, source_items(title, sources(name))')
         .in('id', updateIds);
       if (updatesError) throw updatesError;
+      coverageSourceItemIds = (updates ?? []).map((update) => update.source_item_id);
       coverageEvidence = (updates ?? []).flatMap((update) => {
         const sourceItem = firstRelation(update.source_items);
         return sourceItem ? [{
@@ -86,7 +89,8 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     }
     const generatedSummary = contentChanged ? await generateRevisionSummary({ baseContent, proposedContent, coverageEvidence }) : null;
     const changeSummary = generatedSummary?.summary ?? sourceOnlyChangeSummary(coverageEvidence);
-    const { error: summaryError } = await supabase.from('story_editorial_revisions').update({ change_summary: changeSummary, public_content_changed: contentChanged }).eq('id', id).eq('status', 'draft');
+    const publicSourceIds = publicRevisionSourceIds((revision.source_list ?? []) as StoredSource[], coverageSourceItemIds);
+    const { error: summaryError } = await supabase.from('story_editorial_revisions').update({ change_summary: changeSummary, public_content_changed: contentChanged, public_source_ids: publicSourceIds }).eq('id', id).eq('status', 'draft');
     if (summaryError) throw summaryError;
     if (generatedSummary) {
       const { error: generationLogError } = await supabase.from('ai_generations').insert({
