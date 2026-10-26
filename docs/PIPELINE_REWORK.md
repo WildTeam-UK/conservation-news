@@ -134,6 +134,8 @@ Implementation note: pending coverage now has explicit dismiss, reviewed-with-no
 3. Add dominance and coverage-gap recommendations with accept and dismiss outcomes.
 4. Keep recommendations manual until enough calibration evidence exists.
 
+Implementation note: the source workspace now uses an RLS-respecting aggregate view to show collection health, 30-day candidate yield, research use, published use, update use and rolling contribution. A completed run refreshes deterministic dominance, repeated-failure, low-yield and topic-coverage signals. Accept and dismiss decisions are stored as calibration evidence and never change source settings or candidate scores. Public news briefings now state that WildNews synthesises and summarises the linked source reporting; digests are unchanged.
+
 ### Batch 6: digest selection and timing
 
 1. Move digest generation to 09:00 UK time.

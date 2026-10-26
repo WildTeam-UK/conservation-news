@@ -143,7 +143,7 @@ Public read policies expose active taxonomy and published editorial records. Adm
 
 - Identity: `admin_users`
 - Taxonomy: `topics`, `content_tags`, aliases and story/cluster joins
-- Sources: `sources`, `source_topics`, `source_items`, ingestion runs and per-source ingestion tasks
+- Sources: `sources`, `source_topics`, `source_items`, ingestion runs, per-source ingestion tasks, the security-invoker `source_performance` view and reviewable source-network recommendations
 - Editorial grouping: `story_clusters`, cluster items and reviewable cluster updates
 - Published content: `stories`, topics, organisations, sources and contextual links
 - Revision history: protected story editorial revisions and their linked coverage updates
@@ -174,6 +174,8 @@ Database changes are append-only migrations. Existing production migrations must
 
 Manual collection, periodic collection and the daily editorial run use the same resumable collection mechanism. The admin request reports completed progress immediately; the minute heartbeat continues any remaining source tasks. Once per day, an otherwise idle heartbeat clears old replaceable `raw_content` in a bounded batch after the configured 30-day retention period. It preserves item metadata, URLs, hashes and assessment history, and excludes payloads supporting stories, research packs or pending coverage updates. Retention runs are logged. Source-item row deletion remains deferred until production history supports a safe policy.
 
+The source workspace rolls this history into collection health, 30-day candidate yield, research use, published contribution and coverage-update use. A completed editorial run refreshes deterministic warnings for outlet dominance, repeated collection failures, low-yield feeds and thin topic coverage. The initial dominance threshold is more than 25% of at least 20 published news articles over 30 days. Contribution measures can overlap because a published article may draw on more than one monitored source. These signals never adjust candidate scores or change the monitored source list. An editor must accept or dismiss each recommendation, and that outcome is retained for later calibration.
+
 Candidate freshness days, daily score decay and the wildlife bonus are stored in `editorial_run_settings` and can be adjusted with the existing daily workflow controls. Effective scores are calculated from the original assessment score at read or selection time, so the underlying AI assessment remains intact and the ranking naturally changes as candidates age.
 
 ### Research and drafting
@@ -183,6 +185,8 @@ Candidate freshness days, daily score decay and the wildlife bonus are stored in
 3. OpenAI generates a structured article conforming to the shared article template and house style.
 4. Taxonomy, conservation outlook and the featured course recommendation are attached.
 5. A separate OpenAI link-editor pass examines the final copy against approved related articles, active topics, approved tags, courses and verified sources. Deterministic validation then enforces exact complete-word anchors, confidence thresholds, destination limits and duplicate prevention before accepted links are stored.
+
+Published article pages identify WildNews as a synthesis and summary of the linked source reporting. This disclosure is intentionally article-only so digest editions retain their existing editorial presentation.
 6. Proposed, accepted and rejected counts, rejection categories, token usage, cost and retryable failures are recorded in `story_linking_assessments`.
 7. The result remains private after generation. It can then enter the publication queue or be published manually.
 

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
-import { SourceManager, type EditorialSource, type SuggestedSource } from '@/components/source-manager';
+import { SourceManager, type EditorialSource, type SourceNetworkRecommendation, type SuggestedSource } from '@/components/source-manager';
 import { sourceSiteKey } from '@/lib/source-discovery';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 
@@ -18,13 +18,14 @@ export default async function SourcesPage({ searchParams }: SourcesPageProps) {
   const { supabase } = await requireContentAdmin();
   const params = searchParams ? await searchParams : undefined;
   const view = params?.view === 'recommendations' ? 'recommendations' : 'monitored';
-  const [{ data, error }, { data: suggestionData, error: suggestionError }, { data: citedSources, error: citedSourcesError }] = await Promise.all([
-    supabase.from('sources').select('id, name, homepage_url, feed_url, source_kind, trust_status, enabled, last_success_at, last_error').order('name'),
+  const [{ data, error }, { data: networkRecommendations, error: networkError }, { data: suggestionData, error: suggestionError }, { data: citedSources, error: citedSourcesError }] = await Promise.all([
+    supabase.from('source_performance').select('*').order('published_story_uses_30d', { ascending: false }).order('name'),
+    supabase.from('source_network_recommendations').select('id, kind, title, summary, first_seen_at, last_seen_at').eq('status', 'open').order('last_seen_at', { ascending: false }),
     supabase.from('source_suggestions').select('id, domain, name, description, homepage_url, feed_url, feed_status, source_type, quality_score, originality_score, recommendation_score, last_seen_at, source_suggestion_mentions(id)').eq('status', 'suggested').neq('feed_status', 'not_found').order('recommendation_score', { ascending: false }).order('last_seen_at', { ascending: false }).limit(50),
     supabase.from('story_sources').select('story_id, source_url'),
   ]);
 
-  if (error || suggestionError || citedSourcesError) throw new Error('Unable to load editorial sources.');
+  if (error || networkError || suggestionError || citedSourcesError) throw new Error('Unable to load editorial sources.');
 
   const citedStoryIdsBySite = new Map<string, Set<string>>();
   for (const source of citedSources ?? []) {
@@ -46,7 +47,7 @@ export default async function SourcesPage({ searchParams }: SourcesPageProps) {
           <h1 id="sources-heading">{view === 'recommendations' ? 'Recommendations' : 'Monitored sources'}</h1>
           <p>{view === 'recommendations' ? 'Review the strongest RSS prospects discovered automatically during article research.' : 'Add the feeds and websites WildNews should check. You can pause any source without removing it.'}</p>
         </section>
-        <SourceManager view={view} sources={(data ?? []) as EditorialSource[]} suggestions={(suggestionData ?? []).map((suggestion) => ({
+        <SourceManager view={view} sources={(data ?? []) as EditorialSource[]} networkRecommendations={(networkRecommendations ?? []) as SourceNetworkRecommendation[]} suggestions={(suggestionData ?? []).map((suggestion) => ({
           ...suggestion,
           mentionCount: suggestion.source_suggestion_mentions?.length ?? 0,
           citationCount: citedStoryIdsBySite.get(sourceSiteKey(suggestion.homepage_url) ?? '')?.size ?? 0,

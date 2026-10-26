@@ -5,6 +5,7 @@ import { estimateWebSearchCost } from '@/lib/openai/pricing';
 import { researchCandidate } from '@/lib/openai/research-story';
 import { queueReadyDrafts, remainingPublicationCapacityToday } from '@/lib/publication-queue';
 import { enrichSourceSuggestionDescriptions, rebuildSourceSuggestionsFromResearch, scanBestSourceSuggestions } from '@/lib/source-discovery';
+import { refreshSourceIntelligence } from '@/lib/source-intelligence';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { firstRelation } from '@/lib/supabase/relations';
 import { candidateRankingSettings, compareRankedCandidates, rankCandidate } from '@/lib/candidate-ranking';
@@ -267,8 +268,9 @@ async function refreshSourceRecommendations(runId: string) {
     const rebuilt = await rebuildSourceSuggestionsFromResearch();
     const enriched = await enrichSourceSuggestionDescriptions();
     const scanned = await scanBestSourceSuggestions(8);
-    await addEvent(runId, 'sources', `Source recommendations updated automatically; ${scanned.found} usable RSS ${scanned.found === 1 ? 'feed was' : 'feeds were'} found.`, {
-      details: { suggestions: rebuilt.suggestions, descriptions_created: enriched.described, feeds_checked: scanned.checked, feeds_found: scanned.found },
+    const intelligence = await refreshSourceIntelligence();
+    await addEvent(runId, 'sources', `Source recommendations updated automatically; ${scanned.found} usable RSS ${scanned.found === 1 ? 'feed was' : 'feeds were'} found and ${intelligence.openRecommendations} source-network ${intelligence.openRecommendations === 1 ? 'signal is' : 'signals are'} open.`, {
+      details: { suggestions: rebuilt.suggestions, descriptions_created: enriched.described, feeds_checked: scanned.checked, feeds_found: scanned.found, source_network_signals: intelligence.openRecommendations },
     });
   } catch (error) {
     await addEvent(runId, 'sources', 'The editorial run completed, but source recommendations could not be refreshed.', {

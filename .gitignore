@@ -8,6 +8,7 @@ dist/
 .next/
 .output/
 .vercel/
+supabase/.temp/
 next-env.d.ts
 .env
 .env.*
