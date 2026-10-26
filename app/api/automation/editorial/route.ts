@@ -1,7 +1,7 @@
 import { timingSafeEqual } from 'node:crypto';
 import { environmentValue } from '@/lib/environment';
 import { advanceEditorialRun } from '@/lib/editorial-runner';
-import { collectEnabledSources } from '@/lib/ingestion/rss';
+import { collectEnabledSources, continueActiveCollection } from '@/lib/ingestion/rss';
 import { generateDigest } from '@/lib/openai/generate-digest';
 import { processClaimedDigestDelivery } from '@/lib/digest-distribution';
 import { publishDigest } from '@/lib/publish-digest';
@@ -132,6 +132,12 @@ export async function POST(request: Request) {
       return Response.json({ action: claim.newly_started ? 'started' : 'advanced', publication, snapshot });
     }
 
+    const activeCollection = await continueActiveCollection();
+    if (activeCollection) {
+      await recordHeartbeatSuccess();
+      return Response.json({ action: 'collection_advanced', publication, result: activeCollection });
+    }
+
     const { data: collect, error: collectClaimError } = await supabase.rpc('claim_periodic_collection', { interval_hours: 2 });
     if (collectClaimError) throw collectClaimError;
     if (collect) {
@@ -140,8 +146,15 @@ export async function POST(request: Request) {
       return Response.json({ action: 'collected', publication, result });
     }
 
+    const { data: payloadsPruned, error: retentionError } = await supabase.rpc('prune_source_item_payloads', { batch_size: 250 });
+    if (retentionError) throw retentionError;
+
     await recordHeartbeatSuccess();
-    return Response.json({ action: publication ? 'published' : 'idle', publication });
+    return Response.json({
+      action: publication ? 'published' : Number(payloadsPruned ?? 0) > 0 ? 'retention_pruned' : 'idle',
+      publication,
+      payloadsPruned: Math.max(0, Number(payloadsPruned ?? 0)),
+    });
   } catch (error) {
     const detail = error instanceof Error ? error.message : 'Unknown automation error.';
     await recordHeartbeatFailure(detail);

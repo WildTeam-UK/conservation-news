@@ -10,6 +10,15 @@ type SourceRecord = {
   source_kind: 'rss' | 'api' | 'website';
 };
 
+type SourceTask = {
+  task_id: string;
+  task_lease_token: string;
+  source_id: string;
+  source_name: string;
+  feed_url: string;
+  source_kind: SourceRecord['source_kind'];
+};
+
 type FeedItem = {
   externalId: string | null;
   url: string;
@@ -21,13 +30,29 @@ type FeedItem = {
   contentHash: string;
 };
 
-type CollectionResult = {
+type CollectionStatus = 'queued' | 'collecting' | 'completed' | 'partial' | 'failed';
+
+export type CollectionResult = {
   runId: string;
-  status: 'completed' | 'partial' | 'failed';
+  status: CollectionStatus;
   sourcesChecked: number;
   itemsFound: number;
   itemsNew: number;
+  remainingSources: number;
   errors: string[];
+};
+
+type CollectionSettings = {
+  collection_batch_size: number;
+  collection_concurrency: number;
+};
+
+type RunSummary = {
+  run_status: CollectionStatus;
+  sources_checked: number;
+  items_found: number;
+  items_new: number;
+  remaining_sources: number;
 };
 
 const parser = new XMLParser({
@@ -175,81 +200,211 @@ async function collectSource(source: SourceRecord, runId: string) {
     !existingUrls.has(item.url) && (!item.externalId || !existingExternalIds.has(item.externalId))
   );
 
+  let itemsAdded = 0;
   if (newItems.length) {
-    const { error } = await supabase.from('source_items').insert(newItems.map((item) => ({
-      source_id: source.id,
-      ingestion_run_id: runId,
-      external_id: item.externalId,
-      url: item.url,
-      canonical_url: item.url,
-      title: item.title,
-      summary: item.summary,
-      author: item.author,
-      published_at: item.publishedAt,
-      raw_content: item.rawContent,
-      content_hash: item.contentHash,
-      language_code: 'en',
-    })));
+    const { data: inserted, error } = await supabase.from('source_items').upsert(
+      newItems.map((item) => ({
+        source_id: source.id,
+        ingestion_run_id: runId,
+        external_id: item.externalId,
+        url: item.url,
+        canonical_url: item.url,
+        title: item.title,
+        summary: item.summary,
+        author: item.author,
+        published_at: item.publishedAt,
+        raw_content: item.rawContent,
+        content_hash: item.contentHash,
+        language_code: 'en',
+      })),
+      { onConflict: 'url', ignoreDuplicates: true },
+    ).select('id');
     if (error) throw error;
+    itemsAdded = inserted?.length ?? 0;
   }
 
-  return { found: items.length, added: newItems.length };
+  return { found: items.length, added: itemsAdded };
 }
 
-export async function collectEnabledSources(runType: 'manual' | 'scheduled' = 'manual'): Promise<CollectionResult> {
+async function activeCollectionRunId() {
   const supabase = getSupabaseAdminClient();
-  const startedAt = new Date().toISOString();
-  const { data: run, error: runError } = await supabase
+  const { data, error } = await supabase
     .from('ingestion_runs')
-    .insert({ run_type: runType, status: 'collecting', started_at: startedAt })
     .select('id')
-    .single();
+    .in('status', ['queued', 'collecting'])
+    .order('created_at', { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  return data?.id as string | undefined;
+}
 
-  if (runError || !run) throw runError ?? new Error('Could not create ingestion run.');
+async function startCollectionRun(runType: 'manual' | 'scheduled') {
+  const supabase = getSupabaseAdminClient();
+  const activeRunId = await activeCollectionRunId();
+  if (activeRunId) return activeRunId;
 
   const { data: sources, error: sourcesError } = await supabase
     .from('sources')
-    .select('id, name, feed_url, source_kind')
+    .select('id')
     .eq('enabled', true)
     .order('name');
-
   if (sourcesError) throw sourcesError;
 
-  let itemsFound = 0;
-  let itemsNew = 0;
-  const errors: string[] = [];
+  const { data: run, error: runError } = await supabase
+    .from('ingestion_runs')
+    .insert({ run_type: runType, status: 'queued' })
+    .select('id')
+    .single();
 
-  for (const source of (sources ?? []) as SourceRecord[]) {
-    const checkedAt = new Date().toISOString();
-    try {
-      const result = await collectSource(source, run.id);
-      itemsFound += result.found;
-      itemsNew += result.added;
-      await supabase.from('sources').update({
-        last_checked_at: checkedAt,
-        last_success_at: checkedAt,
-        last_error: null,
-      }).eq('id', source.id);
-    } catch (error) {
-      const detail = errorMessage(error);
-      errors.push(`${source.name}: ${detail}`);
-      await supabase.from('sources').update({
-        last_checked_at: checkedAt,
-        last_error: detail.slice(0, 500),
-      }).eq('id', source.id);
+  if (runError?.code === '23505') {
+    const racedRunId = await activeCollectionRunId();
+    if (racedRunId) return racedRunId;
+  }
+  if (runError || !run) throw runError ?? new Error('Could not create ingestion run.');
+
+  const tasks = (sources ?? []).map((source) => ({ run_id: run.id, source_id: source.id }));
+  if (tasks.length) {
+    const { error: taskError } = await supabase.from('ingestion_run_sources').insert(tasks);
+    if (taskError) {
+      await supabase.from('ingestion_runs').update({
+        status: 'failed',
+        completed_at: new Date().toISOString(),
+        error_summary: errorMessage(taskError).slice(0, 2000),
+      }).eq('id', run.id);
+      throw taskError;
     }
   }
 
-  const sourceCount = sources?.length ?? 0;
-  const status = errors.length === 0 ? 'completed' : errors.length === sourceCount ? 'failed' : 'partial';
-  await supabase.from('ingestion_runs').update({
-    status,
-    completed_at: new Date().toISOString(),
-    sources_checked: sourceCount,
-    items_found: itemsFound,
-    items_new: itemsNew,
-    error_summary: errors.length ? errors.join('\n').slice(0, 2000) : null,
-  }).eq('id', run.id);
+  return run.id as string;
+}
 
-  return { runId: run.id, status, sourcesChecked: sourceCount, itemsFound, itemsNew, errors };
+async function collectionSettings(): Promise<CollectionSettings> {
+  const { data, error } = await getSupabaseAdminClient()
+    .from('editorial_run_settings')
+    .select('collection_batch_size, collection_concurrency')
+    .eq('id', true)
+    .single();
+  if (error) throw error;
+  return {
+    collection_batch_size: Math.max(1, Math.min(25, Number(data.collection_batch_size ?? 10))),
+    collection_concurrency: Math.max(1, Math.min(10, Number(data.collection_concurrency ?? 5))),
+  };
+}
+
+async function runWithConcurrency<T>(items: T[], concurrency: number, work: (item: T) => Promise<void>) {
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(concurrency, items.length) }, async () => {
+    while (cursor < items.length) {
+      const item = items[cursor];
+      cursor += 1;
+      await work(item);
+    }
+  });
+  await Promise.all(workers);
+}
+
+async function processSourceTask(task: SourceTask, runId: string) {
+  const supabase = getSupabaseAdminClient();
+  const source: SourceRecord = {
+    id: task.source_id,
+    name: task.source_name,
+    feed_url: task.feed_url,
+    source_kind: task.source_kind,
+  };
+  const completedAt = new Date().toISOString();
+  try {
+    const result = await collectSource(source, runId);
+    const { error: taskError } = await supabase.from('ingestion_run_sources').update({
+      status: 'completed',
+      completed_at: completedAt,
+      lease_token: null,
+      lease_until: null,
+      items_found: result.found,
+      items_new: result.added,
+      error_summary: null,
+    }).eq('id', task.task_id).eq('lease_token', task.task_lease_token);
+    if (taskError) throw taskError;
+
+    await supabase.from('sources').update({
+      last_checked_at: completedAt,
+      last_success_at: completedAt,
+      last_error: null,
+    }).eq('id', source.id);
+  } catch (error) {
+    const detail = errorMessage(error);
+    await Promise.all([
+      supabase.from('ingestion_run_sources').update({
+        status: 'failed',
+        completed_at: completedAt,
+        lease_token: null,
+        lease_until: null,
+        error_summary: detail.slice(0, 500),
+      }).eq('id', task.task_id).eq('lease_token', task.task_lease_token),
+      supabase.from('sources').update({
+        last_checked_at: completedAt,
+        last_error: detail.slice(0, 500),
+      }).eq('id', source.id),
+    ]);
+  }
+}
+
+async function refreshCollectionRun(runId: string): Promise<CollectionResult> {
+  const supabase = getSupabaseAdminClient();
+  const { data, error } = await supabase.rpc('refresh_ingestion_run', { target_run_id: runId });
+  if (error) throw error;
+  const summary = (Array.isArray(data) ? data[0] : data) as RunSummary | null;
+  if (!summary) throw new Error('Collection run summary was not returned.');
+
+  const { data: failures, error: failuresError } = await supabase
+    .from('ingestion_run_sources')
+    .select('error_summary, sources(name)')
+    .eq('run_id', runId)
+    .eq('status', 'failed')
+    .order('completed_at');
+  if (failuresError) throw failuresError;
+
+  const errors = (failures ?? []).flatMap((failure) => {
+    if (!failure.error_summary) return [];
+    const relation = Array.isArray(failure.sources) ? failure.sources[0] : failure.sources;
+    return [`${relation?.name ?? 'Source'}: ${failure.error_summary}`];
+  });
+
+  return {
+    runId,
+    status: summary.run_status,
+    sourcesChecked: summary.sources_checked,
+    itemsFound: summary.items_found,
+    itemsNew: summary.items_new,
+    remainingSources: summary.remaining_sources,
+    errors,
+  };
+}
+
+export async function advanceCollectionRun(runId: string): Promise<CollectionResult> {
+  const supabase = getSupabaseAdminClient();
+  const settings = await collectionSettings();
+  const { data, error } = await supabase.rpc('claim_ingestion_source_batch', {
+    target_run_id: runId,
+    batch_size: settings.collection_batch_size,
+    lease_seconds: 90,
+  });
+  if (error) throw error;
+
+  const tasks = (data ?? []) as SourceTask[];
+  await runWithConcurrency(tasks, settings.collection_concurrency, (task) => processSourceTask(task, runId));
+  return refreshCollectionRun(runId);
+}
+
+export async function continueActiveCollection(): Promise<CollectionResult | null> {
+  const runId = await activeCollectionRunId();
+  return runId ? advanceCollectionRun(runId) : null;
+}
+
+export async function collectEnabledSources(
+  runType: 'manual' | 'scheduled' = 'manual',
+  existingRunId?: string | null,
+): Promise<CollectionResult> {
+  const runId = existingRunId ?? await startCollectionRun(runType);
+  return advanceCollectionRun(runId);
 }

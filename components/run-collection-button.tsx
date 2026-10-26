@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation';
 import { LoaderCircle, Play } from 'lucide-react';
 
 type CollectionResponse = {
-  status?: 'completed' | 'partial' | 'failed';
+  status?: 'queued' | 'collecting' | 'completed' | 'partial' | 'failed';
   sourcesChecked?: number;
   itemsFound?: number;
   itemsNew?: number;
+  remainingSources?: number;
   error?: string;
   errors?: string[];
 };
@@ -33,7 +34,11 @@ export function RunCollectionButton() {
         setMessage(result.errors?.[0] ?? result.error ?? 'Collection failed.');
       } else {
         const sourceCount = result.sourcesChecked ?? 0;
-        const summary = `Checked ${sourceCount} ${sourceCount === 1 ? 'source' : 'sources'} and found ${result.itemsNew ?? 0} new items from ${result.itemsFound ?? 0} available.`;
+        const remaining = result.remainingSources ?? 0;
+        const progress = result.status === 'collecting'
+          ? ` ${remaining} ${remaining === 1 ? 'source remains' : 'sources remain'}; automation will continue this run safely.`
+          : '';
+        const summary = `Checked ${sourceCount} ${sourceCount === 1 ? 'source' : 'sources'} and found ${result.itemsNew ?? 0} new items from ${result.itemsFound ?? 0} available.${progress}`;
         const errorDetail = result.errors?.length ? ` ${result.errors.join(' ')}` : '';
         setFailed(Boolean(result.errors?.length));
         setMessage(`${summary}${errorDetail}`);

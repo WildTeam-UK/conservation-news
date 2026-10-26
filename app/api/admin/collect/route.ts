@@ -9,7 +9,7 @@ export async function POST() {
 
   try {
     const result = await collectEnabledSources('manual');
-    return Response.json(result, { status: result.status === 'failed' ? 502 : 200 });
+    return Response.json(result, { status: result.status === 'failed' ? 502 : result.status === 'collecting' ? 202 : 200 });
   } catch (error) {
     console.error('Collection run failed before completion', error);
     return Response.json({ error: 'The collection run could not be started.' }, { status: 500 });

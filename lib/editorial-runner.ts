@@ -25,6 +25,7 @@ type EditorialRun = {
   id: string;
   status: RunStatus;
   current_stage: RunStage;
+  ingestion_run_id: string | null;
   max_new_drafts: number;
   max_estimated_cost_usd: number | string;
   estimated_cost_usd: number | string;
@@ -312,13 +313,21 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
   if (run.status !== 'running') return getEditorialRunSnapshot(run.id, 'This run is no longer active.');
 
   if (run.current_stage === 'collecting') {
-    const result = await collectEnabledSources('manual');
-    await supabase.from('editorial_runs').update({ ingestion_run_id: result.runId, current_stage: 'assessing' }).eq('id', run.id);
-    await addEvent(run.id, 'collecting', `Checked ${result.sourcesChecked} sources and found ${result.itemsNew} new items.`, {
-      level: result.status === 'completed' ? 'info' : 'warning',
+    const result = await collectEnabledSources('manual', run.ingestion_run_id);
+    const collectionFinished = ['completed', 'partial', 'failed'].includes(result.status);
+    await supabase.from('editorial_runs').update({
+      ingestion_run_id: result.runId,
+      current_stage: collectionFinished ? 'assessing' : 'collecting',
+    }).eq('id', run.id);
+    await addEvent(run.id, 'collecting', collectionFinished
+      ? `Collection finished after checking ${result.sourcesChecked} sources and finding ${result.itemsNew} new items.`
+      : `Checked ${result.sourcesChecked} sources and found ${result.itemsNew} new items; ${result.remainingSources} source checks remain.`, {
+      level: result.status === 'completed' || result.status === 'collecting' ? 'info' : 'warning',
       details: result,
     });
-    return getEditorialRunSnapshot(run.id, 'Collection complete. Assessing the new inbox next.');
+    return getEditorialRunSnapshot(run.id, collectionFinished
+      ? 'Collection complete. Assessing the new inbox next.'
+      : `Collection safely paused with ${result.remainingSources} source checks remaining.`);
   }
 
   if (run.current_stage === 'assessing') {

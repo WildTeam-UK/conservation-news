@@ -143,7 +143,7 @@ Public read policies expose active taxonomy and published editorial records. Adm
 
 - Identity: `admin_users`
 - Taxonomy: `topics`, `content_tags`, aliases and story/cluster joins
-- Sources: `sources`, `source_topics`, `source_items`, ingestion runs
+- Sources: `sources`, `source_topics`, `source_items`, ingestion runs and per-source ingestion tasks
 - Editorial grouping: `story_clusters`, cluster items and cluster updates
 - Published content: `stories`, topics, organisations, sources and contextual links
 - AI evidence: `ai_generations`, `research_packs`, linking assessments
@@ -160,12 +160,16 @@ Database changes are append-only migrations. Existing production migrations must
 
 ### Collection and assessment
 
-1. Enabled RSS feeds are fetched and parsed.
-2. Previously unseen items are inserted into `source_items`.
-3. Recent unprocessed items are claimed in batches.
-4. OpenAI assesses relevance, quality, evidence, timeliness and related signals.
-5. Qualifying items become or join story clusters; rejected items remain assessed and are not repeatedly charged.
-6. Recent undrafted candidates are ranked for the daily run.
+1. A collection run snapshots the enabled RSS sources into durable per-source tasks.
+2. Each request leases up to 10 source tasks and checks up to five feeds concurrently, retaining the existing 20-second per-feed timeout.
+3. Interrupted task leases expire and become claimable again; a failed source does not repeat successful checks.
+4. Previously unseen items are inserted into `source_items`.
+5. Recent unprocessed items are claimed in assessment batches.
+6. OpenAI assesses relevance, quality, evidence, timeliness and related signals.
+7. Qualifying items become or join story clusters; rejected items remain assessed and are not repeatedly charged.
+8. Recent undrafted candidates are ranked for the daily run.
+
+Manual collection, periodic collection and the daily editorial run use the same resumable collection mechanism. The admin request reports completed progress immediately; the minute heartbeat continues any remaining source tasks. Once per day, an otherwise idle heartbeat clears old replaceable `raw_content` in a bounded batch after the configured 30-day retention period. It preserves item metadata, URLs, hashes and assessment history, and excludes payloads supporting stories, research packs or pending coverage updates. Retention runs are logged. Source-item row deletion remains deferred until production history supports a safe policy.
 
 ### Research and drafting
 
@@ -199,9 +203,10 @@ The heartbeat:
 - Claims or advances the daily editorial run.
 - Claims or recovers a due digest run.
 - Claims one due external digest delivery, with each Buffer channel and Brevo campaign tracked independently.
-- Performs periodic source collection when no editorial run is active.
+- Continues any active resumable source collection, or starts periodic collection when no editorial run is active.
+- Runs one bounded raw-payload retention batch daily when higher-priority work is idle.
 
-Database row locking and short leases prevent overlapping requests from duplicating work. Editorial steps can recover after interruption; digest runs can recover after fifteen minutes. A distribution request whose lease expires without a recorded provider response is marked uncertain and requires an explicit editor retry, because replaying it automatically could duplicate a post or campaign. The editorial workflow enforces draft-count and estimated-cost limits.
+Database row locking and short leases prevent overlapping requests from duplicating work. Source checks and editorial steps can recover after interruption; digest runs can recover after fifteen minutes. A distribution request whose lease expires without a recorded provider response is marked uncertain and requires an explicit editor retry, because replaying it automatically could duplicate a post or campaign. The editorial workflow enforces draft-count and estimated-cost limits.
 
 The scheduled migration currently targets `https://conservation-news.vercel.app/api/automation/editorial`. Changing the production hostname requires reviewing this endpoint and the Vault configuration.
 

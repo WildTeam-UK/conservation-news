@@ -102,7 +102,7 @@ export default async function PipelinePage() {
         </div>
 
         <section className="pipeline-runs">
-          <div><Activity /><span><small>Latest collection</small><strong>{latestIngestion ? `${latestIngestion.items_new} new from ${latestIngestion.sources_checked} sources` : 'No runs yet'}</strong>{latestIngestion ? <time>{dateTime.format(new Date(latestIngestion.created_at))}</time> : null}</span></div>
+          <div><Activity /><span><small>{latestIngestion?.status === 'collecting' ? 'Collection in progress' : 'Latest collection'}</small><strong>{latestIngestion ? `${latestIngestion.items_new} new from ${latestIngestion.sources_checked} sources${latestIngestion.status === 'collecting' ? ' so far' : ''}` : 'No runs yet'}</strong>{latestIngestion ? <time>{dateTime.format(new Date(latestIngestion.created_at))}</time> : null}</span></div>
           <div><BrainCircuit /><span><small>Latest editorial run</small><strong>{latestEditorial ? `${latestEditorial.drafts_created} drafts from ${latestEditorial.candidates_selected} candidates` : 'No runs yet'}</strong>{latestEditorial ? <time>{dateTime.format(new Date(latestEditorial.created_at))} · ${Number(latestEditorial.estimated_cost_usd ?? 0).toFixed(4)}</time> : null}</span></div>
         </section>
       </div>
