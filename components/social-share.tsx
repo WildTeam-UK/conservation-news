@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { Check, Copy } from 'lucide-react';
+import { recordContentInteraction } from '@/lib/content-interactions';
 
-export function SocialShare({ path, title, label = 'Share this story' }: { path: string; title: string; label?: string }) {
+export function SocialShare({ path, title, storyId, label = 'Share this story' }: { path: string; title: string; storyId?: string; label?: string }) {
   const [copied, setCopied] = useState(false);
 
   function currentUrl() {
@@ -19,10 +20,12 @@ export function SocialShare({ path, title, label = 'Share this story' }: { path:
         ? `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`
         : `https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`;
     window.open(shareUrl, '_blank', 'noopener,noreferrer,width=720,height=720');
+    if (storyId) void recordContentInteraction({ storyId, eventType: `share_${network}` });
   }
 
   async function copyLink() {
     await navigator.clipboard.writeText(currentUrl());
+    if (storyId) void recordContentInteraction({ storyId, eventType: 'copy_link' });
     setCopied(true);
     window.setTimeout(() => setCopied(false), 2000);
   }

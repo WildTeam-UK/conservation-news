@@ -9,7 +9,7 @@ import type { TrainingCoursePromotion } from '@/lib/training-courses';
 import { attachStoredArticleLinks, type ArticleLinkSection, type ArticleLinkType } from '@/lib/article-linking';
 import { firstRelation } from '@/lib/supabase/relations';
 
-type PublishedSource = { source_name: string; source_title: string; source_url: string; source_role: string; display_order: number };
+type PublishedSource = { id: string; source_name: string; source_title: string; source_url: string; source_role: string; display_order: number };
 type PublishedTopicLink = { topics: { name: string; slug: string } | { name: string; slug: string }[] | null };
 type PublishedTagLink = { confidence: number | null; content_tags: { name: string; slug: string; status: string } | { name: string; slug: string; status: string }[] | null };
 type PublishedCourseRecommendation = { placement: string; confidence: number | null; rationale: string | null; training_courses: TrainingCoursePromotion | TrainingCoursePromotion[] | null };
@@ -44,7 +44,7 @@ type PublishedStoryDetail = PublishedStory & {
 };
 
 const storyListingSelect = 'id, slug, headline, standfirst, image_url, image_alt, published_at, updated_at, editorial_updated_at, editorial_change_summary, content_type, digest_period_end, generation_metadata, story_topics(topics(name, slug)), story_tags(confidence, content_tags(name, slug, status)), story_conservation_outlooks(classification, score, confidence, rationale)';
-const storyDetailSelect = `${storyListingSelect}, story_sources(source_name, source_title, source_url, source_role, display_order), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale)`;
+const storyDetailSelect = `${storyListingSelect}, story_sources(id, source_name, source_title, source_url, source_role, display_order), story_course_recommendations(placement, confidence, rationale, training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)), story_contextual_links(link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale)`;
 
 export function publishedTopics(story: PublishedStory) {
   const article = (story.generation_metadata.article_content ?? {}) as Partial<StoryDraftContent>;
@@ -174,7 +174,7 @@ export function publishedStoryToArticle(story: PublishedStoryDetail, goodNewsSet
     whatHappensNext: { text: content.what_happens_next.text, sourceIds: content.what_happens_next.source_ids, links: content.what_happens_next.links },
     whatWeKnow: content.what_we_know.map((item) => ({ text: item.text, sourceIds: item.source_ids, links: item.links })),
     whatWeDontKnow: content.what_we_dont_know.map((item) => ({ text: item.text, sourceIds: item.source_ids, links: item.links })),
-    sources: sources.map((source) => ({ id: `source-${source.display_order}`, name: source.source_name, title: source.source_title, url: source.source_url, primary: source.source_role === 'primary' })),
+    sources: sources.map((source) => ({ id: `source-${source.display_order}`, recordId: source.id, name: source.source_name, title: source.source_title, url: source.source_url, primary: source.source_role === 'primary' })),
     coverage: content.coverage_analysis,
     coursePromotion,
     goodNews: isPublishedGoodNews(story, goodNewsSettings),

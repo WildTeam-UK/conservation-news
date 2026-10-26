@@ -12,6 +12,9 @@ import { TopicTag } from '@/components/topic-tag';
 import { TrainingBanner } from '@/components/training-banner';
 import { DigestTag } from '@/components/digest-tag';
 import { londonCalendarDateFormatter, londonLongDateFormatter } from '@/lib/date-format';
+import { ContentFeedback } from '@/components/content-feedback';
+import { ContentViewTracker } from '@/components/content-view-tracker';
+import { TrackedInteractionLink } from '@/components/tracked-interaction-link';
 
 function longDate(value: string) {
   return londonLongDateFormatter.format(new Date(value));
@@ -107,7 +110,7 @@ function MoreDailyDigests({ digests }: { digests: DigestStoryRecord[] }) {
   </section>;
 }
 
-function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
+function DigestSources({ stories, digestStoryId }: { stories: DigestSourceStory[]; digestStoryId?: string }) {
   const uniqueStories = [...new Map(stories.map((story) => [story.id, story])).values()];
   if (!uniqueStories.length) return null;
   return <section className="digest-source-list">
@@ -115,12 +118,12 @@ function DigestSources({ stories }: { stories: DigestSourceStory[] }) {
     <h2>Stories used in this digest</h2>
     <ul>{uniqueStories.map((story, index) => <li key={story.id}>
       <span>{String(index + 1).padStart(2, '0')}</span>
-      <a href={`/stories/${story.slug}`}>{cleanDigestText(story.headline)} <ArrowRight /></a>
+      {digestStoryId ? <TrackedInteractionLink href={`/stories/${story.slug}`} storyId={digestStoryId} relatedStoryId={story.id} eventType="digest_story">{cleanDigestText(story.headline)} <ArrowRight /></TrackedInteractionLink> : <a href={`/stories/${story.slug}`}>{cleanDigestText(story.headline)} <ArrowRight /></a>}
     </li>)}</ul>
   </section>;
 }
 
-export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
+export function DigestTemplate({ content, stories, storyId, periodEnd, imageUrl, imageAlt, moreDigests = [], sharePath }: { content: DigestContent; stories: DigestSourceStory[]; storyId?: string; periodEnd: string; imageUrl?: string | null; imageAlt?: string | null; moreDigests?: DigestStoryRecord[]; sharePath?: string }) {
   const storyByReference = new Map(stories.map((story, index) => [`story-${index + 1}`, story]));
   const matchingHeroStory = stories.find((story) => story.image_url === imageUrl);
   const heroStory = matchingHeroStory ?? stories.find((story) => story.image_url) ?? stories[0];
@@ -137,6 +140,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
   const linksFor = (sectionIndex: number, paragraphIndex: number) => content.contextual_links?.filter((link) => link.section_index === sectionIndex && link.paragraph_index === paragraphIndex);
 
   return <article className={`digest-article digest-${content.digest_type}`}>
+    {storyId ? <ContentViewTracker storyId={storyId} /> : null}
     <header className="digest-public-hero">
       <div className="digest-hero-copy">
         <div className="digest-hero-content">
@@ -156,7 +160,7 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
           {displayTopics.map((topic) => <TopicTag topic={topic} key={topic} />)}
         </div>
         <div className="digest-introduction-layout">
-          {sharePath ? <SocialShare path={sharePath} title={cleanDigestText(content.headline)} label="Share this digest" /> : null}
+          {sharePath ? <SocialShare path={sharePath} title={cleanDigestText(content.headline)} storyId={storyId} label="Share this digest" /> : null}
           <section className="digest-introduction">{content.introduction.map((paragraph, index) => <LinkedParagraph text={paragraph} stories={storyByReference} allowLegacy={allowLegacyLinks} key={index} />)}</section>
         </div>
         {content.sections.map((section, index) => {
@@ -169,7 +173,8 @@ export function DigestTemplate({ content, stories, periodEnd, imageUrl, imageAlt
             {section.paragraphs.map((paragraph, paragraphIndex) => <Fragment key={paragraphIndex}><LinkedParagraph text={paragraph} links={linksFor(index, paragraphIndex)} stories={storyByReference} referenced={referenced} allowLegacy={allowLegacyLinks} />{index === 1 && paragraphIndex === 0 ? <NewsletterCta id="digest-email-inline" variant="streamlined" /> : null}</Fragment>)}
           </section>;
         })}
-        <DigestSources stories={referencedStories.length ? referencedStories : stories} />
+        <DigestSources stories={referencedStories.length ? referencedStories : stories} digestStoryId={storyId} />
+        {storyId ? <ContentFeedback storyId={storyId} contentLabel="digest" /> : null}
       </div>
 
       <TrainingBanner />

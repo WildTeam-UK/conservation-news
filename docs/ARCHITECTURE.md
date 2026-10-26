@@ -152,6 +152,7 @@ Public read policies expose active taxonomy and published editorial records. Adm
 - Publishing: `publication_queue`
 - Digests: digest settings, runs, selected stories and events
 - Source discovery: source suggestions and mentions
+- Learning signals: anonymous content interactions, 30-day content and source outcome views, and the source-learning policy
 - Training: training courses and story recommendations
 - Good News: settings and conservation-outlook records
 
@@ -259,6 +260,10 @@ Validated text, selected story IDs, review diagnostics, prompt versions, token u
 ### Analytics
 
 The public application uses the existing WildTeam Google Tag Manager container, `GTM-KW2PQNF`, which feeds the shared Google Analytics 4 property used by the main WildTeam and Training sites. On `news.wildteam.org.uk`, statistical analytics are enabled by default under the UK statistical-purposes exception. Consent Mode v2 keeps `ad_storage`, `ad_user_data` and `ad_personalization` denied for WildNews. Visitors receive a clear notice and may opt out free of charge; opting out disables the container on subsequent loads and removes existing Google Analytics cookies. Preview deployments, local development and authenticated admin routes are not tracked. The visitor's choice is stored locally in the browser and can be changed from the site footer.
+
+Published stories and digests also send narrow first-party learning events through `/api/interactions`. The server validates that the content and any linked source or digest story are published before using the service role to write. Records contain an idempotency key, content relationships, event type and timestamp, but no IP address, account ID, user agent, referrer or persistent visitor identifier. Passive page-view, share and click events follow the existing analytics opt-out. Explicit usefulness feedback is still accepted after opt-out because it is a direct user action; the browser stores only the selected choice and its retry key. Authenticated editors can inspect aggregate 30-day content and source outcomes in `/admin/insights`.
+
+The same Insights workspace reports seven-day workflow health and estimated AI cost plus internal Buffer and Brevo delivery outcomes. Provider engagement data is not inferred from submission status and will be added only when supported API fields are confirmed. Source recommendations remain advisory. `source_learning_policy` locks automatic changes off and records the initial evidence gate: 90 observation days, 20 reviewed recommendations, 10 decisions per rule and at least 80% acceptance. Passing the gate cannot enable automation without a later reviewed migration.
 
 ### Performance monitoring
 

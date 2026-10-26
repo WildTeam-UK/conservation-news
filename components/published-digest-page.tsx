@@ -51,6 +51,7 @@ export async function PublishedDigestPage({ type, date }: { type: DigestType; da
     <DigestTemplate
       content={content}
       stories={digest.generation_metadata.digest_source_stories ?? []}
+      storyId={digest.id}
       periodEnd={digest.digest_period_end}
       imageUrl={digest.image_url}
       imageAlt={digest.image_alt}

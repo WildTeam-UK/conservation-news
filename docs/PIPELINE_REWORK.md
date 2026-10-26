@@ -84,8 +84,8 @@ Implementation note: the freshness window, daily decay and wildlife bonus are co
 
 ### Feedback and reporting
 
-- Article and digest pages can later collect simple positive or negative usefulness feedback.
-- Views, outbound source clicks, digest clicks and share interactions should feed aggregated performance reporting without collecting unnecessary personal data.
+- Article and digest pages collect simple positive or negative usefulness feedback.
+- Views, outbound source clicks, digest clicks and share interactions feed aggregated performance reporting without collecting unnecessary personal data.
 - Buffer performance data can join the same reporting model when the available API fields are confirmed.
 - A concise operational summary can report successful runs, costs, failures, held work and recommendations, including an “all clear” message when no action is needed.
 
@@ -151,6 +151,10 @@ Implementation note: the scheduled run now stores the preceding London-local edi
 2. Build aggregated article, digest, source and social outcome reporting.
 3. Add the concise operational health summary.
 4. Define evidence thresholds before enabling any automatic source-list changes.
+
+Implementation note: published pages submit anonymous, idempotent interaction events through a validated server-only write path. The event model stores no IP address, account ID, user agent, referrer or persistent visitor identifier. Passive events follow the existing analytics opt-out; an explicit usefulness vote remains available and is remembered only on that browser. The Insights workspace aggregates 30-day content and source outcomes, reports internal Buffer and Brevo delivery outcomes, and summarises seven-day operational health and estimated AI cost. Buffer engagement metrics remain deferred until supported provider fields are confirmed.
+
+Automatic source-list changes are database-locked off. The initial evidence gate requires at least 90 days of observation, 20 reviewed recommendations, 10 decisions for every recommendation rule and an acceptance rate of at least 80%. Meeting those thresholds does not itself enable automation; a separate reviewed migration is still required.
 
 ## Explicitly deferred
 

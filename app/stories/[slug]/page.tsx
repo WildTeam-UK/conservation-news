@@ -34,7 +34,7 @@ export default async function StoryPage({ params }: { params: Promise<{ slug: st
   return <main>
     <InteriorHeader />
     <JsonLd data={structuredData} />
-    <ArticleTemplate article={article} sharePath={`/stories/${published.slug}`} />
+    <ArticleTemplate article={article} storyId={published.id} sharePath={`/stories/${published.slug}`} />
     <EditorialPageEnd newsletterId="article-digest-email" stories={related} description="Keep exploring this topic." />
   </main>;
 }
