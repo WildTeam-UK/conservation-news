@@ -42,7 +42,7 @@ type RunSnapshot = {
 };
 
 type DailyEditorialRunProps = {
-  defaultMaxDrafts: number;
+  defaultDailyArticleTarget: number;
   defaultMaxCostUsd: number;
   defaultAutomationEnabled: boolean;
   defaultDailyRunTime: string;
@@ -59,7 +59,7 @@ function candidateTitle(item: RunItem) {
 }
 
 export function DailyEditorialRun({
-  defaultMaxDrafts,
+  defaultDailyArticleTarget,
   defaultMaxCostUsd,
   defaultAutomationEnabled,
   defaultDailyRunTime,
@@ -71,7 +71,7 @@ export function DailyEditorialRun({
   hasActiveRun,
 }: DailyEditorialRunProps) {
   const router = useRouter();
-  const [maxDrafts, setMaxDrafts] = useState(defaultMaxDrafts);
+  const [dailyArticleTarget, setDailyArticleTarget] = useState(defaultDailyArticleTarget);
   const [maxCost, setMaxCost] = useState(defaultMaxCostUsd);
   const [automationEnabled, setAutomationEnabled] = useState(defaultAutomationEnabled);
   const [dailyRunTime, setDailyRunTime] = useState(defaultDailyRunTime.slice(0, 5));
@@ -102,12 +102,12 @@ export function DailyEditorialRun({
       const response = await fetch('/api/admin/editorial-settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ automationEnabled, dailyRunTime, maxNewDrafts: maxDrafts, maxEstimatedCostUsd: maxCost, candidateFreshnessDays, candidateFreshnessDecayPerDay, candidateWildlifeBonus }),
+        body: JSON.stringify({ automationEnabled, dailyRunTime, dailyArticleTarget, maxEstimatedCostUsd: maxCost, candidateFreshnessDays, candidateFreshnessDecayPerDay, candidateWildlifeBonus }),
       });
       const result = await response.json() as { saved?: boolean; error?: string };
       if (!response.ok) throw new Error(result.error ?? 'The automation settings could not be saved.');
       setScheduleMessage(automationEnabled
-        ? `Automation enabled. Up to ${maxDrafts} drafts will be prepared daily after ${dailyRunTime} UK time.`
+        ? `Automation enabled. Up to ${dailyArticleTarget} articles will be prepared and scheduled for the same day after ${dailyRunTime} UK time.`
         : 'Automation is switched off. Your limits and preferred time have still been saved.');
       router.refresh();
     } catch (caught) {
@@ -121,7 +121,7 @@ export function DailyEditorialRun({
     setRunning(true);
     setError('');
     try {
-      let next = await request({ action: 'start', maxNewDrafts: maxDrafts, maxEstimatedCostUsd: maxCost });
+      let next = await request({ action: 'start', dailyArticleTarget, maxEstimatedCostUsd: maxCost });
       setSnapshot(next);
       while (next.run.status === 'running') {
         await new Promise((resolve) => setTimeout(resolve, next.message.startsWith('Another request') ? 5_000 : 300));
@@ -147,7 +147,7 @@ export function DailyEditorialRun({
       <div className="daily-run-intro">
         <p className="eyebrow">Daily editorial workflow</p>
         <h2 id="daily-run-heading">Create today&apos;s private drafts</h2>
-        <p>Collect and assess the latest items, rank them alongside recent undrafted candidates, then research and draft the strongest stories. Complete drafts can enter the controlled publishing queue automatically.</p>
+        <p>Collect and assess the latest items, rank them alongside recent undrafted candidates, then create only the strongest articles needed for today&apos;s remaining publishing capacity.</p>
         <div className="daily-run-safeguards"><span><ShieldCheck /> Publication checklist</span><span><SearchCheck /> Seven-day candidate pool</span><span><CircleDollarSign /> Stops before a projected overspend</span><span><RotateCcw /> Safe to resume</span></div>
         <div className={`automation-status ${automationEnabled ? 'enabled' : ''}`}>
           <Clock3 />
@@ -156,18 +156,18 @@ export function DailyEditorialRun({
       </div>
 
       <div className="daily-run-controls">
-        <label><span>Maximum new drafts</span><input type="number" min="1" max="25" step="1" value={maxDrafts} disabled={running || saving} onChange={(event) => setMaxDrafts(Number(event.target.value))} /></label>
+        <label><span>Daily article target</span><input type="number" min="1" max="25" step="1" value={dailyArticleTarget} disabled={running || saving} onChange={(event) => setDailyArticleTarget(Number(event.target.value))} /><small>Maximum articles created and scheduled for that day.</small></label>
         <label><span>Estimated cost limit (USD)</span><div className="money-input"><span>$</span><input type="number" min="0.05" max="100" step="0.05" value={maxCost} disabled={running || saving} onChange={(event) => setMaxCost(Number(event.target.value))} /></div></label>
         <label><span>Daily run time</span><input type="time" value={dailyRunTime} disabled={running || saving} onChange={(event) => setDailyRunTime(event.target.value)} /></label>
         <label><span>Candidate freshness</span><input type="number" min="1" max="30" step="1" value={candidateFreshnessDays} disabled={running || saving} onChange={(event) => setCandidateFreshnessDays(Number(event.target.value))} /><small>Days a candidate remains eligible.</small></label>
         <label><span>Freshness decay</span><input type="number" min="0" max="20" step="0.5" value={candidateFreshnessDecayPerDay} disabled={running || saving} onChange={(event) => setCandidateFreshnessDecayPerDay(Number(event.target.value))} /><small>Points removed per complete day.</small></label>
         <label><span>Wildlife bonus</span><input type="number" min="0" max="10" step="0.5" value={candidateWildlifeBonus} disabled={running || saving} onChange={(event) => setCandidateWildlifeBonus(Number(event.target.value))} /><small>Small priority lift, not a hard preference.</small></label>
         <label className="automation-toggle"><span>Daily scheduler</span><span className="automation-toggle-control"><input type="checkbox" checked={automationEnabled} disabled={running || saving} onChange={(event) => setAutomationEnabled(event.target.checked)} /> <strong>{automationEnabled ? 'Enabled' : 'Off'}</strong></span></label>
-        <button className="admin-secondary-button schedule-save-button" type="button" onClick={saveSchedule} disabled={running || saving || maxDrafts < 1 || maxCost < 0.05 || !dailyRunTime || candidateFreshnessDays < 1 || candidateFreshnessDecayPerDay < 0 || candidateWildlifeBonus < 0}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving settings</> : <><Save /> Save automation</>}</button>
-        <button className="admin-primary-button daily-run-button" type="button" onClick={run} disabled={running || saving || maxDrafts < 1 || maxCost < 0.05}>
+        <button className="admin-secondary-button schedule-save-button" type="button" onClick={saveSchedule} disabled={running || saving || dailyArticleTarget < 1 || maxCost < 0.05 || !dailyRunTime || candidateFreshnessDays < 1 || candidateFreshnessDecayPerDay < 0 || candidateWildlifeBonus < 0}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving settings</> : <><Save /> Save automation</>}</button>
+        <button className="admin-primary-button daily-run-button" type="button" onClick={run} disabled={running || saving || dailyArticleTarget < 1 || maxCost < 0.05}>
           {running ? <><LoaderCircle className="admin-spinner" /> {snapshot?.message || 'Starting run'}</> : hasActiveRun || runState?.status === 'running' || runState?.status === 'budget_stopped' ? <><RotateCcw /> Resume run now</> : <><Play /> Run manually now</>}
         </button>
-        <small>The draft and cost limits are shared by manual and scheduled runs. Automatic publishing is controlled separately from the Queue page.</small>
+        <small>The article target and cost limit are shared by manual and scheduled runs. Publishing hours and quality safeguards are controlled from the Schedule page.</small>
         {scheduleMessage ? <output className="schedule-message">{scheduleMessage}</output> : null}
       </div>
 

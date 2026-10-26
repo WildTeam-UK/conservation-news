@@ -65,7 +65,7 @@ export default async function AdminDashboard() {
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').eq('status', 'held').order('updated_at', { ascending: false }),
     supabase.from('sources').select('id, name, last_error').eq('enabled', true).not('last_error', 'is', null),
     supabase.from('stories').select('id, headline, taxonomy_review_reason', { count: 'exact' }).eq('taxonomy_review_required', true).order('updated_at', { ascending: false }).limit(4),
-    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, max_auto_publishes_per_day, candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).maybeSingle(),
+    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).maybeSingle(),
     supabase.from('editorial_runs').select('id, trigger_type, status, max_new_drafts, estimated_cost_usd, drafts_created, candidates_selected, failures, created_at, completed_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('editorial_runs').select('id').eq('status', 'running').maybeSingle(),
     supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, error_summary, created_at').order('created_at', { ascending: false }).limit(1),
@@ -109,8 +109,8 @@ export default async function AdminDashboard() {
         </section>
 
         <section className="overview-system-grid" aria-label="Automation health">
-          <article><span className={`overview-card-icon ${settings?.automation_enabled ? 'healthy' : ''}`}><Bot /></span><div><p className="eyebrow">Daily workflow</p><h2>{settings?.automation_enabled ? 'Running automatically' : 'Paused'}</h2><p>Next scheduled run at {String(settings?.daily_run_time ?? '10:00').slice(0, 5)} UK time.</p></div><strong>{latestEditorialRun?.drafts_created ?? 0}<small>drafts last run</small></strong></article>
-          <article><span className={`overview-card-icon ${settings?.auto_publish_enabled ? 'healthy' : ''}`}><CalendarClock /></span><div><p className="eyebrow">Publishing</p><h2>{settings?.auto_publish_enabled ? 'Publishing automatically' : 'Paused'}</h2><p>{String(settings?.publish_window_start ?? '08:00').slice(0, 5)}–{String(settings?.publish_window_end ?? '20:00').slice(0, 5)} · up to {settings?.max_auto_publishes_per_day ?? 10} per day.</p></div><strong>{upcoming.length}<small>coming up</small></strong></article>
+          <article><span className={`overview-card-icon ${settings?.automation_enabled ? 'healthy' : ''}`}><Bot /></span><div><p className="eyebrow">Daily workflow</p><h2>{settings?.automation_enabled ? 'Running automatically' : 'Paused'}</h2><p>Next scheduled run at {String(settings?.daily_run_time ?? '07:00').slice(0, 5)} UK time.</p></div><strong>{latestEditorialRun?.drafts_created ?? 0}<small>articles last run</small></strong></article>
+          <article><span className={`overview-card-icon ${settings?.auto_publish_enabled ? 'healthy' : ''}`}><CalendarClock /></span><div><p className="eyebrow">Publishing</p><h2>{settings?.auto_publish_enabled ? 'Publishing automatically' : 'Paused'}</h2><p>{String(settings?.publish_window_start ?? '08:00').slice(0, 5)}–{String(settings?.publish_window_end ?? '20:00').slice(0, 5)} · target {settings?.max_new_drafts ?? 10} per day.</p></div><strong>{upcoming.length}<small>coming up</small></strong></article>
           <article><span className={`overview-card-icon ${sourceErrors.length ? 'warning' : 'healthy'}`}><Rss /></span><div><p className="eyebrow">Source network</p><h2>{latestIngestionRun?.status === 'collecting' ? 'Collection in progress' : sourceErrors.length ? `${sourceErrors.length} source warning${sourceErrors.length === 1 ? '' : 's'}` : 'All sources responding'}</h2><p>{sourcesResult.count ?? 0} active sources · {latestIngestionRun?.status === 'collecting' ? 'current run has' : 'last check'} found {latestIngestionRun?.items_new ?? 0} new items.</p></div><strong>{latestIngestionRun?.sources_checked ?? 0}<small>{latestIngestionRun?.status === 'collecting' ? 'checked so far' : 'checked last run'}</small></strong></article>
         </section>
 
@@ -152,10 +152,10 @@ export default async function AdminDashboard() {
           <summary><span><strong>Manual controls</strong><small>Run or test individual workflow stages when needed.</small></span><ArrowRight /></summary>
           <div>
             <DailyEditorialRun
-              defaultMaxDrafts={settings?.max_new_drafts ?? 10}
+              defaultDailyArticleTarget={settings?.max_new_drafts ?? 10}
               defaultMaxCostUsd={Number(settings?.max_estimated_cost_usd ?? 1)}
               defaultAutomationEnabled={settings?.automation_enabled ?? false}
-              defaultDailyRunTime={settings?.daily_run_time ?? '10:00'}
+              defaultDailyRunTime={settings?.daily_run_time ?? '07:00'}
               defaultCandidateFreshnessDays={Number(settings?.candidate_freshness_days ?? 7)}
               defaultCandidateFreshnessDecayPerDay={Number(settings?.candidate_freshness_decay_per_day ?? 2)}
               defaultCandidateWildlifeBonus={Number(settings?.candidate_wildlife_bonus ?? 3)}

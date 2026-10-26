@@ -169,7 +169,7 @@ Database changes are append-only migrations. Existing production migrations must
 7. Qualifying items become or join story clusters; rejected items remain assessed and are not repeatedly charged.
 8. Every qualifying cluster remains a candidate until it is drafted, rejected or becomes stale; candidate creation is not capped by the daily draft limit.
 9. Active undrafted candidates receive a time-sensitive effective score. The default removes two points per complete day since the latest supporting source and adds a deliberately small three-point bonus when Wildlife is the primary topic. Geography is not a ranking factor.
-10. The daily run researches and drafts only the configured number of highest-ranked active candidates. Candidates older than the configurable seven-day freshness window remain stored for audit but are excluded from automation and the active Candidates workspace.
+10. The daily run researches and drafts only the highest-ranked active candidates needed to fill that day's remaining article target. Candidates older than the configurable seven-day freshness window remain stored for audit but are excluded from automation and the active Candidates workspace.
 
 Manual collection, periodic collection and the daily editorial run use the same resumable collection mechanism. The admin request reports completed progress immediately; the minute heartbeat continues any remaining source tasks. Once per day, an otherwise idle heartbeat clears old replaceable `raw_content` in a bounded batch after the configured 30-day retention period. It preserves item metadata, URLs, hashes and assessment history, and excludes payloads supporting stories, research packs or pending coverage updates. Retention runs are logged. Source-item row deletion remains deferred until production history supports a safe policy.
 
@@ -187,7 +187,7 @@ Candidate freshness days, daily score decay and the wildlife bonus are stored in
 
 ### Publication
 
-Eligible drafts enter `publication_queue`. The queue distributes them across the configured London publishing window. A database claim function permits only one due publication per heartbeat and recovers interrupted publications after five minutes. Drafts held by automatic source or score thresholds can be reviewed and explicitly approved by an authenticated editor; the queue records that approval and still reruns the content publication checklist before the scheduled article goes live.
+Eligible drafts from the current editorial run enter `publication_queue`. The daily article target is the single limit for drafting and publishing. The queue distributes those articles only across the remaining portion of that same day's configured London publishing window; it does not create a future-day backlog. A database claim function permits only one due publication per heartbeat and recovers interrupted publications after five minutes. Drafts held by automatic source or score thresholds can be reviewed and explicitly approved by an authenticated editor; the queue records that approval and still reruns the content publication checklist before the scheduled article goes live.
 
 The database keeps an article's `stories.status` as `draft` until it becomes public. Admin workflow labels combine that private/public state with `publication_queue.status`: **Drafts** are private articles outside the active queue, **Scheduled** covers queued, scheduled and currently publishing articles, **Held** identifies private articles requiring attention, and **Published** identifies live articles. These admin groups are mutually exclusive even though scheduled and held records remain database drafts.
 
@@ -210,7 +210,7 @@ The heartbeat:
 - Continues any active resumable source collection, or starts periodic collection when no editorial run is active.
 - Runs one bounded raw-payload retention batch daily when higher-priority work is idle.
 
-Database row locking and short leases prevent overlapping requests from duplicating work. Source checks and editorial steps can recover after interruption; digest runs can recover after fifteen minutes. A distribution request whose lease expires without a recorded provider response is marked uncertain and requires an explicit editor retry, because replaying it automatically could duplicate a post or campaign. The editorial workflow enforces draft-count and estimated-cost limits.
+Database row locking and short leases prevent overlapping requests from duplicating work. Source checks and editorial steps can recover after interruption; digest runs can recover after fifteen minutes. A distribution request whose lease expires without a recorded provider response is marked uncertain and requires an explicit editor retry, because replaying it automatically could duplicate a post or campaign. The editorial workflow runs at 07:00 UK time by default, one hour before the current 08:00 publication window, and enforces the shared daily article target and estimated-cost limit.
 
 The scheduled migration currently targets `https://conservation-news.vercel.app/api/automation/editorial`. Changing the production hostname requires reviewing this endpoint and the Vault configuration.
 

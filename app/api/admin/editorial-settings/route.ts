@@ -11,13 +11,13 @@ export async function PATCH(request: Request) {
   const body = await request.json().catch(() => null) as {
     automationEnabled?: boolean;
     dailyRunTime?: string;
-    maxNewDrafts?: number;
+    dailyArticleTarget?: number;
     maxEstimatedCostUsd?: number;
     candidateFreshnessDays?: number;
     candidateFreshnessDecayPerDay?: number;
     candidateWildlifeBonus?: number;
   } | null;
-  const maxNewDrafts = Number(body?.maxNewDrafts);
+  const dailyArticleTarget = Number(body?.dailyArticleTarget);
   const maxEstimatedCostUsd = Number(body?.maxEstimatedCostUsd);
   const dailyRunTime = body?.dailyRunTime?.slice(0, 5) ?? '';
   const candidateFreshnessDays = Number(body?.candidateFreshnessDays);
@@ -27,8 +27,8 @@ export async function PATCH(request: Request) {
   if (typeof body?.automationEnabled !== 'boolean' || !isTime(dailyRunTime)) {
     return Response.json({ error: 'Choose a valid automation status and daily run time.' }, { status: 400 });
   }
-  if (!Number.isInteger(maxNewDrafts) || maxNewDrafts < 1 || maxNewDrafts > 25) {
-    return Response.json({ error: 'Maximum drafts must be between 1 and 25.' }, { status: 400 });
+  if (!Number.isInteger(dailyArticleTarget) || dailyArticleTarget < 1 || dailyArticleTarget > 25) {
+    return Response.json({ error: 'The daily article target must be between 1 and 25.' }, { status: 400 });
   }
   if (!Number.isFinite(maxEstimatedCostUsd) || maxEstimatedCostUsd < 0.05 || maxEstimatedCostUsd > 100) {
     return Response.json({ error: 'The estimated cost limit must be between $0.05 and $100.' }, { status: 400 });
@@ -48,7 +48,8 @@ export async function PATCH(request: Request) {
     automation_enabled: body.automationEnabled,
     daily_run_time: `${dailyRunTime}:00`,
     automation_timezone: 'Europe/London',
-    max_new_drafts: maxNewDrafts,
+    max_new_drafts: dailyArticleTarget,
+    max_auto_publishes_per_day: dailyArticleTarget,
     max_estimated_cost_usd: Math.round(maxEstimatedCostUsd * 100) / 100,
     candidate_freshness_days: candidateFreshnessDays,
     candidate_freshness_decay_per_day: Math.round(candidateFreshnessDecayPerDay * 100) / 100,

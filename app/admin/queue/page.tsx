@@ -32,7 +32,7 @@ function storyFor(item: QueueItem) {
 export default async function PublicationQueuePage() {
   const { supabase } = await requireContentAdmin();
   const [{ data: settings, error: settingsError }, { data: queue, error: queueError }] = await Promise.all([
-    supabase.from('editorial_run_settings').select('auto_publish_enabled, publish_window_start, publish_window_end, max_auto_publishes_per_day, min_auto_publish_overall_score, min_auto_publish_evidence_score').eq('id', true).single(),
+    supabase.from('editorial_run_settings').select('auto_publish_enabled, publish_window_start, publish_window_end, max_new_drafts, min_auto_publish_overall_score, min_auto_publish_evidence_score').eq('id', true).single(),
     supabase.from('publication_queue').select('id, status, scheduled_for, published_at, hold_reason, last_error, stories(id, headline, slug, status)').in('status', ['queued', 'scheduled', 'publishing', 'held']).order('scheduled_for', { ascending: true, nullsFirst: false }).limit(250),
   ]);
   if (settingsError) throw new Error('Unable to load automatic publishing settings.');
@@ -55,13 +55,13 @@ export default async function PublicationQueuePage() {
           enabled={settings.auto_publish_enabled}
           windowStart={settings.publish_window_start}
           windowEnd={settings.publish_window_end}
-          dailyMaximum={settings.max_auto_publishes_per_day}
+          dailyArticleTarget={settings.max_new_drafts}
           minimumOverall={settings.min_auto_publish_overall_score}
           minimumEvidence={settings.min_auto_publish_evidence_score}
         />
 
         <section className="queue-section">
-          <div className="source-list-heading"><div><p className="eyebrow">Coming up</p><h2>{upcoming.length} scheduled {upcoming.length === 1 ? 'article' : 'articles'}</h2></div><p>Times are varied within your publishing window. Newly queued work may rebalance future slots, but anything due within five minutes stays fixed.</p></div>
+          <div className="source-list-heading"><div><p className="eyebrow">Coming up</p><h2>{upcoming.length} scheduled {upcoming.length === 1 ? 'article' : 'articles'}</h2></div><p>Times are varied within today&apos;s remaining publishing window. Work without a same-day slot stays private rather than rolling into tomorrow.</p></div>
           {upcoming.length ? <div className="queue-list">{upcoming.map((item) => { const story = storyFor(item); return story ? <article key={item.id}><span className={`run-status ${item.status}`}>{item.status}</span><div><strong>{story.headline}</strong><small>{item.scheduled_for ? dateTime.format(new Date(item.scheduled_for)) : 'Waiting for a publishing slot'}</small></div><QueueItemActions queueId={item.id} storyId={story.id} /></article> : null; })}</div> : <div className="queue-empty"><CalendarClock /><h3>No articles are waiting</h3><p>Complete drafts will appear here automatically when publishing is enabled.</p></div>}
         </section>
 

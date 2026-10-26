@@ -14,16 +14,16 @@ export async function POST(request: Request) {
   const body = await request.json().catch(() => null) as {
     action?: 'start' | 'advance';
     runId?: string;
-    maxNewDrafts?: number;
+    dailyArticleTarget?: number;
     maxEstimatedCostUsd?: number;
   } | null;
 
   try {
     if (body?.action === 'start') {
-      const maxNewDrafts = Number(body.maxNewDrafts);
+      const dailyArticleTarget = Number(body.dailyArticleTarget);
       const maxEstimatedCostUsd = Number(body.maxEstimatedCostUsd);
-      if (!Number.isFinite(maxNewDrafts) || !Number.isFinite(maxEstimatedCostUsd)) return Response.json({ error: 'Valid run limits are required.' }, { status: 400 });
-      return Response.json(await startEditorialRun(user.id, maxNewDrafts, maxEstimatedCostUsd));
+      if (!Number.isFinite(dailyArticleTarget) || !Number.isFinite(maxEstimatedCostUsd)) return Response.json({ error: 'Valid run limits are required.' }, { status: 400 });
+      return Response.json(await startEditorialRun(user.id, dailyArticleTarget, maxEstimatedCostUsd));
     }
     if (body?.action === 'advance' && isUuid(body.runId)) {
       return Response.json(await advanceEditorialRun(body.runId, user.id));

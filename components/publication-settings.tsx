@@ -8,17 +8,16 @@ type Props = {
   enabled: boolean;
   windowStart: string;
   windowEnd: string;
-  dailyMaximum: number;
+  dailyArticleTarget: number;
   minimumOverall: number;
   minimumEvidence: number;
 };
 
-export function PublicationSettings({ enabled, windowStart, windowEnd, dailyMaximum, minimumOverall, minimumEvidence }: Props) {
+export function PublicationSettings({ enabled, windowStart, windowEnd, dailyArticleTarget, minimumOverall, minimumEvidence }: Props) {
   const router = useRouter();
   const [autoPublishEnabled, setAutoPublishEnabled] = useState(enabled);
   const [start, setStart] = useState(windowStart.slice(0, 5));
   const [end, setEnd] = useState(windowEnd.slice(0, 5));
-  const [maximum, setMaximum] = useState(dailyMaximum);
   const [overall, setOverall] = useState(minimumOverall);
   const [evidence, setEvidence] = useState(minimumEvidence);
   const [saving, setSaving] = useState(false);
@@ -35,14 +34,13 @@ export function PublicationSettings({ enabled, windowStart, windowEnd, dailyMaxi
           autoPublishEnabled,
           publishWindowStart: start,
           publishWindowEnd: end,
-          maxAutoPublishesPerDay: maximum,
           minOverallScore: overall,
           minEvidenceScore: evidence,
         }),
       });
       const result = await response.json() as { saved?: boolean; warning?: string; error?: string; queue?: { queued?: number; held?: number; scheduled?: number } };
       if (!response.ok) throw new Error(result.error ?? 'Publishing settings could not be saved.');
-      const queueNote = result.queue ? ` ${result.queue.scheduled ?? 0} articles are now scheduled and ${result.queue.held ?? 0} are held for review.` : '';
+      const queueNote = result.queue ? ` ${result.queue.scheduled ?? 0} articles were rescheduled within today's window.` : '';
       setMessage(result.warning ?? (autoPublishEnabled ? `Automatic publishing is active from ${start} to ${end} UK time.${queueNote}` : 'Automatic publishing is paused. Existing queue times are preserved.'));
       router.refresh();
     } catch (error) {
@@ -52,16 +50,16 @@ export function PublicationSettings({ enabled, windowStart, windowEnd, dailyMaxi
     }
   }
 
-  const valid = start && end && end > start && maximum >= 1 && maximum <= 200 && overall >= 0 && overall <= 100 && evidence >= 0 && evidence <= 100;
+  const valid = start && end && end > start && overall >= 0 && overall <= 100 && evidence >= 0 && evidence <= 100;
 
   return (
     <details className="publication-settings-disclosure">
-      <summary><span>{autoPublishEnabled ? <PlayCircle /> : <PauseCircle />}<span><strong>Publishing settings</strong><small>{autoPublishEnabled ? 'Automatic publishing active' : 'Automatic publishing paused'} · {start}–{end} · up to {maximum} per day</small></span></span><span>Edit settings</span></summary>
+      <summary><span>{autoPublishEnabled ? <PlayCircle /> : <PauseCircle />}<span><strong>Publishing settings</strong><small>{autoPublishEnabled ? 'Automatic publishing active' : 'Automatic publishing paused'} · {start}–{end} · target {dailyArticleTarget} per day</small></span></span><span>Edit settings</span></summary>
       <section className="publication-settings-panel" aria-labelledby="publication-settings-heading">
         <div className="publication-settings-intro">
           <p className="eyebrow">Automatic publishing</p>
           <h2 id="publication-settings-heading">Publishing schedule</h2>
-          <p>Complete, sourced drafts above both quality thresholds are distributed across your publishing window. Overflow moves into later days.</p>
+          <p>Complete, sourced articles above both quality thresholds are distributed across the remaining publishing window for the same day. Nothing rolls into a future day automatically.</p>
           <div className={`publication-mode ${autoPublishEnabled ? 'enabled' : ''}`}>
             {autoPublishEnabled ? <PlayCircle /> : <PauseCircle />}
             <div><strong>{autoPublishEnabled ? 'Automatic publishing active' : 'Automatic publishing paused'}</strong><small>The publication checklist is rechecked immediately before an article goes live.</small></div>
@@ -71,7 +69,6 @@ export function PublicationSettings({ enabled, windowStart, windowEnd, dailyMaxi
         <div className="publication-settings-controls">
           <label><span>Publishing starts</span><input type="time" value={start} disabled={saving} onChange={(event) => setStart(event.target.value)} /></label>
           <label><span>Publishing ends</span><input type="time" value={end} disabled={saving} onChange={(event) => setEnd(event.target.value)} /></label>
-          <label><span>Maximum per day</span><input type="number" min="1" max="200" step="1" value={maximum} disabled={saving} onChange={(event) => setMaximum(Number(event.target.value))} /><small>Changing this reschedules unpublished articles.</small></label>
           <label><span>Minimum overall score</span><input type="number" min="0" max="100" step="1" value={overall} disabled={saving} onChange={(event) => setOverall(Number(event.target.value))} /><small>Lower-scoring articles are held for human review.</small></label>
           <label><span>Minimum evidence score</span><input type="number" min="0" max="100" step="1" value={evidence} disabled={saving} onChange={(event) => setEvidence(Number(event.target.value))} /><small>Articles below this evidence threshold are held for review.</small></label>
           <label className="automation-toggle"><span>Automatic publishing</span><span className="automation-toggle-control"><input type="checkbox" checked={autoPublishEnabled} disabled={saving} onChange={(event) => setAutoPublishEnabled(event.target.checked)} /> <strong>{autoPublishEnabled ? 'Enabled' : 'Paused'}</strong></span></label>

@@ -3,7 +3,7 @@ import { assessUnprocessedItems } from '@/lib/openai/assess-news';
 import { generateStoryDraft } from '@/lib/openai/draft-story';
 import { estimateWebSearchCost } from '@/lib/openai/pricing';
 import { researchCandidate } from '@/lib/openai/research-story';
-import { queueReadyDrafts } from '@/lib/publication-queue';
+import { queueReadyDrafts, remainingPublicationCapacityToday } from '@/lib/publication-queue';
 import { enrichSourceSuggestionDescriptions, rebuildSourceSuggestionsFromResearch, scanBestSourceSuggestions } from '@/lib/source-discovery';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { firstRelation } from '@/lib/supabase/relations';
@@ -154,9 +154,9 @@ export async function getEditorialRunSnapshot(runId: string, message = ''): Prom
   return { run: typedRun, items: typedItems, events: (events ?? []) as RunEvent[], progressPercent, message };
 }
 
-export async function startEditorialRun(userId: string | null, maxNewDrafts: number, maxEstimatedCostUsd: number) {
+export async function startEditorialRun(userId: string | null, dailyArticleTarget: number, maxEstimatedCostUsd: number) {
   const supabase = getSupabaseAdminClient();
-  const safeDrafts = Math.max(1, Math.min(25, Math.round(maxNewDrafts)));
+  const safeDrafts = Math.max(1, Math.min(25, Math.round(dailyArticleTarget)));
   const safeBudget = Math.max(0.05, Math.min(100, Math.round(maxEstimatedCostUsd * 100) / 100));
 
   const { data: active } = await supabase.from('editorial_runs').select('id').eq('status', 'running').maybeSingle();
@@ -211,8 +211,8 @@ export async function startEditorialRun(userId: string | null, maxNewDrafts: num
     triggered_by: userId,
   }).select('id').single();
   if (error || !run) throw error ?? new Error('Could not create the editorial run.');
-  await addEvent(run.id, 'run', `Run started with a limit of ${safeDrafts} new drafts and a $${safeBudget.toFixed(2)} estimated budget.`, {
-    details: { max_new_drafts: safeDrafts, max_estimated_cost_usd: safeBudget },
+  await addEvent(run.id, 'run', `Run started with a daily target of ${safeDrafts} articles and a $${safeBudget.toFixed(2)} estimated budget.`, {
+    details: { daily_article_target: safeDrafts, max_estimated_cost_usd: safeBudget },
   });
   return getEditorialRunSnapshot(run.id, 'Run started.');
 }
@@ -333,7 +333,10 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
       return getEditorialRunSnapshot(run.id, `Assessed ${result.assessedItems} items. ${result.remainingItems} remain in the recent backlog.`);
     }
 
-    const shortlistResult = await selectRecentUndraftedCandidates(run.max_new_drafts);
+    const remainingCapacity = await remainingPublicationCapacityToday(run.max_new_drafts);
+    const shortlistResult = remainingCapacity > 0
+      ? await selectRecentUndraftedCandidates(remainingCapacity)
+      : { candidates: [], settings: candidateRankingSettings(null) };
     const shortlist = shortlistResult.candidates;
     if (shortlist.length) {
       const { error: itemError } = await supabase.from('editorial_run_items').insert(shortlist.map((candidate, index) => ({
@@ -352,15 +355,17 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
       candidates_selected: shortlist.length,
       estimated_cost_usd: nextCost,
     }).eq('id', run.id);
-    await addEvent(run.id, 'assessing', `Assessed ${result.assessedItems} new items, then selected the top ${shortlist.length} recent undrafted candidates.`, {
-      details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, matched_items: result.matchedItems, updates_flagged: result.updatesFlagged, expired_items: result.expiredItems, recent_pool_shortlist: shortlist.length, freshness_days: shortlistResult.settings.freshnessDays, freshness_decay_per_day: shortlistResult.settings.freshnessDecayPerDay, wildlife_bonus: shortlistResult.settings.wildlifeBonus, selected_effective_scores: shortlist.map((candidate) => ({ cluster_id: candidate.id, effective_score: candidate.ranking.effectiveScore })) },
+    await addEvent(run.id, 'assessing', remainingCapacity > 0
+      ? `Assessed ${result.assessedItems} new items, then selected the top ${shortlist.length} recent undrafted candidates for today's remaining capacity.`
+      : `Assessed ${result.assessedItems} new items; today's article target was already filled.`, {
+      details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, matched_items: result.matchedItems, updates_flagged: result.updatesFlagged, expired_items: result.expiredItems, daily_article_target: run.max_new_drafts, remaining_publication_capacity: remainingCapacity, recent_pool_shortlist: shortlist.length, freshness_days: shortlistResult.settings.freshnessDays, freshness_decay_per_day: shortlistResult.settings.freshnessDecayPerDay, wildlife_bonus: shortlistResult.settings.wildlifeBonus, selected_effective_scores: shortlist.map((candidate) => ({ cluster_id: candidate.id, effective_score: candidate.ranking.effectiveScore })) },
       estimatedCostUsd: result.estimatedCostUsd,
     });
     if (completed) {
-      await addEvent(run.id, 'run', 'Run completed because there were no new qualifying candidates.');
+      await addEvent(run.id, 'run', remainingCapacity > 0 ? 'Run completed because there were no new qualifying candidates.' : "Run completed because today's article target was already filled.");
       await refreshSourceRecommendations(run.id);
     }
-    return getEditorialRunSnapshot(run.id, completed ? 'No new qualifying candidates were found.' : 'Assessment complete. Researching the first candidate next.');
+    return getEditorialRunSnapshot(run.id, completed ? remainingCapacity > 0 ? 'No new qualifying candidates were found.' : "Today's article target is already filled." : 'Assessment complete. Researching the first candidate next.');
   }
 
   const { data: itemRows, error: itemsError } = await supabase

@@ -115,6 +115,8 @@ Implementation note: the freshness window, daily decay and wildlife bonus are co
 4. Preserve held-work review and all publishing safeguards.
 5. Migrate or cancel existing future queue entries explicitly before enabling the new behaviour.
 
+Implementation note: `max_new_drafts` remains the backward-compatible database field, but is presented and used as the single daily article target. Saving it also mirrors the legacy publication-limit column so older code cannot drift. The scheduler plans only the current London day and scopes automatic queueing to stories produced by that editorial run.
+
 ### Batch 4: coverage review and revision history
 
 1. Add update decisions, article revision metadata and public change summaries.

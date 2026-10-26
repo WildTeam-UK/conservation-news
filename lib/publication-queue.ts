@@ -4,6 +4,7 @@ import { publicationChecks } from '@/lib/publishing';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { runTaxonomyGovernance } from '@/lib/taxonomy-governance';
 import { londonDateTimeParts, londonLocalDateTimeToUtc } from '@/lib/london-time';
+import { planSameDayPublicationTimes, remainingDailyArticleCapacity } from '@/lib/publication-planning';
 
 export class PublicationQueueConflict extends Error {}
 
@@ -13,7 +14,7 @@ type PublicationSettings = {
   auto_publish_enabled: boolean;
   publish_window_start: string;
   publish_window_end: string;
-  max_auto_publishes_per_day: number;
+  max_new_drafts: number;
   min_auto_publish_overall_score: number;
   min_auto_publish_evidence_score: number;
 };
@@ -29,11 +30,6 @@ type QueueRow = {
   created_at: string;
 };
 
-function addLocalDays(date: { year: number; month: number; day: number }, days: number) {
-  const shifted = new Date(Date.UTC(date.year, date.month - 1, date.day + days));
-  return { year: shifted.getUTCFullYear(), month: shifted.getUTCMonth() + 1, day: shifted.getUTCDate() };
-}
-
 function timeParts(value: string) {
   const [hour, minute] = value.slice(0, 5).split(':').map(Number);
   return { hour, minute };
@@ -44,36 +40,63 @@ function localDateKey(date: Date) {
   return `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}`;
 }
 
-function deterministicFraction(seed: string) {
-  let hash = 2166136261;
-  for (const character of seed) {
-    hash ^= character.charCodeAt(0);
-    hash = Math.imul(hash, 16777619);
-  }
-  return (hash >>> 0) / 4294967295;
+function londonDayBounds(date: Date) {
+  const local = londonDateTimeParts(date);
+  const nextDate = new Date(Date.UTC(local.year, local.month - 1, local.day + 1));
+  return {
+    start: londonLocalDateTimeToUtc(local.year, local.month, local.day),
+    end: londonLocalDateTimeToUtc(nextDate.getUTCFullYear(), nextDate.getUTCMonth() + 1, nextDate.getUTCDate()),
+    local,
+  };
 }
 
 async function getSettings(): Promise<PublicationSettings> {
   const { data, error } = await getSupabaseAdminClient()
     .from('editorial_run_settings')
-    .select('auto_publish_enabled, publish_window_start, publish_window_end, max_auto_publishes_per_day, min_auto_publish_overall_score, min_auto_publish_evidence_score')
+    .select('auto_publish_enabled, publish_window_start, publish_window_end, max_new_drafts, min_auto_publish_overall_score, min_auto_publish_evidence_score')
     .eq('id', true)
     .single();
   if (error || !data) throw error ?? new Error('Publication settings were not found.');
   return data as PublicationSettings;
 }
 
-export async function rebalancePublicationQueue() {
+type RebalanceOptions = {
+  sourceRunId?: string | null;
+  storyId?: string | null;
+};
+
+export async function remainingPublicationCapacityToday(target: number) {
+  const supabase = getSupabaseAdminClient();
+  const bounds = londonDayBounds(new Date());
+  const { count, error } = await supabase
+    .from('publication_queue')
+    .select('id', { count: 'exact', head: true })
+    .in('status', ['scheduled', 'publishing', 'published'])
+    .gte('scheduled_for', new Date(bounds.start).toISOString())
+    .lt('scheduled_for', new Date(bounds.end).toISOString());
+  if (error) throw error;
+  return remainingDailyArticleCapacity(target, Number(count ?? 0));
+}
+
+export async function rebalancePublicationQueue(options: RebalanceOptions = {}) {
   const supabase = getSupabaseAdminClient();
   const settings = await getSettings();
   if (!settings.auto_publish_enabled) return { scheduled: 0 };
 
   const now = new Date();
+  const bounds = londonDayBounds(now);
+  const dayStart = new Date(bounds.start).toISOString();
+  const dayEnd = new Date(bounds.end).toISOString();
   const protectedUntil = new Date(now.getTime() + 5 * 60_000).toISOString();
-  const { data: movable, error: movableError } = await supabase
+  let movableQuery = supabase
     .from('publication_queue')
     .select('id, scheduled_for')
-    .eq('status', 'scheduled');
+    .eq('status', 'scheduled')
+    .gte('scheduled_for', dayStart)
+    .lt('scheduled_for', dayEnd);
+  if (options.sourceRunId) movableQuery = movableQuery.eq('source_run_id', options.sourceRunId);
+  else if (options.storyId) movableQuery = movableQuery.eq('story_id', options.storyId);
+  const { data: movable, error: movableError } = await movableQuery;
   if (movableError) throw movableError;
   const movableIds = (movable ?? [])
     .filter((row) => !row.scheduled_for || row.scheduled_for < now.toISOString() || row.scheduled_for > protectedUntil)
@@ -83,58 +106,44 @@ export async function rebalancePublicationQueue() {
     if (error) throw error;
   }
 
+  let pendingQuery = supabase.from('publication_queue').select('id, story_id, status, priority_rank, scheduled_for, attempt_count, created_at').eq('status', 'queued').order('priority_rank', { ascending: true, nullsFirst: false }).order('created_at');
+  if (options.sourceRunId) pendingQuery = pendingQuery.eq('source_run_id', options.sourceRunId);
+  else if (options.storyId) pendingQuery = pendingQuery.eq('story_id', options.storyId);
+  else if (movableIds.length) pendingQuery = pendingQuery.in('id', movableIds);
+  else return { scheduled: 0 };
+
   const [{ data: pending, error: pendingError }, { data: fixed, error: fixedError }] = await Promise.all([
-    supabase.from('publication_queue').select('id, story_id, status, priority_rank, scheduled_for, attempt_count, created_at').eq('status', 'queued').order('priority_rank', { ascending: true, nullsFirst: false }).order('created_at'),
-    supabase.from('publication_queue').select('id, story_id, status, priority_rank, scheduled_for, attempt_count, created_at').in('status', ['scheduled', 'publishing', 'published']).not('scheduled_for', 'is', null),
+    pendingQuery,
+    supabase.from('publication_queue').select('id, story_id, status, priority_rank, scheduled_for, attempt_count, created_at').in('status', ['scheduled', 'publishing', 'published']).gte('scheduled_for', dayStart).lt('scheduled_for', dayEnd),
   ]);
   if (pendingError) throw pendingError;
   if (fixedError) throw fixedError;
   const queue = (pending ?? []) as QueueRow[];
   if (!queue.length) return { scheduled: 0 };
 
-  const occupiedByDay = new Map<string, number>();
-  for (const row of (fixed ?? []) as QueueRow[]) {
-    if (!row.scheduled_for) continue;
-    const key = localDateKey(new Date(row.scheduled_for));
-    occupiedByDay.set(key, (occupiedByDay.get(key) ?? 0) + 1);
-  }
-
   const startTime = timeParts(settings.publish_window_start);
   const endTime = timeParts(settings.publish_window_end);
-  const today = londonDateTimeParts(now);
-  let offset = 0;
-  let cursor = 0;
-
-  while (cursor < queue.length && offset < 730) {
-    const date = addLocalDays(today, offset);
-    const key = `${date.year}-${String(date.month).padStart(2, '0')}-${String(date.day).padStart(2, '0')}`;
-    const occupied = occupiedByDay.get(key) ?? 0;
-    const capacity = Math.max(0, settings.max_auto_publishes_per_day - occupied);
-    let start = londonLocalDateTimeToUtc(date.year, date.month, date.day, startTime.hour, startTime.minute);
-    const end = londonLocalDateTimeToUtc(date.year, date.month, date.day, endTime.hour, endTime.minute);
-    if (offset === 0) start = Math.max(start, now.getTime() + 10 * 60_000);
-    if (capacity === 0 || end <= start) {
-      offset += 1;
-      continue;
-    }
-
-    const count = Math.min(capacity, queue.length - cursor);
-    const duration = end - start;
-    const updates = queue.slice(cursor, cursor + count).map((row, index) => {
-      // One article is placed inside each equal-width band. The deterministic
-      // variation keeps the cadence natural without allowing articles to bunch.
-      const position = (index + 0.2 + deterministicFraction(`${row.story_id}:${key}`) * 0.6) / count;
-      const scheduledFor = new Date(start + duration * position).toISOString();
-      return supabase.from('publication_queue').update({ status: 'scheduled', scheduled_for: scheduledFor, hold_reason: null, last_error: null }).eq('id', row.id);
-    });
-    const results = await Promise.all(updates);
-    const failed = results.find((result) => result.error);
-    if (failed?.error) throw failed.error;
-    cursor += count;
-    offset += 1;
-  }
-
-  return { scheduled: cursor };
+  const date = bounds.local;
+  const key = localDateKey(now);
+  const start = londonLocalDateTimeToUtc(date.year, date.month, date.day, startTime.hour, startTime.minute);
+  const end = londonLocalDateTimeToUtc(date.year, date.month, date.day, endTime.hour, endTime.minute);
+  const scheduledTimes = planSameDayPublicationTimes({
+    storyIds: queue.map((row) => row.story_id),
+    dateKey: key,
+    now: now.getTime(),
+    windowStart: start,
+    windowEnd: end,
+    target: settings.max_new_drafts,
+    occupied: fixed?.length ?? 0,
+  });
+  const updates = queue.slice(0, scheduledTimes.length).map((row, index) => {
+    const scheduledFor = scheduledTimes[index];
+    return supabase.from('publication_queue').update({ status: 'scheduled', scheduled_for: scheduledFor, hold_reason: null, last_error: null }).eq('id', row.id);
+  });
+  const results = await Promise.all(updates);
+  const failed = results.find((result) => result.error);
+  if (failed?.error) throw failed.error;
+  return { scheduled: scheduledTimes.length };
 }
 
 export async function queueReadyDrafts(sourceRunId: string | null = null, onlyStoryId: string | null = null, forceRebalance = true, allowCancelled = false, allowWhenPaused = false, resetEditorApproval = false) {
@@ -142,28 +151,34 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
   const settings = await getSettings();
   if (!settings.auto_publish_enabled && !allowWhenPaused) return { queued: 0, held: 0, scheduled: 0 };
 
+  const { data: runItems, error: runItemsError } = sourceRunId
+    ? await supabase.from('editorial_run_items').select('story_id, rank').eq('run_id', sourceRunId).not('story_id', 'is', null)
+    : { data: [], error: null };
+  if (runItemsError) throw runItemsError;
+  const runStoryIds = (runItems ?? []).flatMap((item) => item.story_id ? [item.story_id] : []);
+  if (sourceRunId && !runStoryIds.length) return { queued: 0, held: 0, scheduled: 0 };
+
   let storyQuery = supabase
     .from('stories')
     .select('id, cluster_id, generation_metadata, taxonomy_review_required, taxonomy_review_reason, created_at')
     .eq('status', 'draft')
     .order('created_at');
   if (onlyStoryId) storyQuery = storyQuery.eq('id', onlyStoryId);
+  else if (sourceRunId) storyQuery = storyQuery.in('id', runStoryIds);
   const { data: stories, error: storiesError } = await storyQuery;
   if (storiesError) throw storiesError;
   if (!stories?.length) return { queued: 0, held: 0, scheduled: 0 };
 
   const storyIds = stories.map((story) => story.id);
   const clusterIds = [...new Set(stories.flatMap((story) => story.cluster_id ? [story.cluster_id] : []))];
-  const [{ data: existing, error: existingError }, { data: sources, error: sourcesError }, { data: clusters, error: clustersError }, { data: runItems, error: runItemsError }] = await Promise.all([
+  const [{ data: existing, error: existingError }, { data: sources, error: sourcesError }, { data: clusters, error: clustersError }] = await Promise.all([
     supabase.from('publication_queue').select('story_id, status, editor_approved_at, editor_approved_by').in('story_id', storyIds),
     supabase.from('story_sources').select('story_id').in('story_id', storyIds),
     clusterIds.length ? supabase.from('story_clusters').select('id, overall_score, evidence_score').in('id', clusterIds) : Promise.resolve({ data: [], error: null }),
-    sourceRunId ? supabase.from('editorial_run_items').select('story_id, rank').eq('run_id', sourceRunId).not('story_id', 'is', null) : Promise.resolve({ data: [], error: null }),
   ]);
   if (existingError) throw existingError;
   if (sourcesError) throw sourcesError;
   if (clustersError) throw clustersError;
-  if (runItemsError) throw runItemsError;
 
   const existingByStory = new Map((existing ?? []).map((row) => [row.story_id, row]));
   const sourceCounts = new Map<string, number>();
@@ -224,7 +239,7 @@ export async function queueReadyDrafts(sourceRunId: string | null = null, onlySt
     else held += 1;
   }
 
-  const scheduled = forceRebalance || membershipChanged ? await rebalancePublicationQueue() : { scheduled: 0 };
+  const scheduled = forceRebalance || membershipChanged ? await rebalancePublicationQueue({ sourceRunId, storyId: onlyStoryId }) : { scheduled: 0 };
   return { queued, held, scheduled: scheduled.scheduled };
 }
 
@@ -272,7 +287,7 @@ export async function approveHeldDraftForQueue(storyId: string, userId: string) 
     await supabase.from('publication_queue').update({ editor_approved_at: null, editor_approved_by: null }).eq('id', queueItem.id);
     throw new PublicationQueueConflict(`This article still needs changes before it can be queued: ${queueItem.hold_reason || 'complete the editorial review and save the draft.'}`);
   }
-  await rebalancePublicationQueue();
+  await rebalancePublicationQueue({ storyId });
   return queueItem;
 }
 
