@@ -1,6 +1,6 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads reliably refresh the protected Supabase session in Vinext */
 import type { Metadata } from 'next';
-import { Activity, AlertTriangle, ArrowRight, Bot, CalendarClock, CheckCircle2, FileText, Newspaper, Radio, Rss } from 'lucide-react';
+import { Activity, AlertTriangle, ArrowRight, BellRing, Bot, CalendarClock, CheckCircle2, FileText, Newspaper, Radio, Rss } from 'lucide-react';
 import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
 import { DailyEditorialRun } from '@/components/daily-editorial-run';
@@ -55,9 +55,9 @@ const greetings = [
 
 export default async function AdminDashboard() {
   const { supabase, user, admin } = await requireContentAdmin();
-  const [draftsResult, publishedResult, sourcesResult, itemsResult, candidatesResult, queueResult, heldResult, sourceErrorsResult, taxonomyReviewResult, settingsResult, editorialRunsResult, activeRunResult, ingestionRunsResult] = await Promise.all([
-    supabase.from('stories').select('id').eq('content_type', 'news').eq('status', 'draft'),
-    supabase.from('stories').select('*', { count: 'exact', head: true }).eq('content_type', 'news').eq('status', 'published'),
+  const [draftsResult, publishedResult, sourcesResult, itemsResult, candidatesResult, queueResult, heldResult, sourceErrorsResult, taxonomyReviewResult, coverageUpdatesResult, revisionDraftsResult, settingsResult, editorialRunsResult, activeRunResult, ingestionRunsResult] = await Promise.all([
+    supabase.from('stories').select('id, cluster_id').eq('content_type', 'news').eq('status', 'draft'),
+    supabase.from('stories').select('id, cluster_id', { count: 'exact' }).eq('content_type', 'news').eq('status', 'published'),
     supabase.from('sources').select('*', { count: 'exact', head: true }).eq('enabled', true),
     supabase.from('source_items').select('*', { count: 'exact', head: true }),
     supabase.from('story_clusters').select('created_at, last_source_at').eq('status', 'selected'),
@@ -65,6 +65,8 @@ export default async function AdminDashboard() {
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').eq('status', 'held').order('updated_at', { ascending: false }),
     supabase.from('sources').select('id, name, last_error').eq('enabled', true).not('last_error', 'is', null),
     supabase.from('stories').select('id, headline, taxonomy_review_reason', { count: 'exact' }).eq('taxonomy_review_required', true).order('updated_at', { ascending: false }).limit(4),
+    supabase.from('story_cluster_updates').select('cluster_id').eq('status', 'pending_review'),
+    supabase.from('story_editorial_revisions').select('story_id').eq('status', 'draft'),
     supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).maybeSingle(),
     supabase.from('editorial_runs').select('id, trigger_type, status, max_new_drafts, estimated_cost_usd, drafts_created, candidates_selected, failures, created_at, completed_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('editorial_runs').select('id').eq('status', 'running').maybeSingle(),
@@ -85,12 +87,19 @@ export default async function AdminDashboard() {
   const privateDraftCount = (draftsResult.data ?? []).filter((story) => !activeQueueStoryIds.has(story.id)).length;
   const sourceErrors = sourceErrorsResult.data ?? [];
   const taxonomyReviews = taxonomyReviewResult.data ?? [];
+  if (coverageUpdatesResult.error || revisionDraftsResult.error) throw new Error('Unable to load article update alerts.');
+  const pendingCoverageClusterIds = new Set((coverageUpdatesResult.data ?? []).map((update) => update.cluster_id));
+  const revisionStoryIds = new Set((revisionDraftsResult.data ?? []).map((revision) => revision.story_id));
+  const updateArticleIds = new Set([...(draftsResult.data ?? []), ...(publishedResult.data ?? [])].flatMap((story) => (
+    revisionStoryIds.has(story.id) || Boolean(story.cluster_id && pendingCoverageClusterIds.has(story.cluster_id)) ? [story.id] : []
+  )));
+  const updateArticleCount = updateArticleIds.size;
   const latestEditorialRun = editorialRunsResult.data?.[0];
   const latestIngestionRun = ingestionRunsResult.data?.[0];
   const nextItem = upcoming.find((item) => item.scheduled_for);
   const nextStory = nextItem ? queueStory(nextItem) : null;
-  const attentionCount = held.length + sourceErrors.length + (taxonomyReviewResult.count ?? 0) + (settings?.last_automation_error ? 1 : 0);
-  const automationHealthy = Boolean(settings?.automation_enabled && settings?.auto_publish_enabled && !settings?.last_automation_error && !taxonomyReviewResult.count);
+  const attentionCount = held.length + sourceErrors.length + (taxonomyReviewResult.count ?? 0) + updateArticleCount + (settings?.last_automation_error ? 1 : 0);
+  const automationHealthy = Boolean(settings?.automation_enabled && settings?.auto_publish_enabled && !settings?.last_automation_error && !taxonomyReviewResult.count && !updateArticleCount);
   const profile = await buildAdminProfile(user, admin);
   // This is a dynamic server-rendered page, so a fresh greeting is intentionally chosen per request.
   // oxlint-disable-next-line react/react-compiler
@@ -136,10 +145,11 @@ export default async function AdminDashboard() {
             <div className="overview-section-heading"><div><p className="eyebrow">Needs attention</p><h2>{attentionCount ? `${attentionCount} item${attentionCount === 1 ? '' : 's'} to review` : 'Everything looks good'}</h2></div></div>
             {attentionCount ? <div className="overview-alert-list">
               {settings?.last_automation_error ? <article><AlertTriangle /><div><strong>Automation warning</strong><p>{settings.last_automation_error}</p></div></article> : null}
+              {updateArticleCount ? <article><BellRing /><div><strong>{updateArticleCount} {updateArticleCount === 1 ? 'article has' : 'articles have'} updates available</strong><p>New coverage or a prepared revision is ready for editorial review. <a href="/admin/drafts?view=updates">Review updates</a></p></div></article> : null}
               {taxonomyReviews.map((story) => <article key={story.id}><AlertTriangle /><div><strong>{story.headline}</strong><p>{story.taxonomy_review_reason ?? 'Choose a controlled topic before this article can publish.'} <a href={`/admin/drafts/${story.id}`}>Review article</a></p></div></article>)}
               {held.slice(0, 4).map((item) => { const story = queueStory(item); return <article key={item.id}><CalendarClock /><div><strong>{story?.headline ?? 'Held article'}</strong><p>{item.hold_reason ?? 'Held for editorial review.'}</p></div></article>; })}
               {sourceErrors.slice(0, 4).map((source) => <article key={source.id}><Rss /><div><strong>{source.name}</strong><p>{source.last_error}</p></div></article>)}
-            </div> : <div className="overview-calm-state"><CheckCircle2 /><p>No held articles, taxonomy reviews, source errors or automation warnings.</p></div>}
+            </div> : <div className="overview-calm-state"><CheckCircle2 /><p>No article updates, held articles, taxonomy reviews, source errors or automation warnings.</p></div>}
           </section>
         </div>
 
