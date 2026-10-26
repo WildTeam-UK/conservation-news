@@ -3,6 +3,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { articleLinkRows } from '@/lib/article-linking';
 import { recordUnsplashSelection } from '@/lib/images/unsplash';
 import { cleanDraftContent, type StoryDraftContent } from '@/lib/openai/draft-story';
+import { generateRevisionSummary, type RevisionSummaryEvidence } from '@/lib/openai/generate-revision-summary';
+import { firstRelation, sourceRelationName } from '@/lib/supabase/relations';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { normalizeEditorialTopics } from '@/lib/taxonomy';
 import { isUuid } from '@/lib/validation';
@@ -39,18 +41,12 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   }
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(_request: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   if (!isUuid(id)) return Response.json({ error: 'A valid editorial revision is required.' }, { status: 400 });
   const auth = await requireApiAdmin();
   if ('response' in auth) return auth.response;
   const { supabase } = auth;
-  const body = await request.json().catch(() => null) as { changeSummary?: string } | null;
-  const changeSummary = body?.changeSummary?.trim() ?? '';
-  if (changeSummary.length < 20 || changeSummary.length > 1000) {
-    return Response.json({ error: 'Explain what changed in 20 to 1,000 characters.' }, { status: 400 });
-  }
-
   try {
     const { data: revision, error: revisionError } = await loadDraftRevision(supabase, id);
     if (revisionError) throw revisionError;
@@ -58,8 +54,41 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     if (revision.status !== 'draft') return Response.json({ error: 'This editorial revision has already been resolved.' }, { status: 409 });
     const proposedContent = revision.proposed_content as StoryDraftContent;
     const baseContent = revision.base_content as StoryDraftContent;
-    const { error: summaryError } = await supabase.from('story_editorial_revisions').update({ change_summary: changeSummary }).eq('id', id).eq('status', 'draft');
+    const { data: revisionLinks, error: revisionLinksError } = await supabase.from('story_editorial_revision_updates').select('update_id').eq('revision_id', id);
+    if (revisionLinksError) throw revisionLinksError;
+    const updateIds = (revisionLinks ?? []).map((link) => link.update_id);
+    let coverageEvidence: RevisionSummaryEvidence[] = [];
+    if (updateIds.length) {
+      const { data: updates, error: updatesError } = await supabase
+        .from('story_cluster_updates')
+        .select('relationship, rationale, source_items(title, sources(name))')
+        .in('id', updateIds);
+      if (updatesError) throw updatesError;
+      coverageEvidence = (updates ?? []).flatMap((update) => {
+        const sourceItem = firstRelation(update.source_items);
+        return sourceItem ? [{
+          relationship: update.relationship,
+          rationale: update.rationale,
+          title: sourceItem.title,
+          publisher: sourceRelationName(sourceItem.sources, 'Source'),
+        }] : [];
+      });
+    }
+    const generatedSummary = await generateRevisionSummary({ baseContent, proposedContent, coverageEvidence });
+    const { error: summaryError } = await supabase.from('story_editorial_revisions').update({ change_summary: generatedSummary.summary }).eq('id', id).eq('status', 'draft');
     if (summaryError) throw summaryError;
+    const { error: generationLogError } = await supabase.from('ai_generations').insert({
+      story_id: revision.story_id,
+      purpose: 'revision_summary',
+      provider: 'openai',
+      model: generatedSummary.model,
+      prompt_version: generatedSummary.promptVersion,
+      input_tokens: generatedSummary.inputTokens,
+      output_tokens: generatedSummary.outputTokens,
+      estimated_cost_usd: generatedSummary.estimatedCostUsd,
+      warnings: [],
+    });
+    if (generationLogError) throw generationLogError;
     const { data: storyId, error: applyError } = await supabase.rpc('apply_story_editorial_revision', { target_revision_id: id });
     if (applyError) throw applyError;
 
@@ -88,7 +117,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     }
     return Response.json({ applied: true, storyId, warnings });
   } catch (error) {
-    return unexpectedErrorResponse('Editorial revision apply failed', error, 'The editorial revision could not be applied.');
+    return unexpectedErrorResponse('Editorial revision apply failed', error, 'The revision was not applied. Its public update summary can be generated again when you retry.');
   }
 }
 
