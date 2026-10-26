@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { articleLinkRows } from '@/lib/article-linking';
 import { recordUnsplashSelection } from '@/lib/images/unsplash';
 import { cleanDraftContent, type StoryDraftContent } from '@/lib/openai/draft-story';
+import { revisionChangesPublicContent } from '@/lib/openai/generate-editorial-revision';
 import { generateRevisionSummary, type RevisionSummaryEvidence } from '@/lib/openai/generate-revision-summary';
 import { firstRelation, sourceRelationName } from '@/lib/supabase/relations';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
@@ -14,7 +15,7 @@ export const dynamic = 'force-dynamic';
 type StoredSource = { id?: string; url?: string };
 
 async function loadDraftRevision(supabase: SupabaseClient, id: string) {
-  return supabase.from('story_editorial_revisions').select('id, story_id, status, base_content, proposed_content, source_list').eq('id', id).maybeSingle();
+  return supabase.from('story_editorial_revisions').select('id, story_id, status, base_content, proposed_content, source_list, public_content_changed').eq('id', id).maybeSingle();
 }
 
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -33,7 +34,8 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     if (revision.status !== 'draft') return Response.json({ error: 'Only a draft revision can be edited.' }, { status: 409 });
     const validSourceIds = new Set(((revision.source_list ?? []) as StoredSource[]).flatMap((source) => source.id ? [source.id] : []));
     const content = cleanDraftContent({ ...body.content, topics: normalizeEditorialTopics(body.content.topics ?? []) }, validSourceIds);
-    const { error } = await supabase.from('story_editorial_revisions').update({ proposed_content: content }).eq('id', id).eq('status', 'draft');
+    const baseContent = revision.base_content as StoryDraftContent;
+    const { error } = await supabase.from('story_editorial_revisions').update({ proposed_content: content, public_content_changed: revisionChangesPublicContent(baseContent, content) }).eq('id', id).eq('status', 'draft');
     if (error) throw error;
     return Response.json({ saved: true });
   } catch (error) {
@@ -54,6 +56,7 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
     if (revision.status !== 'draft') return Response.json({ error: 'This editorial revision has already been resolved.' }, { status: 409 });
     const proposedContent = revision.proposed_content as StoryDraftContent;
     const baseContent = revision.base_content as StoryDraftContent;
+    const contentChanged = revisionChangesPublicContent(baseContent, proposedContent);
     const { data: revisionLinks, error: revisionLinksError } = await supabase.from('story_editorial_revision_updates').select('update_id').eq('revision_id', id);
     if (revisionLinksError) throw revisionLinksError;
     const updateIds = (revisionLinks ?? []).map((link) => link.update_id);
@@ -74,22 +77,25 @@ export async function POST(_request: Request, { params }: { params: Promise<{ id
         }] : [];
       });
     }
-    const generatedSummary = await generateRevisionSummary({ baseContent, proposedContent, coverageEvidence });
-    const { error: summaryError } = await supabase.from('story_editorial_revisions').update({ change_summary: generatedSummary.summary }).eq('id', id).eq('status', 'draft');
+    const generatedSummary = contentChanged ? await generateRevisionSummary({ baseContent, proposedContent, coverageEvidence }) : null;
+    const changeSummary = generatedSummary?.summary ?? 'Additional source reporting was added without changing the public article copy.';
+    const { error: summaryError } = await supabase.from('story_editorial_revisions').update({ change_summary: changeSummary, public_content_changed: contentChanged }).eq('id', id).eq('status', 'draft');
     if (summaryError) throw summaryError;
-    const { error: generationLogError } = await supabase.from('ai_generations').insert({
-      story_id: revision.story_id,
-      purpose: 'revision_summary',
-      provider: 'openai',
-      model: generatedSummary.model,
-      prompt_version: generatedSummary.promptVersion,
-      input_tokens: generatedSummary.inputTokens,
-      output_tokens: generatedSummary.outputTokens,
-      estimated_cost_usd: generatedSummary.estimatedCostUsd,
-      warnings: [],
-    });
-    if (generationLogError) throw generationLogError;
-    const { data: storyId, error: applyError } = await supabase.rpc('apply_story_editorial_revision', { target_revision_id: id });
+    if (generatedSummary) {
+      const { error: generationLogError } = await supabase.from('ai_generations').insert({
+        story_id: revision.story_id,
+        purpose: 'revision_summary',
+        provider: 'openai',
+        model: generatedSummary.model,
+        prompt_version: generatedSummary.promptVersion,
+        input_tokens: generatedSummary.inputTokens,
+        output_tokens: generatedSummary.outputTokens,
+        estimated_cost_usd: generatedSummary.estimatedCostUsd,
+        warnings: [],
+      });
+      if (generationLogError) throw generationLogError;
+    }
+    const { data: storyId, error: applyError } = await supabase.rpc('apply_story_editorial_revision_v2', { target_revision_id: id, has_public_content_changes: contentChanged });
     if (applyError) throw applyError;
 
     const warnings: string[] = [];

@@ -20,7 +20,7 @@ export function CoverageUpdateActions({ updateId }: { updateId: string }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ decision }),
       });
-      const result = await response.json() as { reviewed?: boolean; error?: string };
+      const result = await response.json() as { reviewed?: boolean; contentChanged?: boolean; error?: string };
       if (!response.ok || !result.reviewed) setMessage(result.error ?? 'The coverage decision could not be saved.');
       else router.refresh();
     } catch {
@@ -31,7 +31,7 @@ export function CoverageUpdateActions({ updateId }: { updateId: string }) {
   }
 
   return <div className="coverage-update-actions">
-    <button type="button" disabled={working !== null} onClick={() => decide('prepare_revision')}>{working === 'prepare_revision' ? <LoaderCircle className="admin-spinner" /> : <FilePenLine />} Prepare update</button>
+    <button type="button" disabled={working !== null} onClick={() => decide('prepare_revision')}>{working === 'prepare_revision' ? <><LoaderCircle className="admin-spinner" /> Drafting update</> : <><FilePenLine /> Prepare update</>}</button>
     <button type="button" disabled={working !== null} onClick={() => decide('no_change')}>{working === 'no_change' ? <LoaderCircle className="admin-spinner" /> : <Check />} Reviewed, no change</button>
     <button type="button" disabled={working !== null} onClick={() => decide('dismiss')}>{working === 'dismiss' ? <LoaderCircle className="admin-spinner" /> : <X />} Dismiss</button>
     {message ? <output>{message}</output> : null}

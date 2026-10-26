@@ -1,5 +1,6 @@
 import { unexpectedErrorResponse } from '@/lib/api-errors';
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
+import { generateEditorialRevision, revisionChangesPublicContent } from '@/lib/openai/generate-editorial-revision';
 import { firstRelation, sourceRelationName } from '@/lib/supabase/relations';
 import { requireApiAdmin } from '@/lib/supabase/require-api-admin';
 import { isUuid } from '@/lib/validation';
@@ -32,7 +33,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
   try {
     const { data: update, error: updateError } = await supabase
       .from('story_cluster_updates')
-      .select('id, cluster_id, source_item_id, status, relationship, source_items(id, title, url, published_at, sources(name))')
+      .select('id, cluster_id, source_item_id, status, relationship, rationale, source_items(id, title, url, published_at, summary, raw_content, sources(name))')
       .eq('id', id)
       .maybeSingle();
     if (updateError) throw updateError;
@@ -65,7 +66,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
     const { data: existingRevision, error: revisionLookupError } = await supabase
       .from('story_editorial_revisions')
-      .select('id, source_list')
+      .select('id, base_content, proposed_content, source_list')
       .eq('story_id', story.id)
       .eq('status', 'draft')
       .maybeSingle();
@@ -85,18 +86,49 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
       source_type: currentSources.length ? 'supporting' : 'primary',
       published_at: sourceItem.published_at,
     };
-    const sourceList = currentSources.some((source) => source.url === appendedSource.url) ? currentSources : [...currentSources, appendedSource];
+    const revisionSource = currentSources.find((source) => source.url === appendedSource.url) ?? appendedSource;
+    const sourceList = revisionSource === appendedSource ? [...currentSources, appendedSource] : currentSources;
+    const revisionGeneration = await generateEditorialRevision({
+      currentContent: (existingRevision?.proposed_content ?? metadata.article_content) as StoryDraftContent,
+      sources: sourceList,
+      update: {
+        sourceId: revisionSource.id,
+        title: sourceItem.title,
+        publisher: appendedSource.publisher,
+        publishedAt: sourceItem.published_at,
+        relationship: update.relationship,
+        rationale: update.rationale,
+        summary: sourceItem.summary,
+        rawContent: sourceItem.raw_content,
+      },
+    });
+    const baseContent = (existingRevision?.base_content ?? metadata.article_content) as StoryDraftContent;
+    const contentChanged = revisionChangesPublicContent(baseContent, revisionGeneration.content);
+    const { error: generationError } = await supabase.from('ai_generations').insert({
+      story_id: story.id,
+      cluster_id: update.cluster_id,
+      purpose: 'revision_draft',
+      provider: 'openai',
+      model: revisionGeneration.model,
+      prompt_version: revisionGeneration.promptVersion,
+      input_tokens: revisionGeneration.inputTokens,
+      output_tokens: revisionGeneration.outputTokens,
+      estimated_cost_usd: revisionGeneration.estimatedCostUsd,
+      warnings: [],
+    });
+    if (generationError) throw generationError;
 
     let revisionId = existingRevision?.id;
     if (revisionId) {
-      const { error } = await supabase.from('story_editorial_revisions').update({ source_list: sourceList }).eq('id', revisionId).eq('status', 'draft');
+      const { error } = await supabase.from('story_editorial_revisions').update({ proposed_content: revisionGeneration.content, source_list: sourceList, public_content_changed: contentChanged }).eq('id', revisionId).eq('status', 'draft');
       if (error) throw error;
     } else {
       const { data: revision, error } = await supabase.from('story_editorial_revisions').insert({
         story_id: story.id,
         base_content: metadata.article_content,
-        proposed_content: metadata.article_content,
+        proposed_content: revisionGeneration.content,
         source_list: sourceList,
+        public_content_changed: contentChanged,
         created_by: user.id,
       }).select('id').single();
       if (error) throw error;
@@ -108,7 +140,7 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const { error: statusError } = await supabase.from('story_cluster_updates').update({ status: 'in_revision' }).eq('id', update.id).eq('status', 'pending_review');
     if (statusError) throw statusError;
 
-    return Response.json({ reviewed: true, status: 'in_revision', revisionId });
+    return Response.json({ reviewed: true, status: 'in_revision', revisionId, contentChanged });
   } catch (error) {
     return unexpectedErrorResponse('Coverage update decision failed', error, 'The coverage decision could not be saved.');
   }

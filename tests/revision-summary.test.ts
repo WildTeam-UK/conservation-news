@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
+import { revisionChangesPublicContent } from '@/lib/openai/generate-editorial-revision';
 import { cleanRevisionSummary, publicArticleContent } from '@/lib/openai/generate-revision-summary';
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
 
@@ -36,4 +37,14 @@ void test('cleans house-style punctuation and rejects unsupported formatting', (
   assert.equal(cleanRevisionSummary('This article now includes new reporting — and clarifies what remains unknown.'), 'This article now includes new reporting, and clarifies what remains unknown.');
   assert.throws(() => cleanRevisionSummary('Too short.'));
   assert.throws(() => cleanRevisionSummary('Read **the updated account** at https://example.com for the latest details.'));
+});
+
+void test('distinguishes public copy changes from source-reference changes', () => {
+  const sourceOnly = structuredClone(content);
+  sourceOnly.key_takeaways[0].source_ids.push('source-2');
+  assert.equal(revisionChangesPublicContent(content, sourceOnly), false);
+
+  const editorialUpdate = structuredClone(content);
+  editorialUpdate.key_takeaways[0].text = 'Officials announced a wider review of elephant protection.';
+  assert.equal(revisionChangesPublicContent(content, editorialUpdate), true);
 });
