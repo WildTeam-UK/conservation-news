@@ -64,7 +64,7 @@ export default async function AdminDashboard() {
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').in('status', ['queued', 'scheduled', 'publishing']).order('scheduled_for', { ascending: true, nullsFirst: false }),
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').eq('status', 'held').order('updated_at', { ascending: false }),
     supabase.from('sources').select('id, name, last_error').eq('enabled', true).not('last_error', 'is', null),
-    supabase.from('stories').select('id, headline, taxonomy_review_reason', { count: 'exact' }).eq('taxonomy_review_required', true).order('updated_at', { ascending: false }).limit(4),
+    supabase.from('stories').select('id, headline, taxonomy_review_reason', { count: 'exact' }).eq('taxonomy_review_required', true).in('status', ['draft', 'published']).order('updated_at', { ascending: false }).limit(4),
     supabase.from('story_cluster_updates').select('cluster_id').eq('status', 'pending_review'),
     supabase.from('story_editorial_revisions').select('story_id').eq('status', 'draft'),
     supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).maybeSingle(),

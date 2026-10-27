@@ -6,6 +6,7 @@ import { Check, CircleAlert, ExternalLink, Globe2, LoaderCircle, LockKeyhole, X 
 import type { StoryDraftContent } from '@/lib/openai/draft-story';
 import { publicationChecks } from '@/lib/publishing';
 import { londonLongDateTimeFormatter } from '@/lib/date-format';
+import { ArticleLifecycleButton } from '@/components/article-lifecycle-button';
 
 export function PublishControls({ storyId, slug, status, publishedAt, content, sourceCount }: { storyId: string; slug: string; status: string; publishedAt: string | null; content: StoryDraftContent; sourceCount: number }) {
   const router = useRouter();
@@ -34,7 +35,7 @@ export function PublishControls({ storyId, slug, status, publishedAt, content, s
     }
   }
 
-  if (status === 'published') return <section className="publish-panel published"><div className="publish-panel-heading"><span><Globe2 /></span><div><p className="eyebrow">Public article</p><h2>Published</h2><p>Published {publishedAt ? londonLongDateTimeFormatter.format(new Date(publishedAt)) : 'now'}.</p></div></div><div className="publish-panel-actions"><a href={`/stories/${slug}`} target="_blank" rel="noopener noreferrer">View public article <ExternalLink /></a><button type="button" disabled={working} onClick={() => changePublication('unpublish')}>{working ? <LoaderCircle className="admin-spinner" /> : <LockKeyhole />} Unpublish to edit</button></div>{message ? <output>{message}</output> : null}</section>;
+  if (status === 'published') return <section className="publish-panel published"><div className="publish-panel-heading"><span><Globe2 /></span><div><p className="eyebrow">Public article</p><h2>Published</h2><p>Published {publishedAt ? londonLongDateTimeFormatter.format(new Date(publishedAt)) : 'now'}.</p></div></div><div className="publish-panel-actions"><a href={`/stories/${slug}`} target="_blank" rel="noopener noreferrer">View public article <ExternalLink /></a><button type="button" disabled={working} onClick={() => changePublication('unpublish')}>{working ? <LoaderCircle className="admin-spinner" /> : <LockKeyhole />} Unpublish to edit</button><ArticleLifecycleButton storyId={storyId} action="archive" wasPublished redirectTo="/admin/drafts?view=archived" /></div>{message ? <output>{message}</output> : null}</section>;
 
   return <section className="publish-panel"><div className="publish-panel-heading"><span><Globe2 /></span><div><p className="eyebrow">Final editorial gate</p><h2>Ready to publish?</h2><p>Publishing makes this article immediately available on the public website.</p></div></div><ul>{checks.map((check) => <li className={check.passed ? 'passed' : ''} key={check.key}>{check.passed ? <Check /> : <X />} {check.label}</li>)}</ul><div className="publish-panel-actions"><button className="publish-button" type="button" disabled={!ready || working} onClick={() => changePublication('publish')}>{working ? <LoaderCircle className="admin-spinner" /> : ready ? <Globe2 /> : <CircleAlert />} {ready ? 'Publish article' : 'Complete checklist first'}</button></div>{message ? <output>{message}</output> : null}</section>;
 }

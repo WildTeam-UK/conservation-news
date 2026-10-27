@@ -5,6 +5,7 @@ import { EDITORIAL_TOPICS, type EditorialTopicName } from '@/lib/taxonomy';
 import { aiInstructions, parseAiJson } from './house-style';
 import { sourceRelationName } from '@/lib/supabase/relations';
 import { clampScore } from '@/lib/scores';
+import { shouldCreateCoverageUpdate } from '@/lib/article-lifecycle';
 
 const MODEL = 'gpt-6-luna';
 const PROMPT_VERSION = 'assessment-v2-recent-event-matching';
@@ -275,7 +276,10 @@ Use concise neutral wording. This is triage and event matching, not fact checkin
         const existing = recentClusters.find((candidate) => candidate.id === cluster.existing_cluster_id);
         if (!existing) throw new Error('A matched recent story could not be loaded.');
         const existingStory = storyByCluster.get(existing.id);
-        if (existingStory || existing.status === 'drafted') {
+        if (!shouldCreateCoverageUpdate(existingStory?.status)) {
+          const { error: freshnessError } = await supabase.from('story_clusters').update({ last_source_at: latestSourceAt ? new Date(latestSourceAt).toISOString() : existing.last_source_at }).eq('id', existing.id);
+          if (freshnessError) throw freshnessError;
+        } else if (existingStory || existing.status === 'drafted') {
           const { error: updateError } = await supabase.from('story_cluster_updates').upsert(cluster.item_ids.map((itemId) => ({ cluster_id: existing.id, source_item_id: itemId, relationship: cluster.relationship, status: 'pending_review', rationale: cluster.rationale })), { onConflict: 'cluster_id,source_item_id' });
           if (updateError) throw updateError;
           updatesFlagged += cluster.item_ids.length;
