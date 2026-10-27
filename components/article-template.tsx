@@ -1,5 +1,5 @@
 /* oxlint-disable next/no-html-link-for-pages -- full page loads avoid unreliable Vinext client navigation */
-import { ArrowRight, ChevronDown, CircleHelp, ExternalLink } from 'lucide-react';
+import { ArrowRight, CircleHelp, ExternalLink } from 'lucide-react';
 import { ContextualLinkedText } from '@/components/contextual-linked-text';
 import { EditorialImage } from '@/components/editorial-image';
 import { EditorialImageCredit } from '@/components/editorial-image-credit';
@@ -15,6 +15,7 @@ import { londonLongDateFormatter } from '@/lib/date-format';
 import { ContentFeedback } from '@/components/content-feedback';
 import { ContentViewTracker } from '@/components/content-view-tracker';
 import { TrackedInteractionLink } from '@/components/tracked-interaction-link';
+import { StoryUpdateHistory } from '@/components/story-update-history';
 
 export type ArticleCoverage = {
   ecological: number;
@@ -118,7 +119,7 @@ export function ArticleTemplate({ article, storyId, sharePath }: { article: Arti
     </header>
     <figure className={`article-lead-image${article.imageUrl ? '' : ' article-lead-placeholder'}`}>{article.imageUrl ? <><EditorialImage src={article.imageUrl} alt={article.imageAlt?.trim() || `Illustrative image for ${article.headline}`} loading="eager" fetchPriority="high" decoding="async" />{article.goodNews ? <GoodNewsBadge overlay /> : null}<EditorialImageCredit credit={article.imageCredit} /></> : <span>Lead image to be selected</span>}</figure>
     <section className="article-overview shell">
-      <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}{latestEditorialUpdate && article.publishedAt ? <details className="story-update-history"><summary><span>First published {formattedDate(article.publishedAt)}. Updated {formattedDate(latestEditorialUpdate.date)}.</span><span className="story-update-action">See what&apos;s changed <ChevronDown /></span></summary><div className="story-update-timeline">{editorialUpdates.map((update, index) => <article key={`${update.date}-${index}`}><time dateTime={update.date}>{formattedDate(update.date)}</time><p>{update.summary}{update.sourceIds.length ? <> <SourceReferenceLinks sourceIds={update.sourceIds} sources={sourcesById} storyId={storyId} /></> : null}</p></article>)}</div></details> : <p className="story-update-note">Published {formattedDate(article.publishedAt ?? article.updatedAt)}. This story may be updated as it develops.</p>}</div>
+      <div className="article-overview-meta">{article.discoveryTags?.length ? <div className="article-discovery-tags" aria-label="Explore related subjects">{article.discoveryTags.map((tag) => <a href={`/tags/${tag.slug}`} key={tag.slug}>{tag.name}</a>)}</div> : <span aria-hidden="true" />}{latestEditorialUpdate && article.publishedAt ? <StoryUpdateHistory publishedDate={formattedDate(article.publishedAt)} updatedDate={formattedDate(latestEditorialUpdate.date)}>{editorialUpdates.map((update, index) => <article key={`${update.date}-${index}`}><time dateTime={update.date}>{formattedDate(update.date)}</time><p>{update.summary}{update.sourceIds.length ? <> <SourceReferenceLinks sourceIds={update.sourceIds} sources={sourcesById} storyId={storyId} /></> : null}</p></article>)}</StoryUpdateHistory> : <p className="story-update-note">Published {formattedDate(article.publishedAt ?? article.updatedAt)}. This story may be updated as it develops.</p>}</div>
       <h2>The story at a glance</h2>
       <div className="article-overview-reading">
         {sharePath ? <SocialShare path={sharePath} title={article.headline} storyId={storyId} /> : null}
