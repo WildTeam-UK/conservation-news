@@ -32,7 +32,7 @@ function storyFor(item: QueueItem) {
 export default async function PublicationQueuePage() {
   const { supabase } = await requireContentAdmin();
   const [{ data: settings, error: settingsError }, { data: queue, error: queueError }] = await Promise.all([
-    supabase.from('editorial_run_settings').select('auto_publish_enabled, publish_window_start, publish_window_end, max_new_drafts, min_auto_publish_overall_score, min_auto_publish_evidence_score').eq('id', true).single(),
+    supabase.from('editorial_run_settings').select('auto_publish_enabled, publish_window_start, publish_window_end, max_new_drafts').eq('id', true).single(),
     supabase.from('publication_queue').select('id, status, scheduled_for, published_at, hold_reason, last_error, stories(id, headline, slug, status)').in('status', ['queued', 'scheduled', 'publishing', 'held']).order('scheduled_for', { ascending: true, nullsFirst: false }).limit(250),
   ]);
   if (settingsError) throw new Error('Unable to load automatic publishing settings.');
@@ -56,8 +56,6 @@ export default async function PublicationQueuePage() {
           windowStart={settings.publish_window_start}
           windowEnd={settings.publish_window_end}
           dailyArticleTarget={settings.max_new_drafts}
-          minimumOverall={settings.min_auto_publish_overall_score}
-          minimumEvidence={settings.min_auto_publish_evidence_score}
         />
 
         <section className="queue-section">

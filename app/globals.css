@@ -722,6 +722,7 @@ figure:has(>img.editorial-image-fallback) .editorial-image-credit{display:none}
 
 /* Candidate lifecycle and ranking */
 .candidate-labels .candidate-freshness-label{background:var(--status-info-surface);color:var(--status-info-text)}
+.candidate-labels .candidate-threshold-label{background:var(--status-pending-surface);color:var(--status-pending-text)}
 .daily-run-controls label{align-content:start}
 .daily-run-controls label>small{color:var(--muted);font-size:var(--admin-type-min-size);line-height:1.35}
 @media(max-width:900px){.candidate-scores{grid-template-columns:repeat(6,1fr)}}
