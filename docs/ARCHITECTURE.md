@@ -68,10 +68,11 @@ Vercel applies browser-security headers to every route: MIME sniffing is disable
 
 - Global CSS in `app/globals.css`
 - Admin workspace CSS in `app/admin-workspace.css`
-- WildNews-owned global CSS with no utility-framework or component-library runtime
+- Versioned WildTeam foundations from `@wildteam-uk/tokens` and `@wildteam-uk/ui`
+- WildNews-owned editorial layouts and specialist public/admin components layered on those shared foundations
 - Local VAG Rounded font files under `public/fonts`
 
-The unused generic starter component collection and its component-only dependencies were removed during pre-launch cleanup. Public and admin interfaces use WildNews-owned components in `components/`.
+The unused generic starter component collection and its component-only dependencies were removed during pre-launch cleanup. Public and admin interfaces continue to use WildNews-owned components in `components/`; stable ecosystem primitives can be adopted from the versioned shared UI package when their behaviour matches the application.
 
 ## Repository structure
 

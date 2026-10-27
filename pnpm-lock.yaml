@@ -22,6 +22,12 @@ importers:
       '@vercel/speed-insights':
         specifier: ^2.0.0
         version: 2.0.0(react@19.3.1)
+      '@wildteam-uk/tokens':
+        specifier: 0.2.0
+        version: 0.2.0
+      '@wildteam-uk/ui':
+        specifier: 0.2.1
+        version: 0.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)
       fast-xml-parser:
         specifier: ^5.11.2
         version: 5.11.2
@@ -995,6 +1001,15 @@ packages:
 
   '@webassemblyjs/wast-printer@1.14.1':
     resolution: {integrity: sha512-kPSSXE6De1XOR820C90RIo2ogvZG+c3KiHzqUoO/F34Y2shGzesfqv7o57xrxovZJH/MetF5UjroJ/R/3isoiw==}
+
+  '@wildteam-uk/tokens@0.2.0':
+    resolution: {integrity: sha512-5PpIoG4t6flDuzVmzDenNnMI61XVBK8XYC5P9l+vBVya+QdPhNDCtx//sX8JOyVmcnwjaTzQZ0XKLk4Ma0xb5Q==, tarball: https://npm.pkg.github.com/download/@wildteam-uk/tokens/0.2.0/44e4591057529739c35b4e5a2e28d313271bf1a6}
+
+  '@wildteam-uk/ui@0.2.1':
+    resolution: {integrity: sha512-n83QFyEZxuaTGqlUeeHPggtH8bmRb2a+AprJxJyYFsQ6ypTiojWmVt+/Spqa1nH//MS6e0FmAHbbLRSQsCODMA==, tarball: https://npm.pkg.github.com/download/@wildteam-uk/ui/0.2.1/1c4b9cde82b205a7664e5a95d19952015fa8fe74}
+    peerDependencies:
+      react: '>=19.0.0'
+      react-dom: '>=19.0.0'
 
   '@xtuc/ieee754@1.2.0':
     resolution: {integrity: sha512-DX8nKgqcGwsc0eJSqYt5lwP4DH5FlHnmuWWBRy7X0NcaGR0ZtuyeESgMwTYVEtxmsNGY+qit4QYT/MIYTOTPeA==}
@@ -2399,6 +2414,14 @@ snapshots:
     dependencies:
       '@webassemblyjs/ast': 1.14.1
       '@xtuc/long': 4.2.2
+
+  '@wildteam-uk/tokens@0.2.0': {}
+
+  '@wildteam-uk/ui@0.2.1(react-dom@19.3.1(react@19.3.1))(react@19.3.1)':
+    dependencies:
+      '@wildteam-uk/tokens': 0.2.0
+      react: 19.3.1
+      react-dom: 19.3.1(react@19.3.1)
 
   '@xtuc/ieee754@1.2.0': {}
 

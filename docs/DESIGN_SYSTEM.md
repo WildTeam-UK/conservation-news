@@ -6,7 +6,7 @@ This document records the design currently implemented by WildNews. It is descri
 
 ### Colour tokens
 
-The public application defines its core tokens in `app/globals.css`.
+The canonical ecosystem values come from `@wildteam-uk/tokens`. `app/globals.css` maps WildNews's established local names to those shared `--wt-*` custom properties so existing editorial components keep their current API and layout. WildNews-only semantic and workflow colours remain local.
 
 | Token | Value | Implemented use |
 | --- | --- | --- |
@@ -121,13 +121,13 @@ Do not introduce another breakpoint without confirming that an existing tier can
 ## Shape, borders and depth
 
 - Compact controls use `--radius-control` at 9px and compact surfaces use `--radius-compact` at 10px.
-- Standard cards use `--radius-card` at 18px; large panels use `--radius-panel` at 22px.
-- Pill and circular shapes use `--radius-pill` and `--radius-round`.
+- Standard cards and large panels use the shared 18px radius through `--radius-card` and `--radius-panel`.
+- Pill shapes use the shared 18px `--radius-pill`; genuinely circular controls use `--radius-round`.
 - Public button radius: 6px.
 - Image and standard card radii are 18px where the shared card token is used.
 - Some feature-specific editorial panels retain 20px or 24px radii.
 - Some feature-specific admin inputs and small controls retain 7px, 8px, 11px, 12px or 14px radii.
-- Pills and circular controls: 999px or 50%.
+- Pills use 18px; circular controls use 50%.
 - Standard dividers: 1px `--rule`.
 - Strong section dividers: 3px `--ink`.
 - Public components are generally flat. Repeated black offset shadows use the `--shadow-offset-sm` through `--shadow-offset-xl` scale; muted legacy cards use `--shadow-card-soft`.
