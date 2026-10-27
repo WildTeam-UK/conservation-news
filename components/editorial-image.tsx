@@ -8,7 +8,7 @@ type EditorialImageProps = Omit<ImgHTMLAttributes<HTMLImageElement>, 'src' | 'on
   src: string;
 };
 
-const FALLBACK_IMAGE = '/icon-512.png';
+const FALLBACK_IMAGE = '/editorial-image-fallback.png';
 
 export function EditorialImage({ alt, className, src, ...props }: EditorialImageProps) {
   const [failedSource, setFailedSource] = useState<string | null>(null);
