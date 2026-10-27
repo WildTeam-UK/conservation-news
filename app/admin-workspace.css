@@ -67,6 +67,8 @@
 }
 
 .admin-overview-shell{padding-top:52px;padding-bottom:90px}
+.admin-heading-with-icon{display:flex;align-items:center;gap:12px}
+.admin-heading-with-icon>svg{width:.55em;height:.55em;flex:0 0 auto;color:var(--status-success-text);stroke-width:3}
 .overview-heading{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:flex-end;justify-content:space-between;gap:20px 42px}
 .overview-heading>div:first-child{grid-column:1/-1;max-width:none}
 .overview-heading h1{max-width:none;margin:8px 0 0;font-size:clamp(43px,5.5vw,70px);font-weight:var(--font-weight-black);line-height:.96;letter-spacing:-.05em}

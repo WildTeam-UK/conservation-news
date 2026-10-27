@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ArrowRight, BellRing, ChevronDown, FilePenLine, Search } from 'lucide-react';
+import { ArrowRight, BellRing, Check, ChevronDown, FilePenLine, Search } from 'lucide-react';
 import { AddToQueueButton } from '@/components/add-to-queue-button';
 import { ArticleLifecycleButton } from '@/components/article-lifecycle-button';
 import { AdminHeader } from '@/components/admin-header';
@@ -110,7 +110,7 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
     <AdminHeader />
     <AdminNav active="drafts" />
     <div className="admin-shell admin-drafts-shell">
-      <section className="admin-welcome candidates-heading"><div><p className="eyebrow">Editorial workspace</p><h1>Articles</h1><p>Search and manage every draft, scheduled, held and published article in one place.</p></div><div className="candidate-summary"><FilePenLine /><strong>{stories?.length ?? 0}</strong><span>total articles</span></div></section>
+      <section className="admin-welcome candidates-heading"><div><p className="eyebrow">Editorial workspace</p><h1 className="admin-heading-with-icon">Articles <Check aria-hidden="true" /></h1><p>Search and manage every draft, scheduled, held and published article in one place.</p></div><div className="candidate-summary"><FilePenLine /><strong>{stories?.length ?? 0}</strong><span>total articles</span></div></section>
       {stories?.length ? <div className="draft-library-tools"><div className="draft-filter-controls"><details className="draft-status-filter"><summary><span>Status</span><strong>{selectedStatus.label}</strong><em>{counts[selectedStatus.value]}</em><ChevronDown /></summary><nav aria-label="Filter articles by status">{articleStatusViews.map((option) => <a className={view === option.value ? 'active' : ''} href={articleViewHref(option.value, search)} aria-current={view === option.value ? 'page' : undefined} key={option.value}><span>{option.label}</span><strong>{counts[option.value]}</strong></a>)}</nav></details><a className={`draft-updates-filter${view === 'updates' ? ' active' : ''}`} href={articleViewHref('updates', search)} aria-current={view === 'updates' ? 'page' : undefined}><BellRing /><span>Updates available</span><strong>{counts.updates}</strong></a></div><form action="/admin/drafts"><input type="hidden" name="view" value={view === 'all' ? '' : view} /><label><Search /><input aria-label="Search articles" name="q" defaultValue={search} placeholder="Search article titles…" /></label><button type="submit">Search</button>{search ? <a href={articleViewHref(view, '')}>Clear</a> : null}</form></div> : null}
       {!stories?.length ? <section className="source-empty candidate-empty"><FilePenLine /><h2>No articles yet</h2><p>Research a candidate, then choose Generate draft.</p></section> : visibleArticles.length ? <section className="draft-list">{visibleArticles.map((article) => {
         const metadata = article.generation_metadata as { topic_classification?: { primary_topic?: string }; model?: string };
