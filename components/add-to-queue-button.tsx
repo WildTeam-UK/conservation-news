@@ -3,14 +3,24 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CalendarPlus, LoaderCircle } from 'lucide-react';
+import { useAdminConfirmation } from '@/components/admin-confirmation';
 
 export function AddToQueueButton({ storyId, compact = false, approveHeld = false }: { storyId: string; compact?: boolean; approveHeld?: boolean }) {
   const router = useRouter();
+  const { confirmAdminAction } = useAdminConfirmation();
   const [adding, setAdding] = useState(false);
   const [message, setMessage] = useState('');
 
   async function add() {
-    if (approveHeld && !window.confirm('Add this reviewed article to the publishing queue? This approves scheduled publication even though the automatic workflow held it for review.')) return;
+    if (approveHeld) {
+      const confirmed = await confirmAdminAction({
+        title: 'Approve and queue this article?',
+        description: 'This approves scheduled publication even though the automatic workflow held the article for review.',
+        confirmLabel: 'Approve and add to queue',
+        tone: 'warning',
+      });
+      if (!confirmed) return;
+    }
     setAdding(true);
     setMessage('');
     try {

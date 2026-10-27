@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoaderCircle, RefreshCw } from 'lucide-react';
 import { SOCIAL_EDITORIAL_DESTINATION } from '@/lib/distribution/constants';
+import { useAdminConfirmation } from '@/components/admin-confirmation';
 
 type Delivery = {
   id: string;
@@ -17,13 +18,22 @@ type Delivery = {
 
 export function DigestDeliveryStatus({ storyId, deliveries, socialCopy }: { storyId: string; deliveries: Delivery[]; socialCopy: string | null }) {
   const router = useRouter();
+  const { confirmAdminAction } = useAdminConfirmation();
   const [working, setWorking] = useState<string | null>(null);
   const [message, setMessage] = useState('');
   if (!deliveries.length) return null;
 
   async function retry(delivery: Delivery) {
     const uncertain = delivery.status === 'uncertain' && delivery.destination !== SOCIAL_EDITORIAL_DESTINATION;
-    if (uncertain && !window.confirm('The provider may already have received this request. Retrying could create a duplicate post or email campaign. Retry anyway?')) return;
+    if (uncertain) {
+      const confirmed = await confirmAdminAction({
+        title: 'Retry this uncertain delivery?',
+        description: 'The provider may already have received the request. Retrying could create a duplicate post or email campaign.',
+        confirmLabel: 'Retry delivery',
+        tone: 'warning',
+      });
+      if (!confirmed) return;
+    }
     setWorking(delivery.id);
     setMessage('');
     try {

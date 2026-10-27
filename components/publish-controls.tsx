@@ -7,17 +7,28 @@ import type { StoryDraftContent } from '@/lib/openai/draft-story';
 import { publicationChecks } from '@/lib/publishing';
 import { londonLongDateTimeFormatter } from '@/lib/date-format';
 import { ArticleLifecycleButton } from '@/components/article-lifecycle-button';
+import { useAdminConfirmation } from '@/components/admin-confirmation';
 
 export function PublishControls({ storyId, slug, status, publishedAt, content, sourceCount }: { storyId: string; slug: string; status: string; publishedAt: string | null; content: StoryDraftContent; sourceCount: number }) {
   const router = useRouter();
+  const { confirmAdminAction } = useAdminConfirmation();
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState('');
   const checks = publicationChecks(content, sourceCount);
   const ready = checks.every((check) => check.passed);
 
   async function changePublication(action: 'publish' | 'unpublish') {
-    if (action === 'publish' && !window.confirm('Publish this article now? It will become publicly accessible immediately.')) return;
-    if (action === 'unpublish' && !window.confirm('Unpublish this article? Its public URL will stop working until it is published again.')) return;
+    const confirmed = await confirmAdminAction(action === 'publish' ? {
+      title: 'Publish this article?',
+      description: 'It will become publicly accessible immediately.',
+      confirmLabel: 'Publish article',
+    } : {
+      title: 'Unpublish this article?',
+      description: 'Its public URL will stop working until the article is published again.',
+      confirmLabel: 'Unpublish article',
+      tone: 'warning',
+    });
+    if (!confirmed) return;
     setWorking(true);
     setMessage('');
     try {

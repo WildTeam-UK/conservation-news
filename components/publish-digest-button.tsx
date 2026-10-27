@@ -3,15 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Globe2, LoaderCircle } from 'lucide-react';
+import { useAdminConfirmation } from '@/components/admin-confirmation';
 
 export function PublishDigestButton({ storyId, publicationDate, distributionSummary }: { storyId: string; publicationDate?: string; distributionSummary: string }) {
   const router = useRouter();
+  const { confirmAdminAction } = useAdminConfirmation();
   const [working, setWorking] = useState(false);
   const [message, setMessage] = useState('');
 
   async function publish() {
     const dateNote = publicationDate ? ` Its publication time will be recorded as 14:00 Europe/London on ${publicationDate}.` : '';
-    if (!window.confirm(`Publish this digest now? It will become publicly accessible immediately.${dateNote} ${distributionSummary}`)) return;
+    const confirmed = await confirmAdminAction({
+      title: 'Publish this digest?',
+      description: `It will become publicly accessible immediately.${dateNote} ${distributionSummary}`,
+      confirmLabel: 'Publish digest',
+    });
+    if (!confirmed) return;
     setWorking(true);
     setMessage('');
     try {

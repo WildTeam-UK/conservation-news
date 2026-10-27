@@ -1,4 +1,19 @@
 /* Reorganised editorial workspace */
+.admin-confirmation-dialog{width:min(520px,calc(100% - 32px));max-width:none;padding:0;border:0;border-radius:var(--radius-panel);background:transparent;color:var(--ink)}
+.admin-confirmation-dialog::backdrop{background:rgba(23,35,28,.46);backdrop-filter:blur(2px)}
+.admin-confirmation-card{position:relative;display:grid;grid-template-columns:46px minmax(0,1fr);gap:15px;padding:28px;border:1px solid var(--rule);border-radius:var(--radius-panel);background:var(--paper)}
+.admin-confirmation-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:var(--radius-compact);background:var(--cream);color:var(--brand-purple)}
+.admin-confirmation-dialog.warning .admin-confirmation-icon{background:var(--status-warning-surface);color:var(--status-warning-text)}
+.admin-confirmation-icon svg{width:22px;height:22px}
+.admin-confirmation-copy{padding:2px 34px 0 0}.admin-confirmation-copy h2{margin:0;font-size:23px;line-height:1.1}.admin-confirmation-copy p{margin:10px 0 0;color:var(--muted);font-size:14px;line-height:1.55}
+.admin-confirmation-close{position:absolute;top:17px;right:17px;display:grid;place-items:center;width:34px;height:34px;padding:0;border:0;border-radius:var(--radius-control);background:transparent;color:var(--muted);cursor:pointer}.admin-confirmation-close:hover{background:var(--cream);color:var(--brand-purple)}.admin-confirmation-close svg{width:17px;height:17px}
+.admin-confirmation-actions{grid-column:1/-1;display:flex;justify-content:flex-end;gap:9px;margin-top:7px;padding-top:20px;border-top:1px solid var(--rule)}
+.admin-confirmation-actions button{min-height:42px;padding:10px 16px;border:0;border-radius:var(--radius-control);font:inherit;font-size:var(--admin-type-min-size);font-weight:var(--font-weight-black);text-transform:uppercase;cursor:pointer}
+.admin-confirmation-cancel{background:var(--cream);color:var(--ink)}.admin-confirmation-confirm{background:var(--brand-pink);color:var(--paper)}
+.admin-confirmation-actions button:hover{background:var(--brand-purple);color:var(--paper)}
+.admin-confirmation-actions button:focus-visible,.admin-confirmation-close:focus-visible{outline:2px solid var(--brand-pink);outline-offset:3px}
+@media(max-width:520px){.admin-confirmation-card{grid-template-columns:40px minmax(0,1fr);gap:13px;padding:22px}.admin-confirmation-icon{width:40px;height:40px}.admin-confirmation-copy{padding-right:26px}.admin-confirmation-copy h2{font-size:20px}.admin-confirmation-actions{display:grid;grid-template-columns:1fr;margin-top:4px}.admin-confirmation-actions button{width:100%}.admin-confirmation-confirm{grid-row:1}.admin-confirmation-cancel{grid-row:2}}
+
 @media(min-width:921px){
   .admin-page{display:grid;grid-template-columns:244px minmax(0,1fr);grid-template-rows:76px minmax(calc(100vh - 76px),auto);min-height:100vh;transition:grid-template-columns .22s ease}
   .admin-page.admin-nav-collapsed{grid-template-columns:76px minmax(0,1fr)}

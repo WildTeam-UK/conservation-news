@@ -3,14 +3,22 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { LoaderCircle, XCircle } from 'lucide-react';
+import { useAdminConfirmation } from '@/components/admin-confirmation';
 
 export function QueueItemActions({ queueId, storyId, held = false }: { queueId: string; storyId: string; held?: boolean }) {
   const router = useRouter();
+  const { confirmAdminAction } = useAdminConfirmation();
   const [removing, setRemoving] = useState(false);
   const [error, setError] = useState('');
 
   async function remove() {
-    if (!window.confirm(`Remove this ${held ? 'held article' : 'article'} from automatic publishing? It will remain available as a private draft.`)) return;
+    const confirmed = await confirmAdminAction({
+      title: 'Remove this article from the queue?',
+      description: `This ${held ? 'held article' : 'article'} will be removed from automatic publishing and remain available as a private draft.`,
+      confirmLabel: 'Remove from queue',
+      tone: 'warning',
+    });
+    if (!confirmed) return;
     setRemoving(true);
     setError('');
     try {

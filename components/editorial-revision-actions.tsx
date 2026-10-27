@@ -3,16 +3,23 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, LoaderCircle, Sparkles, Trash2 } from 'lucide-react';
+import { useAdminConfirmation } from '@/components/admin-confirmation';
 
 export function EditorialRevisionActions({ revisionId, published, contentChanged }: { revisionId: string; published: boolean; contentChanged: boolean }) {
   const router = useRouter();
+  const { confirmAdminAction } = useAdminConfirmation();
   const [working, setWorking] = useState<'apply' | 'discard' | null>(null);
   const [message, setMessage] = useState('');
 
   async function applyRevision() {
-    if (!window.confirm(contentChanged
-      ? published ? 'Generate the public update summary and apply this revision to the live article? The original publication date will be preserved.' : 'Generate the revision summary and apply this coverage revision to the private draft?'
-      : 'Apply this source-only update? The source will be retained without changing the public article copy, update date or public “What changed” note.')) return;
+    const confirmed = await confirmAdminAction({
+      title: contentChanged ? 'Apply this editorial revision?' : 'Apply this source update?',
+      description: contentChanged
+        ? published ? 'WildNews will generate the public update summary and apply the revision to the live article. The original publication date will be preserved.' : 'WildNews will generate the revision summary and apply this coverage revision to the private draft.'
+        : 'The source will be retained without changing the public article copy, update date or public “What changed” note.',
+      confirmLabel: contentChanged ? 'Apply revision' : 'Apply source update',
+    });
+    if (!confirmed) return;
     setWorking('apply');
     setMessage('');
     try {
@@ -30,7 +37,13 @@ export function EditorialRevisionActions({ revisionId, published, contentChanged
   }
 
   async function discardRevision() {
-    if (!window.confirm('Discard this revision? Its linked coverage will return to the review list.')) return;
+    const confirmed = await confirmAdminAction({
+      title: 'Discard this revision?',
+      description: 'Its linked coverage will return to the review list.',
+      confirmLabel: 'Discard revision',
+      tone: 'warning',
+    });
+    if (!confirmed) return;
     setWorking('discard');
     setMessage('');
     try {
