@@ -10,6 +10,7 @@ export async function PATCH(request: Request) {
 
   const body = await request.json().catch(() => null) as {
     automationEnabled?: boolean;
+    autoCoverageUpdatesEnabled?: boolean;
     dailyRunTime?: string;
     dailyArticleTarget?: number;
     maxEstimatedCostUsd?: number;
@@ -24,7 +25,7 @@ export async function PATCH(request: Request) {
   const candidateFreshnessDecayPerDay = Number(body?.candidateFreshnessDecayPerDay);
   const candidateWildlifeBonus = Number(body?.candidateWildlifeBonus);
 
-  if (typeof body?.automationEnabled !== 'boolean' || !isTime(dailyRunTime)) {
+  if (typeof body?.automationEnabled !== 'boolean' || typeof body?.autoCoverageUpdatesEnabled !== 'boolean' || !isTime(dailyRunTime)) {
     return Response.json({ error: 'Choose a valid automation status and daily run time.' }, { status: 400 });
   }
   if (!Number.isInteger(dailyArticleTarget) || dailyArticleTarget < 1 || dailyArticleTarget > 25) {
@@ -46,6 +47,7 @@ export async function PATCH(request: Request) {
   const { error } = await supabase.from('editorial_run_settings').upsert({
     id: true,
     automation_enabled: body.automationEnabled,
+    auto_coverage_updates_enabled: body.autoCoverageUpdatesEnabled,
     daily_run_time: `${dailyRunTime}:00`,
     automation_timezone: 'Europe/London',
     max_new_drafts: dailyArticleTarget,

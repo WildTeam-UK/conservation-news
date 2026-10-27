@@ -10,6 +10,7 @@ import { DraftEditor, type DraftSource } from '@/components/draft-editor';
 import { CoverageUpdateActions } from '@/components/coverage-update-actions';
 import { EditorialRevisionActions } from '@/components/editorial-revision-actions';
 import { PublishControls } from '@/components/publish-controls';
+import { coverageUpdateNeedsAttention } from '@/lib/coverage-update-attention';
 import { migrateDraftContent, type DraftCoverageAnalysis } from '@/lib/openai/draft-story';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { firstRelation, sourceRelationName } from '@/lib/supabase/relations';
@@ -62,23 +63,26 @@ export default async function DraftPage({ params }: { params: Promise<{ id: stri
   if (!metadata.article_content) notFound();
   const topics = [metadata.topic_classification?.primary_topic, ...(metadata.topic_classification?.secondary_topics ?? [])].filter((topic): topic is string => Boolean(topic));
   const articleContent = migrateDraftContent(metadata.article_content, { topics, coverage_analysis: metadata.coverage_analysis, image_url: story.image_url, image_alt: story.image_alt });
-  const [{ data: coverageUpdateRows }, { data: revisionRow, error: revisionError }, { data: queueItem, error: queueError }, { data: courseRecommendation, error: courseError }, { data: contextualLinkRows, error: contextualLinksError }] = await Promise.all([
-    story.status !== 'archived' && story.cluster_id ? supabase.from('story_cluster_updates').select('id, relationship, rationale, created_at, source_items(title, url, sources(name))').eq('cluster_id', story.cluster_id).eq('status', 'pending_review').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
+  const [{ data: coverageUpdateRows }, { data: revisionRow, error: revisionError }, { data: queueItem, error: queueError }, { data: courseRecommendation, error: courseError }, { data: contextualLinkRows, error: contextualLinksError }, { data: updateSettings, error: updateSettingsError }] = await Promise.all([
+    story.status !== 'archived' && story.cluster_id ? supabase.from('story_cluster_updates').select('id, relationship, rationale, created_at, automation_attempt_count, source_items(title, url, sources(name))').eq('cluster_id', story.cluster_id).eq('status', 'pending_review').order('created_at', { ascending: false }) : Promise.resolve({ data: [] }),
     supabase.from('story_editorial_revisions').select('id, proposed_content, source_list, public_content_changed, updated_at').eq('story_id', story.id).eq('status', 'draft').maybeSingle(),
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason').eq('story_id', story.id).maybeSingle(),
     supabase.from('story_course_recommendations').select('training_courses(id, title, short_title, description, course_url, primary_colour, ad_headline, ad_description, cta_label)').eq('story_id', story.id).eq('placement', 'featured').maybeSingle(),
     supabase.from('story_contextual_links').select('link_type, target_id, href, anchor_text, section_key, item_index, external, confidence, rationale').eq('story_id', story.id),
+    supabase.from('editorial_run_settings').select('auto_coverage_updates_enabled').eq('id', true).maybeSingle(),
   ]);
   if (queueError) throw new Error('Unable to load this article’s publishing status.');
   if (revisionError) throw new Error('Unable to load this article’s editorial revision. Run the coverage-revision migration first.');
   if (courseError) throw new Error('Unable to load this article’s training recommendation.');
   if (contextualLinksError) throw new Error('Unable to load this article’s contextual links. Run the article-linking migration first.');
+  if (updateSettingsError) throw new Error('Unable to load article update automation settings.');
   const { data: appliedRevisionRows, error: appliedRevisionsError } = await supabase.from('story_editorial_revisions').select('id, change_summary, applied_at').eq('story_id', story.id).eq('status', 'applied').order('applied_at', { ascending: false }).limit(10);
   if (appliedRevisionsError) throw new Error('Unable to load this article’s revision history.');
   attachStoredArticleLinks(articleContent, (contextualLinkRows ?? []).map((link) => ({ type: link.link_type as ArticleLinkType, target_id: link.target_id, href: link.href, anchor_text: link.anchor_text, section_key: link.section_key as ArticleLinkSection, item_index: link.item_index, external: link.external, confidence: link.confidence, rationale: link.rationale ?? '' })));
   const linkedCourse = courseRecommendation?.training_courses;
   const coursePromotion = firstRelation(linkedCourse) as TrainingCoursePromotion | null;
-  const coverageUpdates = (coverageUpdateRows ?? []) as CoverageUpdate[];
+  const updateAutomationEnabled = updateSettings?.auto_coverage_updates_enabled ?? false;
+  const coverageUpdates = (coverageUpdateRows ?? []).filter((update) => coverageUpdateNeedsAttention(update, updateAutomationEnabled)) as CoverageUpdate[];
   const revision = revisionRow as EditorialRevision | null;
   const appliedRevisions = (appliedRevisionRows ?? []) as AppliedRevision[];
   const revisionContent = revision ? migrateDraftContent(revision.proposed_content, { topics, coverage_analysis: metadata.coverage_analysis, image_url: story.image_url, image_alt: story.image_alt }) : null;

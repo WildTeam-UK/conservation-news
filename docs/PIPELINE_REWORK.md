@@ -162,7 +162,7 @@ Automatic source-list changes are database-locked off. The initial evidence gate
 - Live event reporting, including the proposed COP-style live text format.
 - Geography as an editorial ranking factor.
 - Parent-region taxonomy thresholds until the geographic tag set is mature.
-- Automatically accepting coverage updates or source recommendations.
+- Automatically accepting source-network recommendations. Coverage updates now use a separately switchable, leased and retry-limited automation path; failures return to the existing editorial review workspace.
 - Automatically changing source weights from early engagement data.
 
 ## Migration and release rules

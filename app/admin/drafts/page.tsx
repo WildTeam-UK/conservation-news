@@ -4,6 +4,7 @@ import { AddToQueueButton } from '@/components/add-to-queue-button';
 import { ArticleLifecycleButton } from '@/components/article-lifecycle-button';
 import { AdminHeader } from '@/components/admin-header';
 import { AdminNav } from '@/components/admin-nav';
+import { coverageRevisionNeedsAttention, coverageUpdateNeedsAttention } from '@/lib/coverage-update-attention';
 import { stripSourceMarkers } from '@/lib/article-text';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { londonMediumDateTimeFormatter as dateTime } from '@/lib/date-format';
@@ -60,15 +61,20 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
   if (error) throw new Error('Unable to load articles.');
   const clusterIds = (stories ?? []).flatMap((story) => story.cluster_id ? [story.cluster_id] : []);
   const storyIds = (stories ?? []).map((story) => story.id);
-  const [{ data: updateRows, error: updatesError }, { data: revisionRows, error: revisionsError }] = await Promise.all([
-    clusterIds.length ? supabase.from('story_cluster_updates').select('cluster_id').in('cluster_id', clusterIds).eq('status', 'pending_review') : Promise.resolve({ data: [], error: null }),
-    storyIds.length ? supabase.from('story_editorial_revisions').select('story_id').in('story_id', storyIds).eq('status', 'draft') : Promise.resolve({ data: [], error: null }),
+  const [{ data: updateRows, error: updatesError }, { data: revisionRows, error: revisionsError }, { data: updateSettings, error: updateSettingsError }] = await Promise.all([
+    clusterIds.length ? supabase.from('story_cluster_updates').select('cluster_id, automation_attempt_count, automation_last_error').in('cluster_id', clusterIds).eq('status', 'pending_review') : Promise.resolve({ data: [], error: null }),
+    storyIds.length ? supabase.from('story_editorial_revisions').select('story_id, created_by, automation_attempt_count, automation_last_error').in('story_id', storyIds).eq('status', 'draft') : Promise.resolve({ data: [], error: null }),
+    supabase.from('editorial_run_settings').select('auto_coverage_updates_enabled').eq('id', true).maybeSingle(),
   ]);
   if (updatesError) throw new Error('Unable to load pending coverage reviews.');
   if (revisionsError) throw new Error('Unable to load editorial revisions. Run the coverage-revision migration first.');
+  if (updateSettingsError) throw new Error('Unable to load article update automation settings.');
+  const updateAutomationEnabled = updateSettings?.auto_coverage_updates_enabled ?? false;
   const updateCounts = new Map<string, number>();
-  for (const update of updateRows ?? []) updateCounts.set(update.cluster_id, (updateCounts.get(update.cluster_id) ?? 0) + 1);
-  const revisionStoryIds = new Set((revisionRows ?? []).map((revision) => revision.story_id));
+  for (const update of updateRows ?? []) {
+    if (coverageUpdateNeedsAttention(update, updateAutomationEnabled)) updateCounts.set(update.cluster_id, (updateCounts.get(update.cluster_id) ?? 0) + 1);
+  }
+  const revisionStoryIds = new Set((revisionRows ?? []).filter((revision) => coverageRevisionNeedsAttention(revision, updateAutomationEnabled)).map((revision) => revision.story_id));
   const drafts = stories?.filter((story) => story.status === 'draft') ?? [];
   const published = stories?.filter((story) => story.status === 'published') ?? [];
   const archived = stories?.filter((story) => story.status === 'archived') ?? [];

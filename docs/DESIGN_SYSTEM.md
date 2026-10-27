@@ -278,6 +278,8 @@ Admin pages use:
 
 The Articles workspace groups All, Published, Scheduled, Unscheduled, Held and Archived inside one compact status disclosure. Updates available remains a separate visible attention filter rather than competing with every routine status as another pill. Unscheduled article cards expose both queue and archive actions; archived cards expose restoration. The article workspace uses the same lifecycle controls for private and published articles, with explicit confirmation copy when an action removes a live URL.
 
+The overview treats coverage revisions as attention items only when update automation is disabled, a manual revision is open, or automatic processing has exhausted its retries. The daily workflow controls expose one Article updates toggle so the recoverable manual path remains available without adding a second settings surface.
+
 ## Current implementation debt
 
 These are recorded facts, not design changes:
