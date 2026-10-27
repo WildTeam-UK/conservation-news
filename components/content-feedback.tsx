@@ -19,7 +19,7 @@ function readStoredFeedback(storyId: string) {
   }
 }
 
-export function ContentFeedback({ storyId, contentLabel, variant = 'card' }: { storyId: string; contentLabel: 'story' | 'digest'; variant?: 'card' | 'article' }) {
+export function ContentFeedback({ storyId, contentLabel }: { storyId: string; contentLabel: 'story' | 'digest' }) {
   const [choice, setChoice] = useState<FeedbackChoice | null>(null);
   const [message, setMessage] = useState('');
 
@@ -37,11 +37,11 @@ export function ContentFeedback({ storyId, contentLabel, variant = 'card' }: { s
     setMessage(saved ? 'Thanks, your feedback helps us improve WildNews.' : 'Your choice is saved on this device. We could not send it just now.');
   }
 
-  return <section className={`content-feedback${variant === 'article' ? ' article-feedback story-section' : ''}`} aria-labelledby={`content-feedback-${storyId}`}>
-    <div>{variant === 'card' ? <p className="eyebrow">Help us improve</p> : null}<h2 id={`content-feedback-${storyId}`}>Was this {contentLabel} useful?</h2><p>Your anonymous feedback helps us make future WildNews briefings more useful.</p></div>
+  return <section className="content-feedback" aria-labelledby={`content-feedback-${storyId}`}>
+    <div><h2 id={`content-feedback-${storyId}`}>Was this {contentLabel} useful?</h2><p>Your anonymous feedback helps us make future WildNews briefings more useful.</p></div>
     <div className="content-feedback-actions">
-      <button type="button" className={choice === 'positive' ? 'selected' : ''} aria-label={`Yes, this ${contentLabel} was useful`} title="Useful" aria-pressed={choice === 'positive'} onClick={() => submit('positive')}><ThumbsUp aria-hidden="true" />{variant === 'card' ? ' Yes' : null}</button>
-      <button type="button" className={choice === 'negative' ? 'selected' : ''} aria-label={`No, this ${contentLabel} was not useful`} title="Not useful" aria-pressed={choice === 'negative'} onClick={() => submit('negative')}><ThumbsDown aria-hidden="true" />{variant === 'card' ? ' Not quite' : null}</button>
+      <button type="button" className={choice === 'positive' ? 'selected' : ''} aria-label={`Yes, this ${contentLabel} was useful`} title="Useful" aria-pressed={choice === 'positive'} onClick={() => submit('positive')}><ThumbsUp aria-hidden="true" /></button>
+      <button type="button" className={choice === 'negative' ? 'selected' : ''} aria-label={`No, this ${contentLabel} was not useful`} title="Not useful" aria-pressed={choice === 'negative'} onClick={() => submit('negative')}><ThumbsDown aria-hidden="true" /></button>
     </div>
     <output aria-live="polite">{message}</output>
   </section>;
