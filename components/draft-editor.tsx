@@ -40,6 +40,7 @@ type DraftEditorProps = {
   saveLabel?: string;
   savedMessage?: string;
   previewLabel?: string;
+  previewStatus?: string;
   allowCoverageRecalculation?: boolean;
 };
 
@@ -57,6 +58,7 @@ export function DraftEditor({
   saveLabel = 'Save draft',
   savedMessage = 'Draft saved. Its automatic publishing slot has been checked.',
   previewLabel,
+  previewStatus,
   allowCoverageRecalculation = true,
 }: DraftEditorProps) {
   const router = useRouter();
@@ -248,8 +250,8 @@ export function DraftEditor({
       </fieldset>
     </form>
 
-    <section className="draft-template-preview" aria-label={readOnly ? 'Published article preview' : 'Private article preview'}>
-      <div className="draft-preview-banner"><ShieldCheck /><span>{previewLabel ?? (readOnly ? 'Published article using the live article template' : 'Private preview using the live article template')}</span><strong>{readOnly ? 'Live' : 'Not published'}</strong></div>
+    <section className="draft-template-preview" aria-label={previewLabel ?? (readOnly ? 'Published article preview' : 'Private article preview')}>
+      <div className="draft-preview-banner"><ShieldCheck /><span>{previewLabel ?? (readOnly ? 'Published article using the live article template' : 'Private preview using the live article template')}</span><strong>{previewStatus ?? (readOnly ? 'Live' : 'Not published')}</strong></div>
       <ArticleTemplate article={article} />
     </section>
   </>;

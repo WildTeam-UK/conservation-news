@@ -1,4 +1,5 @@
 import { timingSafeEqual } from 'node:crypto';
+import { processAutomatedCoverageUpdates } from '@/lib/coverage-revision-workflow';
 import { environmentValue } from '@/lib/environment';
 import { advanceEditorialRun } from '@/lib/editorial-runner';
 import { collectEnabledSources, continueActiveCollection } from '@/lib/ingestion/rss';
@@ -131,6 +132,12 @@ export async function POST(request: Request) {
       const snapshot = await advanceEditorialRun(claim.claimed_run_id, null);
       await recordHeartbeatSuccess();
       return Response.json({ action: claim.newly_started ? 'started' : 'advanced', publication, snapshot });
+    }
+
+    const coverageUpdate = await processAutomatedCoverageUpdates(supabase);
+    if (coverageUpdate) {
+      await recordHeartbeatSuccess();
+      return Response.json({ action: coverageUpdate.action, publication, coverageUpdate });
     }
 
     const activeCollection = await continueActiveCollection();

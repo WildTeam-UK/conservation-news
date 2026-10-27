@@ -45,6 +45,7 @@ type DailyEditorialRunProps = {
   defaultDailyArticleTarget: number;
   defaultMaxCostUsd: number;
   defaultAutomationEnabled: boolean;
+  defaultAutoCoverageUpdatesEnabled: boolean;
   defaultDailyRunTime: string;
   defaultCandidateFreshnessDays: number;
   defaultCandidateFreshnessDecayPerDay: number;
@@ -62,6 +63,7 @@ export function DailyEditorialRun({
   defaultDailyArticleTarget,
   defaultMaxCostUsd,
   defaultAutomationEnabled,
+  defaultAutoCoverageUpdatesEnabled,
   defaultDailyRunTime,
   defaultCandidateFreshnessDays,
   defaultCandidateFreshnessDecayPerDay,
@@ -74,6 +76,7 @@ export function DailyEditorialRun({
   const [dailyArticleTarget, setDailyArticleTarget] = useState(defaultDailyArticleTarget);
   const [maxCost, setMaxCost] = useState(defaultMaxCostUsd);
   const [automationEnabled, setAutomationEnabled] = useState(defaultAutomationEnabled);
+  const [autoCoverageUpdatesEnabled, setAutoCoverageUpdatesEnabled] = useState(defaultAutoCoverageUpdatesEnabled);
   const [dailyRunTime, setDailyRunTime] = useState(defaultDailyRunTime.slice(0, 5));
   const [candidateFreshnessDays, setCandidateFreshnessDays] = useState(defaultCandidateFreshnessDays);
   const [candidateFreshnessDecayPerDay, setCandidateFreshnessDecayPerDay] = useState(defaultCandidateFreshnessDecayPerDay);
@@ -102,7 +105,7 @@ export function DailyEditorialRun({
       const response = await fetch('/api/admin/editorial-settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ automationEnabled, dailyRunTime, dailyArticleTarget, maxEstimatedCostUsd: maxCost, candidateFreshnessDays, candidateFreshnessDecayPerDay, candidateWildlifeBonus }),
+        body: JSON.stringify({ automationEnabled, autoCoverageUpdatesEnabled, dailyRunTime, dailyArticleTarget, maxEstimatedCostUsd: maxCost, candidateFreshnessDays, candidateFreshnessDecayPerDay, candidateWildlifeBonus }),
       });
       const result = await response.json() as { saved?: boolean; error?: string };
       if (!response.ok) throw new Error(result.error ?? 'The automation settings could not be saved.');
@@ -163,6 +166,7 @@ export function DailyEditorialRun({
         <label><span>Freshness decay</span><input type="number" min="0" max="20" step="0.5" value={candidateFreshnessDecayPerDay} disabled={running || saving} onChange={(event) => setCandidateFreshnessDecayPerDay(Number(event.target.value))} /><small>Points removed per complete day.</small></label>
         <label><span>Wildlife bonus</span><input type="number" min="0" max="10" step="0.5" value={candidateWildlifeBonus} disabled={running || saving} onChange={(event) => setCandidateWildlifeBonus(Number(event.target.value))} /><small>Small priority lift, not a hard preference.</small></label>
         <label className="automation-toggle"><span>Daily scheduler</span><span className="automation-toggle-control"><input type="checkbox" checked={automationEnabled} disabled={running || saving} onChange={(event) => setAutomationEnabled(event.target.checked)} /> <strong>{automationEnabled ? 'Enabled' : 'Off'}</strong></span></label>
+        <label className="automation-toggle"><span>Article updates</span><span className="automation-toggle-control"><input type="checkbox" checked={autoCoverageUpdatesEnabled} disabled={running || saving} onChange={(event) => setAutoCoverageUpdatesEnabled(event.target.checked)} /> <strong>{autoCoverageUpdatesEnabled ? 'Automatic' : 'Manual'}</strong></span><small>Prepare and apply source-grounded coverage updates automatically.</small></label>
         <button className="admin-secondary-button schedule-save-button" type="button" onClick={saveSchedule} disabled={running || saving || dailyArticleTarget < 1 || maxCost < 0.05 || !dailyRunTime || candidateFreshnessDays < 1 || candidateFreshnessDecayPerDay < 0 || candidateWildlifeBonus < 0}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving settings</> : <><Save /> Save automation</>}</button>
         <button className="admin-primary-button daily-run-button" type="button" onClick={run} disabled={running || saving || dailyArticleTarget < 1 || maxCost < 0.05}>
           {running ? <><LoaderCircle className="admin-spinner" /> {snapshot?.message || 'Starting run'}</> : hasActiveRun || runState?.status === 'running' || runState?.status === 'budget_stopped' ? <><RotateCcw /> Resume run now</> : <><Play /> Run manually now</>}

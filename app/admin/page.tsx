@@ -6,6 +6,7 @@ import { AdminNav } from '@/components/admin-nav';
 import { DailyEditorialRun } from '@/components/daily-editorial-run';
 import { RunCollectionButton } from '@/components/run-collection-button';
 import { buildAdminProfile } from '@/lib/admin-profile';
+import { coverageRevisionNeedsAttention, coverageUpdateNeedsAttention } from '@/lib/coverage-update-attention';
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { firstRelation } from '@/lib/supabase/relations';
 import { londonMediumDateTimeFormatter as dateTime, londonTimeFormatter as timeOnly } from '@/lib/date-format';
@@ -64,10 +65,10 @@ export default async function AdminDashboard() {
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').in('status', ['queued', 'scheduled', 'publishing']).order('scheduled_for', { ascending: true, nullsFirst: false }),
     supabase.from('publication_queue').select('id, status, scheduled_for, hold_reason, stories(id, headline)').eq('status', 'held').order('updated_at', { ascending: false }),
     supabase.from('sources').select('id, name, last_error').eq('enabled', true).not('last_error', 'is', null),
-    supabase.from('stories').select('id, headline, taxonomy_review_reason', { count: 'exact' }).eq('taxonomy_review_required', true).order('updated_at', { ascending: false }).limit(4),
-    supabase.from('story_cluster_updates').select('cluster_id').eq('status', 'pending_review'),
-    supabase.from('story_editorial_revisions').select('story_id').eq('status', 'draft'),
-    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).maybeSingle(),
+    supabase.from('stories').select('id, headline, taxonomy_review_reason', { count: 'exact' }).eq('taxonomy_review_required', true).in('status', ['draft', 'published']).order('updated_at', { ascending: false }).limit(4),
+    supabase.from('story_cluster_updates').select('cluster_id, automation_attempt_count, automation_last_error').eq('status', 'pending_review'),
+    supabase.from('story_editorial_revisions').select('story_id, created_by, automation_attempt_count, automation_last_error').eq('status', 'draft'),
+    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, auto_coverage_updates_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).maybeSingle(),
     supabase.from('editorial_runs').select('id, trigger_type, status, max_new_drafts, estimated_cost_usd, drafts_created, candidates_selected, failures, created_at, completed_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('editorial_runs').select('id').eq('status', 'running').maybeSingle(),
     supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, error_summary, created_at').order('created_at', { ascending: false }).limit(1),
@@ -88,8 +89,9 @@ export default async function AdminDashboard() {
   const sourceErrors = sourceErrorsResult.data ?? [];
   const taxonomyReviews = taxonomyReviewResult.data ?? [];
   if (coverageUpdatesResult.error || revisionDraftsResult.error) throw new Error('Unable to load article update alerts.');
-  const pendingCoverageClusterIds = new Set((coverageUpdatesResult.data ?? []).map((update) => update.cluster_id));
-  const revisionStoryIds = new Set((revisionDraftsResult.data ?? []).map((revision) => revision.story_id));
+  const updateAutomationEnabled = settings?.auto_coverage_updates_enabled ?? false;
+  const pendingCoverageClusterIds = new Set((coverageUpdatesResult.data ?? []).filter((update) => coverageUpdateNeedsAttention(update, updateAutomationEnabled)).map((update) => update.cluster_id));
+  const revisionStoryIds = new Set((revisionDraftsResult.data ?? []).filter((revision) => coverageRevisionNeedsAttention(revision, updateAutomationEnabled)).map((revision) => revision.story_id));
   const updateArticleIds = new Set([...(draftsResult.data ?? []), ...(publishedResult.data ?? [])].flatMap((story) => (
     revisionStoryIds.has(story.id) || Boolean(story.cluster_id && pendingCoverageClusterIds.has(story.cluster_id)) ? [story.id] : []
   )));
@@ -145,7 +147,7 @@ export default async function AdminDashboard() {
             <div className="overview-section-heading"><div><p className="eyebrow">Needs attention</p><h2>{attentionCount ? `${attentionCount} item${attentionCount === 1 ? '' : 's'} to review` : 'Everything looks good'}</h2></div></div>
             {attentionCount ? <div className="overview-alert-list">
               {settings?.last_automation_error ? <article><AlertTriangle /><div><strong>Automation warning</strong><p>{settings.last_automation_error}</p></div></article> : null}
-              {updateArticleCount ? <article><BellRing /><div><strong>{updateArticleCount} {updateArticleCount === 1 ? 'article has' : 'articles have'} updates available</strong><p>New coverage or a prepared revision is ready for editorial review. <a href="/admin/drafts?view=updates">Review updates</a></p></div></article> : null}
+              {updateArticleCount ? <article><BellRing /><div><strong>{updateArticleCount} {updateArticleCount === 1 ? 'article update needs' : 'article updates need'} attention</strong><p>Automatic processing could not safely finish, or a manual revision is still open. <a href="/admin/drafts?view=updates">Review updates</a></p></div></article> : null}
               {taxonomyReviews.map((story) => <article key={story.id}><AlertTriangle /><div><strong>{story.headline}</strong><p>{story.taxonomy_review_reason ?? 'Choose a controlled topic before this article can publish.'} <a href={`/admin/drafts/${story.id}`}>Review article</a></p></div></article>)}
               {held.slice(0, 4).map((item) => { const story = queueStory(item); return <article key={item.id}><CalendarClock /><div><strong>{story?.headline ?? 'Held article'}</strong><p>{item.hold_reason ?? 'Held for editorial review.'}</p></div></article>; })}
               {sourceErrors.slice(0, 4).map((source) => <article key={source.id}><Rss /><div><strong>{source.name}</strong><p>{source.last_error}</p></div></article>)}
@@ -165,6 +167,7 @@ export default async function AdminDashboard() {
               defaultDailyArticleTarget={settings?.max_new_drafts ?? 10}
               defaultMaxCostUsd={Number(settings?.max_estimated_cost_usd ?? 1)}
               defaultAutomationEnabled={settings?.automation_enabled ?? false}
+              defaultAutoCoverageUpdatesEnabled={settings?.auto_coverage_updates_enabled ?? false}
               defaultDailyRunTime={settings?.daily_run_time ?? '07:00'}
               defaultCandidateFreshnessDays={Number(settings?.candidate_freshness_days ?? 7)}
               defaultCandidateFreshnessDecayPerDay={Number(settings?.candidate_freshness_decay_per_day ?? 2)}
