@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { ArrowRight, BellRing, FilePenLine, Search } from 'lucide-react';
+import { ArrowRight, BellRing, ChevronDown, FilePenLine, Search } from 'lucide-react';
 import { AddToQueueButton } from '@/components/add-to-queue-button';
 import { ArticleLifecycleButton } from '@/components/article-lifecycle-button';
 import { AdminHeader } from '@/components/admin-header';
@@ -27,6 +27,14 @@ const articleViews: { value: ArticleView; label: string }[] = [
   { value: 'updates', label: 'Updates available' },
   { value: 'archived', label: 'Archived' },
 ];
+const articleStatusViews = articleViews.filter((option) => option.value !== 'updates');
+
+function articleViewHref(view: ArticleView, search: string) {
+  const query = new URLSearchParams();
+  if (view !== 'all') query.set('view', view);
+  if (search) query.set('q', search);
+  return `/admin/drafts${query.size ? `?${query}` : ''}`;
+}
 
 function queueGroup(status?: string): QueueGroup {
   if (status === 'held') return 'held';
@@ -90,13 +98,14 @@ export default async function DraftsPage({ searchParams }: { searchParams: Promi
     const matchesSearch = !searchLower || `${article.headline} ${article.standfirst}`.toLocaleLowerCase('en-GB').includes(searchLower);
     return matchesView && matchesSearch;
   });
+  const selectedStatus = articleStatusViews.find((option) => option.value === view) ?? articleStatusViews[0];
 
   return <main className="admin-page">
     <AdminHeader />
     <AdminNav active="drafts" />
     <div className="admin-shell admin-drafts-shell">
       <section className="admin-welcome candidates-heading"><div><p className="eyebrow">Editorial workspace</p><h1>Articles</h1><p>Search and manage every draft, scheduled, held and published article in one place.</p></div><div className="candidate-summary"><FilePenLine /><strong>{stories?.length ?? 0}</strong><span>total articles</span></div></section>
-      {stories?.length ? <div className="draft-library-tools"><nav aria-label="Filter articles">{articleViews.map((option) => { const query = new URLSearchParams(); if (option.value !== 'all') query.set('view', option.value); if (search) query.set('q', search); return <a className={view === option.value ? 'active' : ''} href={`/admin/drafts${query.size ? `?${query}` : ''}`} aria-current={view === option.value ? 'page' : undefined} key={option.value}>{option.label}<span>{counts[option.value]}</span></a>; })}</nav><form action="/admin/drafts"><input type="hidden" name="view" value={view === 'all' ? '' : view} /><label><Search /><input aria-label="Search articles" name="q" defaultValue={search} placeholder="Search article titles…" /></label><button type="submit">Search</button>{search ? <a href={`/admin/drafts${view === 'all' ? '' : `?view=${view}`}`}>Clear</a> : null}</form></div> : null}
+      {stories?.length ? <div className="draft-library-tools"><div className="draft-filter-controls"><details className="draft-status-filter"><summary><span>Status</span><strong>{selectedStatus.label}</strong><em>{counts[selectedStatus.value]}</em><ChevronDown /></summary><nav aria-label="Filter articles by status">{articleStatusViews.map((option) => <a className={view === option.value ? 'active' : ''} href={articleViewHref(option.value, search)} aria-current={view === option.value ? 'page' : undefined} key={option.value}><span>{option.label}</span><strong>{counts[option.value]}</strong></a>)}</nav></details><a className={`draft-updates-filter${view === 'updates' ? ' active' : ''}`} href={articleViewHref('updates', search)} aria-current={view === 'updates' ? 'page' : undefined}><BellRing /><span>Updates available</span><strong>{counts.updates}</strong></a></div><form action="/admin/drafts"><input type="hidden" name="view" value={view === 'all' ? '' : view} /><label><Search /><input aria-label="Search articles" name="q" defaultValue={search} placeholder="Search article titles…" /></label><button type="submit">Search</button>{search ? <a href={articleViewHref(view, '')}>Clear</a> : null}</form></div> : null}
       {!stories?.length ? <section className="source-empty candidate-empty"><FilePenLine /><h2>No articles yet</h2><p>Research a candidate, then choose Generate draft.</p></section> : visibleArticles.length ? <section className="draft-list">{visibleArticles.map((article) => {
         const metadata = article.generation_metadata as { topic_classification?: { primary_topic?: string }; model?: string };
         const updates = article.cluster_id ? updateCounts.get(article.cluster_id) ?? 0 : 0;

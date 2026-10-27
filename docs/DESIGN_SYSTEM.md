@@ -276,7 +276,7 @@ Admin pages use:
 - Disclosure panels for advanced or infrequent manual controls.
 - Responsive tables, cards and stacked controls rather than shrinking desktop layouts below usability.
 
-The Articles workspace includes a recoverable Archived filter after the active workflow filters. Unscheduled article cards expose both queue and archive actions; archived cards expose restoration. The article workspace uses the same lifecycle controls for private and published articles, with explicit confirmation copy when an action removes a live URL.
+The Articles workspace groups All, Published, Scheduled, Unscheduled, Held and Archived inside one compact status disclosure. Updates available remains a separate visible attention filter rather than competing with every routine status as another pill. Unscheduled article cards expose both queue and archive actions; archived cards expose restoration. The article workspace uses the same lifecycle controls for private and published articles, with explicit confirmation copy when an action removes a live URL.
 
 ## Current implementation debt
 
