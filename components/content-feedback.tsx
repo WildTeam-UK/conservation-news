@@ -21,7 +21,6 @@ function readStoredFeedback(storyId: string) {
 
 export function ContentFeedback({ storyId, contentLabel }: { storyId: string; contentLabel: 'story' | 'digest' }) {
   const [choice, setChoice] = useState<FeedbackChoice | null>(null);
-  const [message, setMessage] = useState('');
 
   // Hydration is the first point at which this browser-only preference is available.
   // oxlint-disable-next-line react/react-compiler
@@ -31,10 +30,8 @@ export function ContentFeedback({ storyId, contentLabel }: { storyId: string; co
     const stored = readStoredFeedback(storyId);
     const eventId = stored?.eventId ?? crypto.randomUUID();
     setChoice(nextChoice);
-    setMessage('Saving…');
     window.localStorage.setItem(feedbackStorageKey(storyId), JSON.stringify({ choice: nextChoice, eventId }));
-    const saved = await recordContentInteraction({ eventId, storyId, eventType: nextChoice === 'positive' ? 'usefulness_positive' : 'usefulness_negative' }, true);
-    setMessage(saved ? 'Thanks, your feedback helps us improve WildNews.' : 'Your choice is saved on this device. We could not send it just now.');
+    await recordContentInteraction({ eventId, storyId, eventType: nextChoice === 'positive' ? 'usefulness_positive' : 'usefulness_negative' }, true);
   }
 
   return <section className="content-feedback" aria-labelledby={`content-feedback-${storyId}`}>
@@ -43,6 +40,5 @@ export function ContentFeedback({ storyId, contentLabel }: { storyId: string; co
       <button type="button" className={choice === 'positive' ? 'selected' : ''} aria-label={`Yes, this ${contentLabel} was useful`} title="Useful" aria-pressed={choice === 'positive'} onClick={() => submit('positive')}><ThumbsUp aria-hidden="true" /></button>
       <button type="button" className={choice === 'negative' ? 'selected' : ''} aria-label={`No, this ${contentLabel} was not useful`} title="Not useful" aria-pressed={choice === 'negative'} onClick={() => submit('negative')}><ThumbsDown aria-hidden="true" /></button>
     </div>
-    <output aria-live="polite">{message}</output>
   </section>;
 }
