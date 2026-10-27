@@ -31,7 +31,7 @@ const sources: DigestSourceStory[] = Array.from({ length: 5 }, (_, index) => ({
 void test('Buffer payload preserves validated copy, canonical URL and publishing mode', () => {
   const payload = buildSocialDistributionPayload({
     deliveryId: 'delivery-1',
-    text: '🌿 A grounded social briefing.\n\nRead the latest WildNews daily digest: https://news.wildteam.org.uk/daily-digest/2026-10-26',
+    text: '🌿 A grounded social briefing.\n\n📰 Read the latest WildNews daily digest: https://news.wildteam.org.uk/daily-digest/2026-10-26',
     publicUrl: 'https://news.wildteam.org.uk/daily-digest/2026-10-26',
     imageUrl: 'https://images.example.org/digest.jpg',
     mode: 'shareNow',

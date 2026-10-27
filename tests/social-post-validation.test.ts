@@ -39,10 +39,10 @@ void test('accepts a substantive daily editorial post', () => {
     featured_story_ids: ['story-1', 'story-2', 'story-3', 'story-4'],
     opening: '🌊 Pollution findings are putting the distance between environmental rules and practical protection under sharper scrutiny.',
     paragraphs: [
-      'Oil reached beaches in the UAE, where coastal closures, containment and assessment work followed. The available reporting did not establish the full ecological impact, so the condition of nearby sensitive habitats remained uncertain.',
-      'In Zambia, early tests found elevated turbidity and conductivity after a discharge reached streams connected to the Kafue River. Heavy-metal results were still pending, while the mine operator disputed responsibility.',
-      'In England, the High Court found that Natural England had not taken sufficient active steps to protect Catfield Fen from nutrient pollution. The judgment did not prescribe the response or show that the fen had recovered.',
-      'A Cornwall trial also found fewer auk captures when fishing vessels used kites or eye-patterned buoys. It was an encouraging result, but wider testing is still needed before the approach can be treated as proven across fisheries.',
+      '🏖️ Oil reached beaches in the UAE, where coastal closures, containment and assessment work followed. The available reporting did not establish the full ecological impact, so the condition of nearby sensitive habitats remained uncertain.',
+      '🧪 In Zambia, early tests found elevated turbidity and conductivity after a discharge reached streams connected to the Kafue River. Heavy-metal results were still pending, while the mine operator disputed responsibility.',
+      '⚖️ In England, the High Court found that Natural England had not taken sufficient active steps to protect Catfield Fen from nutrient pollution. The judgment did not prescribe the response or show that the fen had recovered.',
+      '🐦 A Cornwall trial also found fewer auk captures when fishing vessels used kites or eye-patterned buoys. It was an encouraging result, but wider testing is still needed before the approach can be treated as proven across fisheries.',
     ],
     hashtags: ['#WildNews', '#Conservation', '#Wildlife'],
   };
@@ -61,10 +61,10 @@ void test('treats the target length as guidance while retaining a 300-word safet
     featured_story_ids: ['story-1', 'story-2', 'story-3'],
     opening: '🌱 A closely watched recovery effort is revealing how much patient evidence matters for conservation decisions.',
     paragraphs: [
-      'Researchers recorded a meaningful change at the first site, while stressing that the result remains preliminary and needs further monitoring before it can demonstrate lasting recovery. The work offers a useful indication of progress without resolving the larger question of whether the intervention will remain effective across seasons, habitats and different operating conditions.',
-      'A second project reached an important implementation milestone after local partners completed the planned fieldwork. Its published evidence describes what was delivered and the immediate observations, but it does not yet establish the longer-term ecological outcome or show that the same approach would work elsewhere without adaptation.',
-      'Elsewhere, a proposed protection measure moved into consultation. The proposal could alter how damaging activity is managed if adopted, although the available material does not confirm its final form, timetable or practical effect. Those distinctions matter when early policy movement is reported alongside completed conservation action.',
-      'Taken together, the developments show why credible progress depends on distinguishing encouraging signals, completed work and confirmed outcomes. Each can be important, but they answer different questions and require different evidence before stronger conclusions are justified. Continued reporting will be especially useful where ecological responses unfold slowly and initial observations cannot yet resolve the central conservation question.',
+      '🔬 Researchers recorded a meaningful change at the first site, while stressing that the result remains preliminary and needs further monitoring before it can demonstrate lasting recovery. The work offers a useful indication of progress without resolving the larger question of whether the intervention will remain effective across seasons, habitats and different operating conditions.',
+      '🛠️ A second project reached an important implementation milestone after local partners completed the planned fieldwork. Its published evidence describes what was delivered and the immediate observations, but it does not yet establish the longer-term ecological outcome or show that the same approach would work elsewhere without adaptation.',
+      '📋 Elsewhere, a proposed protection measure moved into consultation. The proposal could alter how damaging activity is managed if adopted, although the available material does not confirm its final form, timetable or practical effect. Those distinctions matter when early policy movement is reported alongside completed conservation action.',
+      '📊 Taken together, the developments show why credible progress depends on distinguishing encouraging signals, completed work and confirmed outcomes. Each can be important, but they answer different questions and require different evidence before stronger conclusions are justified. Continued reporting will be especially useful where ecological responses unfold slowly and initial observations cannot yet resolve the central conservation question.',
     ],
     hashtags: ['#WildNews', '#Conservation'],
   };
@@ -91,14 +91,14 @@ void test('accepts a reflective weekly editorial post', () => {
   const draft: SocialPostDraft = {
     approach: 'thematic',
     featured_story_ids: ['story-1', 'story-2', 'story-3', 'story-4', 'story-5'],
-    opening: '🌳 Some of conservation’s most encouraging numbers also carried the strongest reasons to look beyond a headline result.',
+    opening: '📊 Some of conservation’s most encouraging numbers also carried the strongest reasons to look beyond a headline result.',
     paragraphs: [
-      'Brazil recorded the lowest annual deforestation figures in its monitoring series for the Amazon and Cerrado. The decline was substantial, although the measure did not capture every form of degradation or establish which policies caused the change.',
+      '🌳 Brazil recorded the lowest annual deforestation figures in its monitoring series for the Amazon and Cerrado. The decline was substantial, although the measure did not capture every form of degradation or establish which policies caused the change.',
       '🪸 A global coral assessment classified most shallow-water reef regions as facing a high risk of collapse when projected heat stress was included. That classification described risk under a specified scenario, not reefs that had already collapsed.',
-      'Captive-origin cheetahs reproduced after phased releases in South Africa, with 33 independent descendants joining the managed metapopulation. That is an encouraging milestone, but reproduction alone does not demonstrate long-term population recovery.',
-      'A Peru pilot associated unconditional payments and voluntary training with improved household wellbeing and greater reported participation in conservation practices. It did not directly measure forest condition or separate the effects of cash from training.',
-      'Four responders died and two were severely burned while fighting a wildfire in Mount Bromo National Park. The cause and circumstances remained under investigation, underlining that conservation delivery must account for people’s safety as well as intended environmental benefits.',
-      'Across these developments, the practical lesson is consistent: indicators, births and promising interventions matter, but monitoring must still show whether they lead to durable ecological outcomes and whether an approach works at the scale claimed.',
+      '🐆 Captive-origin cheetahs reproduced after phased releases in South Africa, with 33 independent descendants joining the managed metapopulation. That is an encouraging milestone, but reproduction alone does not demonstrate long-term population recovery.',
+      '💵 A Peru pilot associated unconditional payments and voluntary training with improved household wellbeing and greater reported participation in conservation practices. It did not directly measure forest condition or separate the effects of cash from training.',
+      '🔥 Four responders died and two were severely burned while fighting a wildfire in Mount Bromo National Park. The cause and circumstances remained under investigation, underlining that conservation delivery must account for people’s safety as well as intended environmental benefits.',
+      '🔎 Across these developments, the practical lesson is consistent: indicators, births and promising interventions matter, but monitoring must still show whether they lead to durable ecological outcomes and whether an approach works at the scale claimed.',
     ],
     hashtags: ['#WildNews', '#Conservation', '#Biodiversity'],
   };
@@ -122,7 +122,7 @@ void test('rejects generic, relative and unsupported social formatting', () => {
   assert.ok(issues.some((issue) => issue.includes('inappropriate reaction')));
 });
 
-void test('requires one opening emoji and limits optional body emojis', () => {
+void test('requires one distinct leading emoji in every editorial paragraph', () => {
   const dailyInput = input('daily', 3);
   const draft: SocialPostDraft = {
     approach: 'news_briefing',
@@ -134,9 +134,11 @@ void test('requires one opening emoji and limits optional body emojis', () => {
     ],
     hashtags: ['#WildNews', '#Conservation'],
   };
-  assert.ok(validateSocialPostDraft(draft, dailyInput).some((issue) => issue.includes('opening must contain one')));
-  const crowded = { ...draft, opening: '🌱 A habitat recovery programme has reached its first monitoring milestone after an extended field season.', paragraphs: ['🌳 🐘 Researchers recorded the first set of results while stressing that longer monitoring is needed before drawing conclusions about recovery.', '🌊 A second team completed planned restoration work, but the available evidence does not yet establish the ecological outcome.'] };
-  const issues = validateSocialPostDraft(crowded, dailyInput);
-  assert.ok(issues.some((issue) => issue.includes('more than three')));
-  assert.ok(issues.some((issue) => issue.includes('more than one emoji')));
+  assert.ok(validateSocialPostDraft(draft, dailyInput).some((issue) => issue.includes('Every editorial paragraph must begin')));
+  const misplaced = { ...draft, opening: 'A 🌱 habitat recovery programme has reached its first monitoring milestone after an extended field season.', paragraphs: ['🌳 Researchers recorded the first set of results while stressing that longer monitoring is needed before drawing conclusions about recovery.', '🌊 A second team completed planned restoration work, but the available evidence does not yet establish the ecological outcome.'] };
+  assert.ok(validateSocialPostDraft(misplaced, dailyInput).some((issue) => issue.includes('must begin')));
+  const repeated = { ...draft, opening: '🌱 A habitat recovery programme has reached its first monitoring milestone after an extended field season.', paragraphs: ['🌱 Researchers recorded the first set of results while stressing that longer monitoring is needed before drawing conclusions about recovery.', '🌊 A second team completed planned restoration work, but the available evidence does not yet establish the ecological outcome.'] };
+  assert.ok(validateSocialPostDraft(repeated, dailyInput).some((issue) => issue.includes('different relevant emoji')));
+  const unrelatedFire = { ...draft, opening: '🔥 A habitat recovery programme has reached its first monitoring milestone after an extended field season.', paragraphs: ['🌳 Researchers recorded the first set of results while stressing that longer monitoring is needed before drawing conclusions about recovery.', '🌊 A second team completed planned restoration work, but the available evidence does not yet establish the ecological outcome.'] };
+  assert.ok(validateSocialPostDraft(unrelatedFire, dailyInput).some((issue) => issue.includes('fire emoji')));
 });

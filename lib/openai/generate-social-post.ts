@@ -5,8 +5,8 @@ import { estimateLunaTokenCost } from '@/lib/openai/pricing';
 import { getOpenAIClient } from './client';
 
 const MODEL = 'gpt-6-luna';
-export const SOCIAL_GENERATION_PROMPT_VERSION = 'social-editor-v3';
-export const SOCIAL_REVIEW_PROMPT_VERSION = 'social-review-v4';
+export const SOCIAL_GENERATION_PROMPT_VERSION = 'social-editor-v4';
+export const SOCIAL_REVIEW_PROMPT_VERSION = 'social-review-v5';
 
 export class SocialEditorialValidationError extends Error {}
 
@@ -113,10 +113,14 @@ function emojiCount(value: string) {
   return (value.match(/\p{Extended_Pictographic}/gu) ?? []).length;
 }
 
+function leadingEmoji(value: string) {
+  return value.match(/^\p{Extended_Pictographic}/u)?.[0] ?? null;
+}
+
 const INAPPROPRIATE_REACTION_EMOJI = /[\u{1F600}-\u{1F64F}\u{1F910}-\u{1F92F}\u{1FAE0}-\u{1FAE8}\u{1F389}\u{1F38A}\u{1F44F}\u{1F44D}\u{2764}\u{1F495}-\u{1F49F}]/u;
 
 function digestLinkLabel(type: DigestType) {
-  return `Read the latest WildNews ${type} digest:`;
+  return `📰 Read the latest WildNews ${type} digest:`;
 }
 
 export function socialDigestLinkLine(input: Pick<SocialEditorialInput, 'type' | 'canonicalUrl'>) {
@@ -166,11 +170,14 @@ export function validateSocialPostDraft(draft: SocialPostDraft, input: SocialEdi
   if (/https?:\/\//i.test(prose)) issues.push('The generated editorial fields must not contain a URL.');
   if (/\*\*|__|\[[^\]]+\]\([^)]+\)|^#{1,6}\s/m.test(prose)) issues.push('The post contains unsupported Markdown formatting.');
   if (prose.includes('—')) issues.push('The post contains an em dash.');
-  const openingEmojiCount = emojiCount(draft.opening);
-  const bodyEmojiCount = draft.paragraphs.reduce((total, paragraph) => total + emojiCount(paragraph), 0);
-  if (openingEmojiCount !== 1) issues.push('The opening must contain one relevant editorial emoji.');
-  if (openingEmojiCount + bodyEmojiCount > 3) issues.push('The post uses more than three emojis.');
-  if (draft.paragraphs.some((paragraph) => emojiCount(paragraph) > 1)) issues.push('A body paragraph uses more than one emoji.');
+  const editorialParagraphs = [draft.opening, ...draft.paragraphs];
+  const paragraphEmojis = editorialParagraphs.map(leadingEmoji);
+  if (editorialParagraphs.some((paragraph) => !leadingEmoji(paragraph))) issues.push('Every editorial paragraph must begin with a relevant emoji.');
+  if (editorialParagraphs.some((paragraph) => emojiCount(paragraph) !== 1)) issues.push('Every editorial paragraph must contain exactly one emoji.');
+  if (paragraphEmojis.every(Boolean) && new Set(paragraphEmojis).size !== paragraphEmojis.length) issues.push('Each editorial paragraph must use a different relevant emoji.');
+  if (editorialParagraphs.some((paragraph) => leadingEmoji(paragraph) === '🔥' && !/\b(?:fire|fires|wildfire|wildfires|burn|burned|burning|blaze)\b/i.test(paragraph))) issues.push('The fire emoji may only introduce a paragraph specifically about fire or burning.');
+  const recentOpeningEmojis = new Set(input.recentPosts.slice(0, 3).flatMap((post) => leadingEmoji(post.split(/\n+/).find(Boolean) ?? '') ?? []));
+  if (paragraphEmojis[0] && recentOpeningEmojis.has(paragraphEmojis[0])) issues.push('The opening emoji repeats one of the three most recent social posts.');
   if (INAPPROPRIATE_REACTION_EMOJI.test(prose)) issues.push('The post uses an inappropriate reaction, facial or celebratory emoji.');
   if (draft.hashtags.some((hashtag) => prose.includes(hashtag))) issues.push('Hashtags must be kept in the dedicated closing line.');
 
@@ -209,7 +216,7 @@ The post must be useful to a reader who never clicks. Lead with the news, never 
 
 Write short paragraphs suitable for LinkedIn. Aim for ${type === 'weekly' ? '180–250' : '120–180'} words across the opening and body paragraphs, allowing for a short application-supplied digest link. This is an editorial target rather than a rigid quota, but the complete editorial copy must never exceed 300 words. Do not use Markdown, a URL or image attribution. Supply two or three relevant hashtags, including #WildNews.
 
-Use exactly one highly relevant editorial emoji in the opening paragraph. Choose it from the actual lead story, such as the featured species, habitat, weather event or conservation subject. You may use up to two additional relevant emojis across the body, no more than one in any paragraph, only when they improve scanning. Do not add an emoji to every paragraph. Never use facial-expression, laughing, crying, angry, romantic, applause, thumbs-up or celebratory emojis. Do not use an emoji to make loss, harm or uncertainty feel playful.
+Begin the opening and every body paragraph with exactly one highly relevant editorial emoji followed by a space. Choose each emoji from the subject of its own paragraph, such as the featured species, habitat, research, policy, place, weather event or conservation action. Use a different emoji for every paragraph and vary the opening emoji from recent posts. Never place an emoji in the middle or at the end of a paragraph. Never default to 🔥: use it only when that paragraph is specifically about fire, wildfire or burning. Never use facial-expression, laughing, crying, angry, romantic, applause, thumbs-up or celebratory emojis. Do not use an emoji to make loss, harm or uncertainty feel playful.
 
 Do not use relative phrases such as “today” or “this week”, because a provider retry may happen later. The application adds the canonical digest invitation immediately after the opening, so do not write a call to action or mention the URL yourself.
 
@@ -224,7 +231,7 @@ Every factual claim must be supported by the supplied evidence. Do not add outsi
 
 You may return the draft unchanged as approved, or revise it to fix a real defect. A revision may only rephrase, remove or reorganise evidence already supplied. It must not add facts. Record concise issues that caused a revision. Create one claim_support entry for every factual opening or body paragraph in the final post. In each entry, copy the complete final paragraph verbatim into claim and provide every source-story ID that supports that paragraph. Do not summarise, paraphrase, label or combine paragraphs in claim_support. Hashtags do not need claim-support entries.
 
-Keep the same output constraints: professional British English, aim for the requested editorial word range but never exceed 300 words, no Markdown, no URL, no image attribution, no em dash, no relative date language, two or three hashtags including #WildNews, and a useful post rather than a digest announcement. Require exactly one highly relevant, non-reaction emoji in the opening and permit no more than two additional relevant body emojis. Remove any emoji that is tonally inappropriate, playful about harm, generic or unrelated to its paragraph. The application supplies the digest invitation, so the post must not add one. Return only the requested structured data.`);
+Keep the same output constraints: professional British English, aim for the requested editorial word range but never exceed 300 words, no Markdown, no URL, no image attribution, no em dash, no relative date language, two or three hashtags including #WildNews, and a useful post rather than a digest announcement. Require the opening and every body paragraph to begin with exactly one relevant, non-reaction emoji followed by a space. Every paragraph must use a different emoji grounded in that paragraph's subject. An emoji in the middle or at the end is invalid. Never default to 🔥, and retain it only for a paragraph specifically about fire, wildfire or burning. Remove or replace any emoji that is tonally inappropriate, playful about harm, generic, repeated or unrelated to its paragraph. The application supplies the 📰 digest invitation, so the post must not add one. Return only the requested structured data.`);
 
 export async function generateSocialEditorial(input: SocialEditorialInput): Promise<SocialEditorialResult> {
   if (!input.stories.length) throw new SocialEditorialValidationError('Social editorial generation requires source-story evidence.');
