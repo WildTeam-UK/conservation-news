@@ -71,3 +71,20 @@ pnpm build
 
 For public UI changes, also inspect representative desktop, tablet and mobile layouts. For pipeline, database, authentication or scheduling changes, verify the relevant admin workflow and preserve resumability, leases and cost safeguards.
 
+## WildTeam ecosystem context
+
+The canonical cross-application architecture and standards live in the private `WildTeam-UK/wildteam-shared` repository.
+
+If `wildteam-shared` is attached to the current Codex project or is available as the sibling folder `../wildteam-shared`, read its `AGENTS.md` and the relevant documents under `docs/` and `standards/` before cross-application work. Do not assume that external folder is available in every environment.
+
+When the shared repository is unavailable, preserve these boundaries:
+
+- WildJobs owns conservation jobs, career profiles and job preferences.
+- LearnWorlds at `training.wildteam.org.uk` owns learner accounts, purchases, progress, certificates and course access.
+- Brevo is the intended system of record for marketing subscriptions and consent evidence.
+- WildTeam Marketing owns advertising, analytics configuration and conversion optimisation.
+- A future WildTeam Dashboard may consume documented integrations and derived reporting data but does not own WildNews editorial records.
+- A future WildTeam Account may manage central identity and verified account links. WildNews admin authentication is not the ecosystem identity model.
+
+Do not create cross-application contracts or move WildNews responsibilities into shared code without reviewing the canonical shared architecture.
+
