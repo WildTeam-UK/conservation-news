@@ -8,7 +8,7 @@ import type { ResearchClaim, ResearchContent } from '@/lib/openai/research-story
 import { requireContentAdmin } from '@/lib/supabase/require-admin';
 import { sourceRelationName } from '@/lib/supabase/relations';
 import { londonMediumDateFormatter } from '@/lib/date-format';
-import { candidateRankingSettings, compareRankedCandidates, rankCandidate, type CandidateRanking } from '@/lib/candidate-ranking';
+import { candidateRankingSettings, compareRankedCandidates, meetsCandidateAutomationThresholds, rankCandidate, type CandidateRanking } from '@/lib/candidate-ranking';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,13 +113,15 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
       .eq('status', 'selected')
       .order('created_at', { ascending: false }),
     supabase.from('story_clusters').select('*', { count: 'exact', head: true }).eq('status', 'rejected'),
-    supabase.from('editorial_run_settings').select('candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).single(),
+    supabase.from('editorial_run_settings').select('candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus, min_auto_publish_overall_score, min_auto_publish_evidence_score').eq('id', true).single(),
   ]);
 
   if (candidatesResult.error) throw new Error('Unable to load assessed candidates.');
   if (settingsResult.error) throw new Error('Unable to load candidate ranking settings.');
 
   const rankingSettings = candidateRankingSettings(settingsResult.data);
+  const minimumOverall = Number(settingsResult.data.min_auto_publish_overall_score ?? 55);
+  const minimumEvidence = Number(settingsResult.data.min_auto_publish_evidence_score ?? 40);
   const rankedCandidates: RankedCandidate[] = ((candidatesResult.data ?? []) as Candidate[]).map((candidate) => ({ ...candidate, ranking: rankCandidate(candidate, rankingSettings) }));
   const staleCandidates = rankedCandidates.filter((candidate) => !candidate.ranking.isFresh);
   const candidates = rankedCandidates.filter((candidate) => candidate.ranking.isFresh).sort((a, b) => {
@@ -209,11 +211,13 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
               const sources = sourceMap.get(candidate.id) ?? [];
               const research = researchMap.get(candidate.id);
               const draftId = draftMap.get(candidate.id);
+              const meetsQualityThresholds = meetsCandidateAutomationThresholds(candidate, minimumOverall, minimumEvidence);
+              const hasTooFewResearchedSources = research?.status === 'completed' && (research.content?.sources.length ?? 0) < 3;
               return (
                 <article className="candidate-card" id={`candidate-${candidate.id}`} key={candidate.id}>
                   <div className="candidate-rank"><span>Position</span><strong>{index + 1}</strong></div>
                   <div className="candidate-main">
-                    <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span><span className="candidate-freshness-label"><ClockAlert /> Latest source {londonMediumDateFormatter.format(new Date(candidate.ranking.latestSourceAt))} · {candidate.ranking.completeAgeDays ? `${candidate.ranking.completeAgeDays} complete ${candidate.ranking.completeAgeDays === 1 ? 'day' : 'days'} old` : 'less than a day old'}</span></div>
+                    <div className="candidate-labels"><span>{assessment.primary_topic ?? 'Conservation'}</span><span><ShieldCheck /> AI recommendation</span>{!meetsQualityThresholds ? <span className="candidate-threshold-label"><ClockAlert /> Below automatic quality threshold</span> : null}{hasTooFewResearchedSources ? <span className="candidate-threshold-label"><ClockAlert /> Below automatic source requirement</span> : null}<span className="candidate-freshness-label"><ClockAlert /> Latest source {londonMediumDateFormatter.format(new Date(candidate.ranking.latestSourceAt))} · {candidate.ranking.completeAgeDays ? `${candidate.ranking.completeAgeDays} complete ${candidate.ranking.completeAgeDays === 1 ? 'day' : 'days'} old` : 'less than a day old'}</span></div>
                     <h2>{candidate.working_title}</h2>
                     {assessment.rationale ? <p>{assessment.rationale}</p> : null}
                     <div className="candidate-sources">
@@ -238,7 +242,7 @@ export default async function CandidatesPage({ searchParams }: CandidatesPagePro
           </section>
         )}
 
-        <p className="candidate-rejected-note">Scores lose {rankingSettings.freshnessDecayPerDay} points per complete day. Wildlife candidates receive a {rankingSettings.wildlifeBonus}-point relevance bonus. {staleCandidates.length} {staleCandidates.length === 1 ? 'candidate is' : 'candidates are'} older than {rankingSettings.freshnessDays} days and hidden from this active workspace. {rejectedResult.count ?? 0} assessed {rejectedResult.count === 1 ? 'story was' : 'stories were'} not selected. All remain recorded for audit.</p>
+        <p className="candidate-rejected-note">Automatic research requires an overall score of at least {minimumOverall} and an evidence score of at least {minimumEvidence}. Lower-scoring candidates remain available for manual review. Scores lose {rankingSettings.freshnessDecayPerDay} points per complete day. Wildlife candidates receive a {rankingSettings.wildlifeBonus}-point relevance bonus. {staleCandidates.length} {staleCandidates.length === 1 ? 'candidate is' : 'candidates are'} older than {rankingSettings.freshnessDays} days and hidden from this active workspace. {rejectedResult.count ?? 0} assessed {rejectedResult.count === 1 ? 'story was' : 'stories were'} not selected. All remain recorded for audit.</p>
       </div>
     </main>
   );

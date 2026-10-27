@@ -17,6 +17,8 @@ export async function PATCH(request: Request) {
     candidateFreshnessDays?: number;
     candidateFreshnessDecayPerDay?: number;
     candidateWildlifeBonus?: number;
+    minOverallScore?: number;
+    minEvidenceScore?: number;
   } | null;
   const dailyArticleTarget = Number(body?.dailyArticleTarget);
   const maxEstimatedCostUsd = Number(body?.maxEstimatedCostUsd);
@@ -24,6 +26,8 @@ export async function PATCH(request: Request) {
   const candidateFreshnessDays = Number(body?.candidateFreshnessDays);
   const candidateFreshnessDecayPerDay = Number(body?.candidateFreshnessDecayPerDay);
   const candidateWildlifeBonus = Number(body?.candidateWildlifeBonus);
+  const minimumOverall = Number(body?.minOverallScore);
+  const minimumEvidence = Number(body?.minEvidenceScore);
 
   if (typeof body?.automationEnabled !== 'boolean' || typeof body?.autoCoverageUpdatesEnabled !== 'boolean' || !isTime(dailyRunTime)) {
     return Response.json({ error: 'Choose a valid automation status and daily run time.' }, { status: 400 });
@@ -43,6 +47,9 @@ export async function PATCH(request: Request) {
   if (!Number.isFinite(candidateWildlifeBonus) || candidateWildlifeBonus < 0 || candidateWildlifeBonus > 10) {
     return Response.json({ error: 'The wildlife bonus must be between 0 and 10 points.' }, { status: 400 });
   }
+  if (!Number.isInteger(minimumOverall) || minimumOverall < 0 || minimumOverall > 100 || !Number.isInteger(minimumEvidence) || minimumEvidence < 0 || minimumEvidence > 100) {
+    return Response.json({ error: 'Candidate quality thresholds must be whole numbers between 0 and 100.' }, { status: 400 });
+  }
 
   const { error } = await supabase.from('editorial_run_settings').upsert({
     id: true,
@@ -56,6 +63,8 @@ export async function PATCH(request: Request) {
     candidate_freshness_days: candidateFreshnessDays,
     candidate_freshness_decay_per_day: Math.round(candidateFreshnessDecayPerDay * 100) / 100,
     candidate_wildlife_bonus: Math.round(candidateWildlifeBonus * 100) / 100,
+    min_auto_publish_overall_score: minimumOverall,
+    min_auto_publish_evidence_score: minimumEvidence,
     updated_by: user.id,
   });
   if (error) {

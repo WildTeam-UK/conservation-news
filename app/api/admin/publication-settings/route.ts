@@ -13,27 +13,17 @@ export async function PATCH(request: Request) {
     autoPublishEnabled?: boolean;
     publishWindowStart?: string;
     publishWindowEnd?: string;
-    minOverallScore?: number;
-    minEvidenceScore?: number;
   } | null;
   const start = body?.publishWindowStart?.slice(0, 5) ?? '';
   const end = body?.publishWindowEnd?.slice(0, 5) ?? '';
-  const minimumOverall = Number(body?.minOverallScore);
-  const minimumEvidence = Number(body?.minEvidenceScore);
 
   if (typeof body?.autoPublishEnabled !== 'boolean' || !isTime(start) || !isTime(end) || end <= start) {
     return Response.json({ error: 'Choose valid publishing hours with the end later than the start.' }, { status: 400 });
   }
-  if (!Number.isInteger(minimumOverall) || minimumOverall < 0 || minimumOverall > 100 || !Number.isInteger(minimumEvidence) || minimumEvidence < 0 || minimumEvidence > 100) {
-    return Response.json({ error: 'Quality thresholds must be whole numbers between 0 and 100.' }, { status: 400 });
-  }
-
   const { error } = await supabase.from('editorial_run_settings').update({
     auto_publish_enabled: body.autoPublishEnabled,
     publish_window_start: `${start}:00`,
     publish_window_end: `${end}:00`,
-    min_auto_publish_overall_score: minimumOverall,
-    min_auto_publish_evidence_score: minimumEvidence,
     updated_by: user.id,
   }).eq('id', true);
   if (error) {

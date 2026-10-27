@@ -68,7 +68,7 @@ export default async function AdminDashboard() {
     supabase.from('stories').select('id, headline, taxonomy_review_reason', { count: 'exact' }).eq('taxonomy_review_required', true).in('status', ['draft', 'published']).order('updated_at', { ascending: false }).limit(4),
     supabase.from('story_cluster_updates').select('cluster_id, automation_attempt_count, automation_last_error').eq('status', 'pending_review'),
     supabase.from('story_editorial_revisions').select('story_id, created_by, automation_attempt_count, automation_last_error').eq('status', 'draft'),
-    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, auto_coverage_updates_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).maybeSingle(),
+    supabase.from('editorial_run_settings').select('max_new_drafts, max_estimated_cost_usd, automation_enabled, auto_coverage_updates_enabled, daily_run_time, automation_timezone, last_automation_tick_at, last_automation_error, auto_publish_enabled, publish_window_start, publish_window_end, candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus, min_auto_publish_overall_score, min_auto_publish_evidence_score').eq('id', true).maybeSingle(),
     supabase.from('editorial_runs').select('id, trigger_type, status, max_new_drafts, estimated_cost_usd, drafts_created, candidates_selected, failures, created_at, completed_at').order('created_at', { ascending: false }).limit(5),
     supabase.from('editorial_runs').select('id').eq('status', 'running').maybeSingle(),
     supabase.from('ingestion_runs').select('id, status, sources_checked, items_found, items_new, error_summary, created_at').order('created_at', { ascending: false }).limit(1),
@@ -172,6 +172,8 @@ export default async function AdminDashboard() {
               defaultCandidateFreshnessDays={Number(settings?.candidate_freshness_days ?? 7)}
               defaultCandidateFreshnessDecayPerDay={Number(settings?.candidate_freshness_decay_per_day ?? 2)}
               defaultCandidateWildlifeBonus={Number(settings?.candidate_wildlife_bonus ?? 3)}
+              defaultMinimumOverall={Number(settings?.min_auto_publish_overall_score ?? 55)}
+              defaultMinimumEvidence={Number(settings?.min_auto_publish_evidence_score ?? 40)}
               lastAutomationTickAt={settings?.last_automation_tick_at ?? null}
               lastAutomationError={settings?.last_automation_error ?? null}
               hasActiveRun={Boolean(activeRunResult.data)}

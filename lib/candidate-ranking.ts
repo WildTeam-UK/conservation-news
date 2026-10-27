@@ -18,6 +18,11 @@ export type RankableCandidate = {
   last_source_at: string | null;
 };
 
+export type CandidateQualityScores = {
+  overall_score: number | null;
+  evidence_score: number | null;
+};
+
 export type CandidateRanking = {
   effectiveScore: number;
   completeAgeDays: number;
@@ -93,4 +98,17 @@ export function compareRankedCandidates<
     Number(b.relevance_score ?? 0) - Number(a.relevance_score ?? 0) ||
     b.ranking.latestSourceAt - a.ranking.latestSourceAt
   );
+}
+
+export function meetsCandidateAutomationThresholds(
+  candidate: CandidateQualityScores,
+  minimumOverall: number,
+  minimumEvidence: number,
+) {
+  return Number(candidate.overall_score ?? 0) >= minimumOverall
+    && Number(candidate.evidence_score ?? 0) >= minimumEvidence;
+}
+
+export function hasSufficientAutomaticSources(sourceCount: number) {
+  return sourceCount >= 3;
 }

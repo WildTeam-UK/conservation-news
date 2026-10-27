@@ -8,7 +8,7 @@ import { enrichSourceSuggestionDescriptions, rebuildSourceSuggestionsFromResearc
 import { refreshSourceIntelligence } from '@/lib/source-intelligence';
 import { getSupabaseAdminClient } from '@/lib/supabase/admin';
 import { firstRelation } from '@/lib/supabase/relations';
-import { candidateRankingSettings, compareRankedCandidates, rankCandidate } from '@/lib/candidate-ranking';
+import { candidateRankingSettings, compareRankedCandidates, hasSufficientAutomaticSources, meetsCandidateAutomationThresholds, rankCandidate } from '@/lib/candidate-ranking';
 
 const ASSESSMENT_RESERVE_USD = 0.03;
 const RESEARCH_RESERVE_USD = 0.06;
@@ -79,19 +79,20 @@ function itemTitle(item: RunItem) {
 type RankedCandidate = {
   id: string;
   overall_score: number | null;
+  evidence_score: number | null;
   relevance_score: number | null;
   assessment: { primary_topic?: string } | null;
   created_at: string;
   last_source_at: string | null;
 };
 
-async function selectRecentUndraftedCandidates(limit: number) {
+async function selectRecentUndraftedCandidates(limit: number, excludedClusterIds: string[] = []) {
   const supabase = getSupabaseAdminClient();
-  const settingsRequest = supabase.from('editorial_run_settings').select('candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus').eq('id', true).single();
+  const settingsRequest = supabase.from('editorial_run_settings').select('candidate_freshness_days, candidate_freshness_decay_per_day, candidate_wildlife_bonus, min_auto_publish_overall_score, min_auto_publish_evidence_score').eq('id', true).single();
   const candidates: RankedCandidate[] = [];
   const pageSize = 1000;
   for (let from = 0; ; from += pageSize) {
-    const { data, error } = await supabase.from('story_clusters').select('id, overall_score, relevance_score, assessment, created_at, last_source_at').eq('status', 'selected').range(from, from + pageSize - 1);
+    const { data, error } = await supabase.from('story_clusters').select('id, overall_score, evidence_score, relevance_score, assessment, created_at, last_source_at').eq('status', 'selected').range(from, from + pageSize - 1);
     if (error) throw error;
     const page = (data ?? []) as RankedCandidate[];
     candidates.push(...page);
@@ -100,21 +101,40 @@ async function selectRecentUndraftedCandidates(limit: number) {
   const { data: settingsRow, error: settingsError } = await settingsRequest;
   if (settingsError) throw settingsError;
   const settings = candidateRankingSettings(settingsRow);
-  if (!candidates.length) return { candidates: [], settings };
-  const ranked = candidates.map((candidate) => ({ ...candidate, ranking: rankCandidate(candidate, settings) })).filter((candidate) => candidate.ranking.isFresh).sort(compareRankedCandidates);
+  const minimumOverall = Number(settingsRow.min_auto_publish_overall_score ?? 55);
+  const minimumEvidence = Number(settingsRow.min_auto_publish_evidence_score ?? 40);
+  if (!candidates.length) return { candidates: [], settings, minimumOverall, minimumEvidence };
+  const excluded = new Set(excludedClusterIds);
+  const ranked = candidates
+    .map((candidate) => ({ ...candidate, ranking: rankCandidate(candidate, settings) }))
+    .filter((candidate) => candidate.ranking.isFresh
+      && !excluded.has(candidate.id)
+      && meetsCandidateAutomationThresholds(candidate, minimumOverall, minimumEvidence))
+    .sort(compareRankedCandidates);
   const shortlist: typeof ranked = [];
   const safeLimit = Math.max(1, Math.min(25, limit));
   for (let from = 0; from < ranked.length && shortlist.length < safeLimit; from += 100) {
     const page = ranked.slice(from, from + 100);
-    const { data: existingStories, error: storyError } = await supabase.from('stories').select('cluster_id').in('cluster_id', page.map((candidate) => candidate.id));
+    const pageIds = page.map((candidate) => candidate.id);
+    const [{ data: existingStories, error: storyError }, { data: completedResearch, error: researchError }] = await Promise.all([
+      supabase.from('stories').select('cluster_id').in('cluster_id', pageIds),
+      supabase.from('research_packs').select('cluster_id, content').in('cluster_id', pageIds).eq('status', 'completed'),
+    ]);
     if (storyError) throw storyError;
+    if (researchError) throw researchError;
     const draftedIds = new Set((existingStories ?? []).flatMap((story) => story.cluster_id ? [story.cluster_id] : []));
-    shortlist.push(...page.filter((candidate) => !draftedIds.has(candidate.id)).slice(0, safeLimit - shortlist.length));
+    const sourceLimitedIds = new Set((completedResearch ?? []).flatMap((pack) => {
+      const sources = (pack.content as { sources?: unknown[] } | null)?.sources;
+      return Array.isArray(sources) && !hasSufficientAutomaticSources(sources.length) ? [pack.cluster_id] : [];
+    }));
+    shortlist.push(...page.filter((candidate) => !draftedIds.has(candidate.id) && !sourceLimitedIds.has(candidate.id)).slice(0, safeLimit - shortlist.length));
   }
 
   return {
     candidates: shortlist,
     settings,
+    minimumOverall,
+    minimumEvidence,
   };
 }
 
@@ -338,7 +358,7 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
     const remainingCapacity = await remainingPublicationCapacityToday(run.max_new_drafts);
     const shortlistResult = remainingCapacity > 0
       ? await selectRecentUndraftedCandidates(remainingCapacity)
-      : { candidates: [], settings: candidateRankingSettings(null) };
+      : { candidates: [], settings: candidateRankingSettings(null), minimumOverall: 55, minimumEvidence: 40 };
     const shortlist = shortlistResult.candidates;
     if (shortlist.length) {
       const { error: itemError } = await supabase.from('editorial_run_items').insert(shortlist.map((candidate, index) => ({
@@ -360,7 +380,7 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
     await addEvent(run.id, 'assessing', remainingCapacity > 0
       ? `Assessed ${result.assessedItems} new items, then selected the top ${shortlist.length} recent undrafted candidates for today's remaining capacity.`
       : `Assessed ${result.assessedItems} new items; today's article target was already filled.`, {
-      details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, matched_items: result.matchedItems, updates_flagged: result.updatesFlagged, expired_items: result.expiredItems, daily_article_target: run.max_new_drafts, remaining_publication_capacity: remainingCapacity, recent_pool_shortlist: shortlist.length, freshness_days: shortlistResult.settings.freshnessDays, freshness_decay_per_day: shortlistResult.settings.freshnessDecayPerDay, wildlife_bonus: shortlistResult.settings.wildlifeBonus, selected_effective_scores: shortlist.map((candidate) => ({ cluster_id: candidate.id, effective_score: candidate.ranking.effectiveScore })) },
+      details: { assessed_items: result.assessedItems, new_candidates: result.selected, rejected: result.rejected, matched_items: result.matchedItems, updates_flagged: result.updatesFlagged, expired_items: result.expiredItems, daily_article_target: run.max_new_drafts, remaining_publication_capacity: remainingCapacity, recent_pool_shortlist: shortlist.length, minimum_overall_score: shortlistResult.minimumOverall, minimum_evidence_score: shortlistResult.minimumEvidence, freshness_days: shortlistResult.settings.freshnessDays, freshness_decay_per_day: shortlistResult.settings.freshnessDecayPerDay, wildlife_bonus: shortlistResult.settings.wildlifeBonus, selected_effective_scores: shortlist.map((candidate) => ({ cluster_id: candidate.id, effective_score: candidate.ranking.effectiveScore })) },
       estimatedCostUsd: result.estimatedCostUsd,
     });
     if (completed) {
@@ -417,6 +437,17 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
       const result = await researchCandidate(readyToResearch.cluster_id);
       const cost = result.alreadyCompleted ? 0 : result.estimatedTokenCostUsd + estimateWebSearchCost(result.searchActions);
       const nextCost = money(run.estimated_cost_usd) + cost;
+      if (!hasSufficientAutomaticSources(result.sourceCount)) {
+        const reason = `Research found ${result.sourceCount} usable ${result.sourceCount === 1 ? 'source' : 'sources'}; automatic publishing requires at least 3.`;
+        await supabase.from('editorial_run_items').update({ status: 'failed', research_cost_usd: cost, web_search_actions: result.searchActions, error_message: reason }).eq('id', readyToResearch.id);
+        await supabase.from('editorial_runs').update({ current_stage: 'researching', estimated_cost_usd: nextCost, candidates_processed: run.candidates_processed + 1, failures: run.failures + 1 }).eq('id', run.id);
+        await addEvent(run.id, 'researching', `Research stopped before drafting ${itemTitle(readyToResearch)} because it did not meet the automatic source threshold.`, {
+          level: 'warning',
+          details: { cluster_id: readyToResearch.cluster_id, sources: result.sourceCount, minimum_sources: 3, web_search_actions: result.searchActions },
+          estimatedCostUsd: cost,
+        });
+        return getEditorialRunSnapshot(run.id, 'A candidate did not have enough usable sources. The next eligible candidate will be selected.');
+      }
       await supabase.from('editorial_run_items').update({ status: 'researched', research_cost_usd: cost, web_search_actions: result.searchActions }).eq('id', readyToResearch.id);
       await supabase.from('editorial_runs').update({ current_stage: 'drafting', estimated_cost_usd: nextCost }).eq('id', run.id);
       await addEvent(run.id, 'researching', `Research completed for ${itemTitle(readyToResearch)}.`, {
@@ -435,6 +466,35 @@ export async function advanceEditorialRun(runId: string, userId: string | null):
 
   if (items.some((item) => ['researching', 'drafting'].includes(item.status))) {
     return getEditorialRunSnapshot(run.id, 'Waiting for an in-progress step to finish or become ready for recovery.');
+  }
+
+  const draftedCount = items.filter((item) => item.status === 'drafted').length;
+  const remainingCapacity = await remainingPublicationCapacityToday(run.max_new_drafts);
+  const replacementsNeeded = Math.max(0, remainingCapacity - draftedCount);
+  if (replacementsNeeded > 0) {
+    const replacementResult = await selectRecentUndraftedCandidates(replacementsNeeded, items.map((item) => item.cluster_id));
+    if (replacementResult.candidates.length) {
+      const nextRank = items.reduce((highest, item) => Math.max(highest, item.rank), 0) + 1;
+      const { error: replacementError } = await supabase.from('editorial_run_items').insert(replacementResult.candidates.map((candidate, index) => ({
+        run_id: run.id,
+        cluster_id: candidate.id,
+        rank: nextRank + index,
+        status: 'pending',
+      })));
+      if (replacementError) throw replacementError;
+      await supabase.from('editorial_runs').update({
+        current_stage: 'researching',
+        candidates_selected: run.candidates_selected + replacementResult.candidates.length,
+      }).eq('id', run.id);
+      await addEvent(run.id, 'researching', `${replacementResult.candidates.length} replacement ${replacementResult.candidates.length === 1 ? 'candidate was' : 'candidates were'} selected after earlier work could not produce today’s full article target.`, {
+        details: {
+          replacement_candidates: replacementResult.candidates.map((candidate) => candidate.id),
+          minimum_overall_score: replacementResult.minimumOverall,
+          minimum_evidence_score: replacementResult.minimumEvidence,
+        },
+      });
+      return getEditorialRunSnapshot(run.id, 'The next eligible candidate has been added to replace unsuccessful work.');
+    }
   }
 
   run = { ...run, failures: items.filter((item) => item.status === 'failed').length };

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 // @ts-expect-error Node's type-stripping test runner requires the source extension.
-import { compareRankedCandidates, rankCandidate, type CandidateRankingSettings, type RankableCandidate } from '../lib/candidate-ranking.ts';
+import { compareRankedCandidates, hasSufficientAutomaticSources, meetsCandidateAutomationThresholds, rankCandidate, type CandidateRankingSettings, type RankableCandidate } from '../lib/candidate-ranking.ts';
 
 const settings: CandidateRankingSettings = { freshnessDays: 7, freshnessDecayPerDay: 2, wildlifeBonus: 3 };
 const now = Date.parse('2026-10-26T12:00:00Z');
@@ -41,4 +41,15 @@ void test('ranks current priority ahead of raw assessment score', () => {
   const ranked = [older, recent].map((item) => ({ ...item, ranking: rankCandidate(item, settings, now) })).sort(compareRankedCandidates);
   assert.equal(ranked[0].overall_score, 61);
   assert.deepEqual(ranked.map((item) => item.ranking.effectiveScore), [61, 52]);
+});
+
+void test('requires both configured quality thresholds before automatic research', () => {
+  assert.equal(meetsCandidateAutomationThresholds({ overall_score: 55, evidence_score: 40 }, 55, 40), true);
+  assert.equal(meetsCandidateAutomationThresholds({ overall_score: 54, evidence_score: 80 }, 55, 40), false);
+  assert.equal(meetsCandidateAutomationThresholds({ overall_score: 90, evidence_score: 39 }, 55, 40), false);
+});
+
+void test('requires three researched sources before automatic drafting', () => {
+  assert.equal(hasSufficientAutomaticSources(2), false);
+  assert.equal(hasSufficientAutomaticSources(3), true);
 });

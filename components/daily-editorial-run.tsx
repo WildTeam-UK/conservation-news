@@ -50,6 +50,8 @@ type DailyEditorialRunProps = {
   defaultCandidateFreshnessDays: number;
   defaultCandidateFreshnessDecayPerDay: number;
   defaultCandidateWildlifeBonus: number;
+  defaultMinimumOverall: number;
+  defaultMinimumEvidence: number;
   lastAutomationTickAt: string | null;
   lastAutomationError: string | null;
   hasActiveRun: boolean;
@@ -68,6 +70,8 @@ export function DailyEditorialRun({
   defaultCandidateFreshnessDays,
   defaultCandidateFreshnessDecayPerDay,
   defaultCandidateWildlifeBonus,
+  defaultMinimumOverall,
+  defaultMinimumEvidence,
   lastAutomationTickAt,
   lastAutomationError,
   hasActiveRun,
@@ -81,6 +85,8 @@ export function DailyEditorialRun({
   const [candidateFreshnessDays, setCandidateFreshnessDays] = useState(defaultCandidateFreshnessDays);
   const [candidateFreshnessDecayPerDay, setCandidateFreshnessDecayPerDay] = useState(defaultCandidateFreshnessDecayPerDay);
   const [candidateWildlifeBonus, setCandidateWildlifeBonus] = useState(defaultCandidateWildlifeBonus);
+  const [minimumOverall, setMinimumOverall] = useState(defaultMinimumOverall);
+  const [minimumEvidence, setMinimumEvidence] = useState(defaultMinimumEvidence);
   const [running, setRunning] = useState(false);
   const [saving, setSaving] = useState(false);
   const [snapshot, setSnapshot] = useState<RunSnapshot | null>(null);
@@ -105,7 +111,7 @@ export function DailyEditorialRun({
       const response = await fetch('/api/admin/editorial-settings', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ automationEnabled, autoCoverageUpdatesEnabled, dailyRunTime, dailyArticleTarget, maxEstimatedCostUsd: maxCost, candidateFreshnessDays, candidateFreshnessDecayPerDay, candidateWildlifeBonus }),
+        body: JSON.stringify({ automationEnabled, autoCoverageUpdatesEnabled, dailyRunTime, dailyArticleTarget, maxEstimatedCostUsd: maxCost, candidateFreshnessDays, candidateFreshnessDecayPerDay, candidateWildlifeBonus, minOverallScore: minimumOverall, minEvidenceScore: minimumEvidence }),
       });
       const result = await response.json() as { saved?: boolean; error?: string };
       if (!response.ok) throw new Error(result.error ?? 'The automation settings could not be saved.');
@@ -165,13 +171,15 @@ export function DailyEditorialRun({
         <label><span>Candidate freshness</span><input type="number" min="1" max="30" step="1" value={candidateFreshnessDays} disabled={running || saving} onChange={(event) => setCandidateFreshnessDays(Number(event.target.value))} /><small>Days a candidate remains eligible.</small></label>
         <label><span>Freshness decay</span><input type="number" min="0" max="20" step="0.5" value={candidateFreshnessDecayPerDay} disabled={running || saving} onChange={(event) => setCandidateFreshnessDecayPerDay(Number(event.target.value))} /><small>Points removed per complete day.</small></label>
         <label><span>Wildlife bonus</span><input type="number" min="0" max="10" step="0.5" value={candidateWildlifeBonus} disabled={running || saving} onChange={(event) => setCandidateWildlifeBonus(Number(event.target.value))} /><small>Small priority lift, not a hard preference.</small></label>
+        <label><span>Minimum overall score</span><input type="number" min="0" max="100" step="1" value={minimumOverall} disabled={running || saving} onChange={(event) => setMinimumOverall(Number(event.target.value))} /><small>Lower-scoring candidates remain visible but are not researched automatically.</small></label>
+        <label><span>Minimum evidence score</span><input type="number" min="0" max="100" step="1" value={minimumEvidence} disabled={running || saving} onChange={(event) => setMinimumEvidence(Number(event.target.value))} /><small>Candidates below this evidence threshold are skipped automatically.</small></label>
         <label className="automation-toggle"><span>Daily scheduler</span><span className="automation-toggle-control"><input type="checkbox" checked={automationEnabled} disabled={running || saving} onChange={(event) => setAutomationEnabled(event.target.checked)} /> <strong>{automationEnabled ? 'Enabled' : 'Off'}</strong></span></label>
         <label className="automation-toggle"><span>Article updates</span><span className="automation-toggle-control"><input type="checkbox" checked={autoCoverageUpdatesEnabled} disabled={running || saving} onChange={(event) => setAutoCoverageUpdatesEnabled(event.target.checked)} /> <strong>{autoCoverageUpdatesEnabled ? 'Automatic' : 'Manual'}</strong></span><small>Prepare and apply source-grounded coverage updates automatically.</small></label>
-        <button className="admin-secondary-button schedule-save-button" type="button" onClick={saveSchedule} disabled={running || saving || dailyArticleTarget < 1 || maxCost < 0.05 || !dailyRunTime || candidateFreshnessDays < 1 || candidateFreshnessDecayPerDay < 0 || candidateWildlifeBonus < 0}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving settings</> : <><Save /> Save automation</>}</button>
+        <button className="admin-secondary-button schedule-save-button" type="button" onClick={saveSchedule} disabled={running || saving || dailyArticleTarget < 1 || maxCost < 0.05 || !dailyRunTime || candidateFreshnessDays < 1 || candidateFreshnessDecayPerDay < 0 || candidateWildlifeBonus < 0 || minimumOverall < 0 || minimumOverall > 100 || minimumEvidence < 0 || minimumEvidence > 100}>{saving ? <><LoaderCircle className="admin-spinner" /> Saving settings</> : <><Save /> Save automation</>}</button>
         <button className="admin-primary-button daily-run-button" type="button" onClick={run} disabled={running || saving || dailyArticleTarget < 1 || maxCost < 0.05}>
           {running ? <><LoaderCircle className="admin-spinner" /> {snapshot?.message || 'Starting run'}</> : hasActiveRun || runState?.status === 'running' || runState?.status === 'budget_stopped' ? <><RotateCcw /> Resume run now</> : <><Play /> Run manually now</>}
         </button>
-        <small>The article target and cost limit are shared by manual and scheduled runs. Publishing hours and quality safeguards are controlled from the Schedule page.</small>
+        <small>The article target, candidate thresholds and cost limit are shared by manual and scheduled runs. Publishing hours and the final publication recheck are controlled from the Schedule page.</small>
         {scheduleMessage ? <output className="schedule-message">{scheduleMessage}</output> : null}
       </div>
 
