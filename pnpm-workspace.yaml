@@ -2,8 +2,8 @@ allowBuilds:
   esbuild: true
   sharp: true
 minimumReleaseAgeExclude:
-  - "@wildteam-uk/tokens@0.2.0"
-  - "@wildteam-uk/ui@0.2.1"
+  - '@wildteam-uk/tokens@0.2.0 || 0.3.0'
+  - '@wildteam-uk/ui@0.2.1'
 overrides:
   fast-uri: 3.1.8
   fflate: 0.7.5
